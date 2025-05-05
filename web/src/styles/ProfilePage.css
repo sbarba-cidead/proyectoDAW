@@ -1,0 +1,354 @@
+.profile-container {
+    font-family: 'Arial', sans-serif;
+}
+
+.title-section {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    background: rgba(0, 0, 0, 0.5); /* oscuro transparente */
+    padding-top: 5px;
+    padding-bottom: 10px;
+}
+
+.title-section h1 {
+    margin-block: 0 0;
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.body-section {
+    height: calc(100vh - 223px);
+    overflow-y: auto;
+    background-color: #f0f0f0; /* blanco */
+    padding: 20px;
+}
+
+/* Sección de perfil y actividades */
+
+.body-section .box-content-1 {
+    display: flex;
+    flex-direction: row;
+    background-color: #fff; /* blanco */
+    margin-bottom: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* oscuro transparente */
+}
+
+.profile-data {
+    flex: 30%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* foto de usuario */
+.profile-data .profile-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+}
+
+/* nombre de usuario */
+.profile-data .profile-info .user-name {
+    font-size: 2rem;
+    color: #333; /* gris oscuro */
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.1;
+}
+
+/* email de usuario */
+.profile-data .profile-info .user-email {
+    color: #666; /* gris claro */
+    margin: 0;
+    padding: 10px;
+    text-align: center;
+}
+
+/* botones de edición de usuario */
+
+.profile-data .profile-info .profile-edit {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+}
+
+.profile-data .profile-info .profile-edit a {
+    text-decoration: none;
+    color: #308b35; /* verde */
+    font-weight: bold;
+    padding: 5px 10px;
+    border: 1px solid #297e2e; /* verde */
+    border-radius: 5px;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.profile-data .profile-info .profile-edit a:hover {
+    background-color: #297e2e; /* verde */
+    color: white;
+}
+
+/* línea divisoria */
+.div-line {
+    max-height: calc(100vh - 280px);
+    border: 1px dashed #bbb; /* gris muy claro */
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.profile-score {
+    flex: 70%;
+    padding: 10px;
+}
+
+/* nivel de usuario */
+
+.profile-score .user-level {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.profile-score .user-level .level-info {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    justify-content: flex-start;
+    font-weight: bold;
+    cursor: default;
+}
+
+.profile-score .user-level .level-info span {
+    margin-left: 10px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.tooltip-container {
+    position: relative;
+}
+
+.tooltip-container svg {
+    font-size: x-small;
+    padding-left: 5px;
+    vertical-align: top;
+    color: #D32F2F;
+}
+
+.profile-score .user-level .level-info .tooltip {
+    visibility: hidden;
+    width: 450px;
+    height: fit-content;
+    background-color: rgba(236, 236, 236, 0.95); /* claro transparete */
+    border-radius: 10px;
+    padding: 20px;
+    position: absolute;
+    left: 50%;
+    top: 90%;
+    margin-left: -60px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.profile-score .user-level .level-info .tooltip p {
+    text-align: center;
+    color: #131313; /* negro */
+    font-size: 1rem;
+    font-weight: normal;
+}
+
+.profile-score .user-level .level-info:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* puntos de usuario */
+
+.profile-score .user-level .user-points {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    position: relative;
+    cursor: default;
+}
+
+.profile-score .user-level .user-points span {
+    margin-left: 10px;
+    margin-right: 5px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.profile-score .user-level .user-points .angle-icon {
+    font-size: medium;
+    vertical-align: bottom;
+    font-weight: normal;
+    transition: opacity 0.3s ease;
+}
+
+.profile-score .user-level .user-points .angle-icon.down {
+    display: inline-block;
+    opacity: 1;
+    visibility: visible;
+}
+
+.profile-score .user-level .user-points .angle-icon.up {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.profile-score .user-level .user-points:hover .angle-icon.up {
+    display: inline-block;
+    opacity: 1;
+    visibility: visible;
+}
+  
+.profile-score .user-level .user-points:hover .angle-icon.down {    
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.profile-score .user-level .user-points .tooltip {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    visibility: hidden;
+    width: 250px;
+    height: fit-content;
+    background-color: rgba(236, 236, 236, 0.95); /* claro transparete */
+    border-radius: 10px;
+    padding: 20px;
+    position: absolute;
+    right: 50%;
+    margin-right: -70px;
+    margin-top: 90px;
+    opacity: 0;
+    transition: opacity 0.3s;    
+}
+
+.profile-score .user-level .user-points:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.profile-score .user-level .user-points .tooltip .score-number {
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+/* fondo de la barra de progreso */
+.profile-score .user-level .user-points .tooltip .progress-bar-container {
+    width: 90%;
+    background-color: #b0b0b0;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* barra de progreso */
+.profile-score .user-level .user-points .tooltip .progress-bar-container .progress-bar {
+    height: 10px;
+    width: 0; /* Se ajustará dinámicamente */
+    background-color: #57aaa3;
+    transition: width 0.3s;
+    border-radius: 5px;
+}
+
+/* lista de actividades de reciclaje */
+.profile-score ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.profile-score li {
+    background-color: #e6f7f0; /* blanco */
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+}
+
+.profile-score h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* Sección de mensajes escritos por el usuario */
+.body-section .box-content-2 {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff; /* blanco */
+    margin-top: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* oscuro transparente */
+}
+
+.profile-messages {
+}
+
+.profile-messages h3 {
+    margin: 0px;
+    font-size: 1.8rem;
+    color: #333; /* gris oscuro */
+    text-align: center;
+}
+
+.profile-messages .messages-list {
+    margin-top: 20px;
+}
+
+.profile-messages .messages-list .message {
+    background-color: #fff; /* blanco */
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* oscuro transparente */
+}
+
+.profile-messages .messages-list .message .message-actions {
+    display: flex;
+    justify-content: space-between;
+}
+
+.profile-messages .messages-list .message .message-actions .edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    color: #4CAF50; /* verde */
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Media query para pantallas más pequeñas, móviles y tablet */
+@media (max-width: 1114px) {
+    .body-section .box-content-1 {
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .profile-data {
+        flex: none;
+        width: 100%;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .profile-score {
+        flex: none;
+        margin: 10px;
+    }
+}

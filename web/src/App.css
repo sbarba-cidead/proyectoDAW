@@ -1,0 +1,29 @@
+.App {
+  height: 100%; /* toda la altura de la ventana */
+  width: 100%; /* todo el ancho de la ventana */
+}
+
+body {
+  background: url('./assets/background.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-position: center;
+}
+
+.content.home {
+  height: 100vh; /* toda la altura de la ventana */
+  width: 100%; /* todo el ancho de la ventana */
+}
+
+.content.other {
+  height: calc(100vh - 131px);
+  width: 100%; /* todo el ancho de la ventana */
+}
+
+.footer {
+  background-color: #333;
+  color: white;
+  padding-top: 0.1px;
+  padding-bottom: 0.1px;
+  text-align: center;
+  font-size: 0.6rem;
+}

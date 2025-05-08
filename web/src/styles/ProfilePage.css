@@ -2,26 +2,8 @@
     font-family: 'Arial', sans-serif;
 }
 
-.title-section {
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: white;
-    background: rgba(0, 0, 0, 0.5); /* oscuro transparente */
-    padding-top: 5px;
-    padding-bottom: 10px;
-}
-
-.title-section h1 {
-    margin-block: 0 0;
-    font-size: 2em;
-    font-weight: bold;
-}
-
 .body-section {
-    height: calc(100vh - 223px);
-    overflow-y: auto;
-    background-color: #f0f0f0; /* blanco */
+    background-color: #f0f0f0; /* blanco un poco oscuro */
     padding: 20px;
 }
 

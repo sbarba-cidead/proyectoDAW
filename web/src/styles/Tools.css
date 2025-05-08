@@ -1,39 +1,12 @@
-.hero-section {
+.tools-container {
+  height: 100%;
+  font-family: 'Arial', sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px; /* Ajustamos la altura */
-  text-align: center;
-  color: white;
-  background: rgba(0, 0, 0, 0.5); /* Fondo oscuro transparente */
-  padding-top: 120px; /* Aumentamos el padding-top para bajar el texto */
-  padding-bottom: 5px; /* Reducimos aún más el espacio debajo */
-}
-  
-.hero-section h1 {
-  font-size: 3rem;
-  font-weight: bold;
-}
-  
-/* Sección de Herramientas */
-.tools-section {
-  padding: 40px;
   background-color: #f0f0f0;
-  min-height: 47vh; /* Asegura que la sección ocupe todo el alto de la pantalla */
-}
-
-.tools-section h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.tool-container {
-  display: flex;
-  justify-content: space-around;
+  justify-content: center; /* Centra horizontalmente los elementos */
+  gap: 30px; /* espacio entre los elementos */
   align-items: center; /* Centra verticalmente los elementos */
-  flex-wrap: wrap;
-  height: 100%; /* Se asegura de que el contenedor ocupe todo el espacio disponible */
+  flex-wrap: wrap; /* elemento salta a la siguiente línea si no cabe */
 }
 
 .tool {
@@ -42,11 +15,12 @@
   margin: 10px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  height: 180px;
   width: 250px;
   text-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
 .tool h3 {
@@ -61,7 +35,7 @@
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.3s;
-  margin-top: 15px; /* Agregamos un margen superior al botón */
+  margin-top: 15px;
 }
 
 .tool a:hover {

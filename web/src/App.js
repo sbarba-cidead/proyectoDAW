@@ -7,6 +7,11 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import ProfilePage from './components/ProfilePage';
 import Tools from './components/Tools';
+import EcoCalc from './components/EcoCalc';
+import RecycleMap from './components/RecycleMap';
+import RecycleBins from './components/RecycleBins';
+import Forum from './components/Forum';
+import EcoInfo from './components/EcoInfo';
 
 function App() {
   const [showLogin, setShowLogin] = useState(false);
@@ -34,6 +39,31 @@ function App() {
           <Route path="/herramientas" element={
             <div className={"content other"}>
               <Tools />
+            </div>
+          } />
+          <Route path="/calculadora-huella-ecologica" element={
+            <div className={"content other"}>
+              <EcoCalc />
+            </div>
+          } />
+          <Route path="/mapa-reciclaje" element={
+            <div className={"content other"}>
+              <RecycleMap />
+            </div>
+          } />
+          <Route path="/contenedores-reciclaje" element={
+            <div className={"content other"}>
+              <RecycleBins />
+            </div>
+          } />
+          <Route path="/foro" element={
+            <div className={"content other"}>
+              <Forum />
+            </div>
+          } />
+          <Route path="/informacion-sostenibilidad" element={
+            <div className={"content other"}>
+              <EcoInfo />
             </div>
           } />
         </Routes>

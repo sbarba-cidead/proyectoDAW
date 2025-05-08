@@ -60,10 +60,6 @@ function ProfilePage() {
 
   return (
     <div className="profile-container">
-      <div className="title-section">
-        <h1>Datos de usuario</h1>
-      </div>
-
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">

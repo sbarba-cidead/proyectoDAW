@@ -1,5 +1,7 @@
 .App {
-  height: 100%; /* toda la altura de la ventana */
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* toda la altura de la ventana */
   width: 100%; /* todo el ancho de la ventana */
 }
 
@@ -15,8 +17,10 @@ body {
 }
 
 .content.other {
-  height: calc(100vh - 131px);
+  flex-grow: 1; /* ocupa espacio disponible entre cabecera y pie */
+  overflow-y: auto; /* permite scroll del contenido */
   width: 100%; /* todo el ancho de la ventana */
+  background-color: #f0f0f0; /* blanco un poco oscuro */
 }
 
 .footer {

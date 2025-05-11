@@ -73,6 +73,11 @@
     align-self: center;
 }
 
+.eco-column .total-notice {
+    color: rgb(48, 48, 48);
+    text-align: center;
+}
+
 .eco-column .result {
     margin-top: 1rem;
     margin-bottom: 1rem;
@@ -94,6 +99,7 @@
     margin-top: 1rem;
     font-weight: bold;
     color: #d84315;
+    text-align: center;
 }
 
 .eco-column .tips {

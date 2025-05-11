@@ -1,0 +1,81 @@
+.recycle-container {
+    display: flex;
+    height: 100%;
+    font-family: sans-serif;
+  }
+  
+  .recycle-map {
+    flex: 2;
+  }
+
+  .recycle-map .map {
+    height: 100%;
+    width: 100%;
+  }
+  
+  /* Columna lateral (buscador + lista) */
+  .recycle-sidebar {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background-color: #f7f7f7;
+    border-left: 1px solid #ddd;
+  }
+  
+  /* Formulario de búsqueda */
+  .recycle-form {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+  
+  .recycle-form input[type="text"] {
+    flex: 1;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .recycle-form button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    background-color: #0077cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .recycle-form button:hover {
+    background-color: #005fa3;
+  }
+  
+/* Lista de puntos */
+.recycle-list {
+    list-style: none;
+    padding-left: 0;
+}
+  
+.recycle-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.color-indicator {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.tint-contenedor-amarillo { color: #FFD700; }
+.tint-contenedor-azul { color: #1E90FF; }
+.tint-contenedor-verde { color: #0e490e; }
+.tint-contenedor-marron { color: #A0522D; }
+.tint-contenedor-gris { color: #808080; }
+.tint-contenedor-sigre { color: #8A2BE2; }
+.tint-contenedor-pilas { color: #000000; }
+.tint-contenedor-ropa { color: #FF69B4; }
+.tint-contenedor-punto-limpio { color: #1a9420; }
+  

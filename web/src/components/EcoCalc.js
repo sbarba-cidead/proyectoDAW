@@ -161,7 +161,7 @@ function EcoCalc() {
                         calculateFootprint(carbonAnswers, carbonQuestions, setCarbonFootprint, 'carbon')
                     }
                 >
-                    Calcular carbono
+                    Calcular consumo
                 </button>
                 {errors.carbon && <p className="error">Completa todas las preguntas antes de calcular.</p>}
                 {carbonFootprint && <p className="result">Resultado: {carbonFootprint} t CO₂/año</p>}
@@ -178,7 +178,7 @@ function EcoCalc() {
                         calculateFootprint(waterAnswers, waterQuestions, setWaterFootprint, 'water')
                     }
                 >
-                    Calcular agua
+                    Calcular consumo
                 </button>
                 {errors.water && <p className="error">Completa todas las preguntas antes de calcular.</p>}
                 {waterFootprint && <p className="result">Resultado: {waterFootprint} m³/año</p>}
@@ -202,7 +202,7 @@ function EcoCalc() {
                         </ul>
                     </>
                 ) : (
-                    <p>Calcula ambas huellas para ver tu resultado total.</p>
+                    <p className="total-notice">Calcula ambas huellas para ver tu resultado total.</p>
                 )}
             </div>
         </div>

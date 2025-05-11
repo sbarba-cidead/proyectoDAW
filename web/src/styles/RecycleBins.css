@@ -1,0 +1,110 @@
+.recyclebins-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+  
+.recyclebins-container .search-products-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+  
+.recyclebins-container .search-products-container input {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    transition: border 0.3s ease;
+}
+  
+.search-products-container input:focus {
+    border: 2px solid #4CAF50;
+    outline: none;
+}
+
+.search-products-container .search-suggestions {
+    display: flex;
+    padding: 0;
+    justify-content: center;
+}
+  
+.search-products-container .search-suggestions ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style: none; 
+}
+  
+.search-products-container .search-suggestions li {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    width: 150px;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+  
+.search-products-container .search-suggestions li:hover {
+    background-color: #45a049;
+}
+  
+.recyclebins-container .results-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.recyclebins-container .results-container .notice {
+    color: rgb(48, 48, 48);
+    text-align: center;
+}
+  
+.recyclebins-container .results-container h2 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+  
+.recyclebins-container .results-container p {
+    font-size: 16px;
+    color: #555;
+}
+  
+.recyclebins-container .results-container img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+ 
+@media (max-width: 850px) {
+    .recyclebins-container {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+}
+  

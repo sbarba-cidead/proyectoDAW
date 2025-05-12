@@ -1,70 +1,130 @@
-.recycle-container {
+.recyclemap-container {
     display: flex;
     height: 100%;
+    min-width: 300px;
     font-family: sans-serif;
-  }
-  
-  .recycle-map {
-    flex: 2;
-  }
+}
 
-  .recycle-map .map {
+/* COLUMNA 1 */
+.recyclemap-container .recycle-map {
+    flex: 2;
+    padding: 10px;
+    margin: 20px 10px 20px 5px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.recyclemap-container .recycle-map .map {
     height: 100%;
     width: 100%;
-  }
-  
-  /* Columna lateral (buscador + lista) */
-  .recycle-sidebar {
+    border-radius: 10px;
+}
+
+/* COLUMNA 2 */
+/* Columna lateral (buscador + lista) */
+.recyclemap-container .recycle-sidebar {
     flex: 1;
-    padding: 1rem;
-    overflow-y: auto;
-    background-color: #f7f7f7;
-    border-left: 1px solid #ddd;
-  }
-  
-  /* Formulario de búsqueda */
-  .recycle-form {
     display: flex;
-    margin-bottom: 1rem;
-  }
+    flex-direction: column;
+    border-left: 1px solid #ddd;
+    padding: 10px;
+    margin: 20px 10px 20px 5px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
   
-  .recycle-form input[type="text"] {
+/* Formulario de búsqueda */
+.recycle-sidebar .recycle-form {
+    display: flex;
+    padding: 0.5rem 0rem;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.recycle-sidebar .recycle-form .input-wrapper {
+    position: relative;
     flex: 1;
-    padding: 0.5rem;
-    margin-right: 0.5rem;
+    display: flex;
+}
+  
+.recycle-form .input-wrapper input {
+    flex: 1;
+    padding: 0.5rem 2rem 0.5rem 0.5rem;
     font-size: 1rem;
     border: 1px solid #ccc;
-    border-radius: 4px;
-  }
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.recycle-form .input-wrapper input:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
   
-  .recycle-form button {
+.recycle-form .input-wrapper .clear-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    z-index: 1;
+}
+  
+.recycle-form .input-wrapper .clear-icon:hover {
+    color: #555;
+}
+ 
+.recycle-sidebar .recycle-form button {
     padding: 0.5rem 1rem;
     font-size: 1rem;
-    background-color: #0077cc;
+    background-color: #2e7d32;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .recycle-form button:hover {
-    background-color: #005fa3;
-  }
-  
-/* Lista de puntos */
-.recycle-list {
-    list-style: none;
-    padding-left: 0;
 }
   
-.recycle-list li {
+.recycle-sidebar .recycle-form button:hover {
+    background-color: #1b5e20;
+}
+
+.recycle-sidebar .error-message {
+    color: rgb(211, 3, 3);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    text-align: center;
+}  
+
+.recycle-sidebar h3 {
+    margin: 0px;
+    padding: 1rem 0rem;
+}
+  
+/* Lista de puntos */
+.recycle-sidebar .recycle-list {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-gutter: stable; /* para mostrar el scroll en móviles */
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+    padding-bottom: 0.5rem;
+}
+  
+.recycle-sidebar .recycle-list li {
     padding: 0.5rem 0;
     border-bottom: 1px solid #ddd;
     font-size: 0.95rem;
     cursor: pointer;
 }
 
-.color-indicator {
+.recycle-sidebar .recycle-list li .color-indicator {
     margin-right: 8px;
     vertical-align: middle;
 }
@@ -78,4 +138,49 @@
 .tint-contenedor-pilas { color: #000000; }
 .tint-contenedor-ropa { color: #FF69B4; }
 .tint-contenedor-punto-limpio { color: #1a9420; }
+
+/* editar aquí */
+@media (max-width: 850px) {
+    .recycle-container {
+        flex-direction: column;
+    }
+    
+    .recycle-container .recycle-sidebar {
+        margin: 10px 10px 5px 10px;
+    }
+
+    .recycle-container .recycle-map {
+        margin: 5px 10px 5px 10px;
+    }
+    
+    .recycle-container .recycle-map {
+        order: 2; /* mueve el mapa abajo */
+    }
+    
+    .recycle-container .recycle-sidebar {
+        order: 1; /* pone el buscador arriba */
+        height: 50%;
+    }
+
+    .recycle-sidebar h3 {
+        margin: 0px;
+        padding: 0.5rem 0rem;
+    }
+}
+
+@media (max-width: 368px) {
+    .recycle-sidebar .recycle-form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .recycle-sidebar .recycle-form .input-wrapper {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  
+    .recycle-sidebar .recycle-form button {
+      width: 100%;
+    }
+}
   

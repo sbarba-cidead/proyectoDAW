@@ -9,8 +9,6 @@ import ProfilePage from './components/ProfilePage';
 import Tools from './components/Tools';
 import EcoCalc from './components/EcoCalc';
 import RecycleMap from './components/RecycleMap';
-import Map from './components/Mapa'
-import MapComponent from './components/MapComponent';
 import RecycleBins from './components/RecycleBins';
 import Forum from './components/Forum';
 import EcoInfo from './components/EcoInfo';
@@ -51,8 +49,6 @@ function App() {
           <Route path="/mapa-reciclaje" element={
             <div className={"content other"}>
               <RecycleMap />
-              {/* <Map /> */}
-              {/* <MapComponent /> */}
             </div>
           } />
           <Route path="/contenedores-reciclaje" element={

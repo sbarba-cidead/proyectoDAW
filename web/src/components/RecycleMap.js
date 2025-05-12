@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
-import { FaSquareFull } from 'react-icons/fa';
+import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 
 // contenedor amarillo (plástico)
 const yellowIcon = L.icon({
@@ -156,28 +156,51 @@ function RecycleMap() {
     const [orderedPoints, setOrderedPoints] = useState(recyclePoints);
     const [selectedPoint, setSelectedPoint] = useState(null); // punto seleccionado en el mapa
     const markersRef = useRef([]); // referencia de los marcadores del mapa
+    const [error, setError] = useState(''); // mensaje de error en búsqueda de dirección
+    const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 368);
+
+    // escucha a los cambios de tamaño de pantalla
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallWidthScreen(window.innerWidth < 368);
+        };
+      
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const searchDirection = async () => {
         if (!direction) return;
 
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direction)}`);
-        const data = await res.json();
-        if (data.length > 0) {
-        const { lat, lon } = data[0];
-        const coords = [parseFloat(lat), parseFloat(lon)];
-        setResult(coords);
+        setError(''); // limpia errores anteriores
 
-        const ordered = orderedPoints
-            .map(p => ({
-                ...p,
-                distance: getDistance(
-                    { latitude: coords[0], longitude: coords[1] },
-                    { latitude: p.coords[0], longitude: p.coords[1] }
-                )
-            }))
-            .sort((a, b) => a.distance - b.distance);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direction)}`);
+            const data = await res.json();
 
-            setOrderedPoints(ordered);
+            if (data.length > 0) {
+                const { lat, lon } = data[0];
+                const coords = [parseFloat(lat), parseFloat(lon)];
+                setResult(coords);
+
+                const ordered = orderedPoints
+                    .map(p => ({
+                        ...p,
+                        distance: getDistance(
+                            { latitude: coords[0], longitude: coords[1] },
+                            { latitude: p.coords[0], longitude: p.coords[1] }
+                        )
+                    }))
+                    .sort((a, b) => a.distance - b.distance);
+
+                    setOrderedPoints(ordered);
+            } else {
+                setResult(null);
+                setError('No se ha encontrado ninguna dirección con esos datos.');
+            }
+        } catch (err) {
+            console.error(err);
+            setError('Error al buscar la dirección.');
         }
     };
 
@@ -210,7 +233,7 @@ function RecycleMap() {
     };
 
     return (
-        <div className="recycle-container">
+        <div className="recyclemap-container">
             <div className="recycle-map">
                 <MapContainer center={focusPoint} zoom={15} className="map">
                     <TileLayer
@@ -239,24 +262,35 @@ function RecycleMap() {
 
             <div className="recycle-sidebar">
                 <form onSubmit={handleSubmit} className="recycle-form">
-                    <input
-                        type="text"
-                        value={direction}
-                        onChange={(e) => setDirection(e.target.value)}
-                        placeholder="Introduce una dirección"
-                    />
+                    <div className="input-wrapper">
+                        <input
+                            type="text"
+                            value={direction}
+                            onChange={(e) => setDirection(e.target.value)}
+                            placeholder="Introduce una dirección"
+                        />
+                        { direction && (<FaTimesCircle  className="clear-icon"
+                            onClick={() => setDirection('')} />)
+                        }
+                    </div>
                     <button type="submit">Buscar</button>
                 </form>
 
-                <h3>Puntos cercanos</h3>
-                <ul className="recycle-list">
-                    {orderedPoints.map(p => (
-                        <li key={p.id} onClick={() => handlePointSelect(p)}>
-                            <FaSquareFull className={`color-indicator tint-contenedor-${p.type}`} />
-                            {p.name} {p.distance ? `- ${(p.distance / 1000).toFixed(2)} km` : ''}
-                        </li>
-                    ))}
-                </ul>
+                {error && <div className="error-message">{error}</div>}
+                
+                {(!error || !isSmallWidthScreen) && (
+                    <>
+                        <h3>Puntos cercanos</h3>
+                        <ul className="recycle-list">
+                            {orderedPoints.map(p => (
+                                <li key={p.id} onClick={() => handlePointSelect(p)}>
+                                    <FaSquareFull className={`color-indicator tint-contenedor-${p.type}`} />
+                                    {p.name} {p.distance ? `- ${(p.distance / 1000).toFixed(2)} km` : ''}
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
             </div>
         </div>
     );

@@ -14,7 +14,7 @@ function Navbar() {
     "/mapa-reciclaje": "Mapa de Reciclaje",
     "/contenedores-reciclaje": "Contenedores de Reciclaje",
     "/foro": "Comunidad de Sostenibilidad",
-    "/informacion-sostenibilidad": "Información de Sostenibilidad",
+    "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
   };
 
   const currentTitle = pageTitles[location.pathname] || "";

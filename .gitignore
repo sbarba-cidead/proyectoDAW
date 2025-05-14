@@ -1,0 +1,27 @@
+# === FRONTEND (React) ===
+client/node_modules/
+client/.pnp
+client/.pnp.js
+
+client/coverage/
+client/build/
+
+client/.env.local
+client/.env.development.local
+client/.env.test.local
+client/.env.production.local
+
+client/npm-debug.log*
+client/yarn-debug.log*
+client/yarn-error.log*
+
+client/.DS_Store
+
+# === BACKEND (Node.js + Express) ===
+server/node_modules/
+server/.env
+server/npm-debug.log*
+server/.DS_Store
+
+# === GLOBAL ===
+.DS_Store

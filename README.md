@@ -9,6 +9,12 @@ http://localhost:3000/contenedores-reciclaje
 http://localhost:3000/foro  
 http://localhost:3000/informacion-sostenibilidad  
 
-Para ejecutar el proyecto React, ejecutar el comando:
+Para ejecutar el cliente (React), ejecutar el comando:
 ### `npm start`
 desde la ruta puertollano-sostenible/client
+Se ejecuta en el puerto 3000
+
+Para ejecutar el servidor (Node), ejecutar el comando:
+### `npm start`
+desde la ruta puertollano-sostenible/server
+Se ejecuta en el puerto 5000

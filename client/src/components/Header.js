@@ -1,11 +1,15 @@
+import '../styles/Header.css';
+
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+
+import { WEBSITE_NAME } from '../config/constants';
 import logo from '../assets/logo.png';
-import '../styles/Navbar.css';
+import LoginButton from './LoginButton';
 
 
-function Navbar() {
-
-  const location = useLocation();
+function Header() {
+  const location = useLocation(); // localización de ruta url en la web
 
   const pageTitles = {
     "/perfil-usuario": "Datos de usuario",
@@ -19,13 +23,20 @@ function Navbar() {
 
   const currentTitle = pageTitles[location.pathname] || "";
 
+  // actualiza el título en la pestaña del navegador
+  useEffect(() => {
+    if (currentTitle) {
+      document.title = `${currentTitle} - ${WEBSITE_NAME}`;
+    } else {
+      document.title = WEBSITE_NAME;
+    }
+  }, [currentTitle]);
+
   return (
     <nav className="navbar">
       <div className="nav-links-left">
         <Link to="#home" id="home-button">Inicio</Link>
       </div>
-
-      {/* <img src={logo} id="logo" alt="Logo de la web" /> */}
 
       <div className="navbar-center">
         <img src={logo} id="logo" alt="Logo de la web" />
@@ -33,11 +44,11 @@ function Navbar() {
       </div>
 
       <div className="nav-links-right">
-        <Link to="#" id="login-button">Iniciar sesión</Link>
+        <LoginButton className="login-button" />
       </div>
     </nav>
   );
 }
 
-export default Navbar;
+export default Header;
 

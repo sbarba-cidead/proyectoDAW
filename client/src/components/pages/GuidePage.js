@@ -1,5 +1,6 @@
+import '../../styles/GuidePage.css';
+
 import { useState } from "react";
-import '../styles/RecycleBins.css';
 
 const productos = [
     {

@@ -57,20 +57,6 @@
     color: #f7a200;
 }
 
-#login-button {
-    padding: 10px 20px;
-    font-size: 1rem;
-    color: white;
-    text-decoration: none;
-    background-color: #2a6f88;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-weight: 600;
-}
-
-#login-button:hover {
-    color: #f7a200;
-    background-color: #1e4f65;
+.login-button {
+    margin: 5px;
 }

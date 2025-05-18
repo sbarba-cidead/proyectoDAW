@@ -1,10 +1,9 @@
-import React from 'react';
-import '../styles/EcoInfo.css';
+import '../../styles/InfoPage.css';
 
-import Image1 from '../assets/sostenibilidad.png';
-import Image2 from '../assets/ods.png';
-import Image3 from '../assets/agenda2030.png';
-import Image4 from '../assets/clm.png';
+import Image1 from '../../assets/sostenibilidad.png';
+import Image2 from '../../assets/ods.png';
+import Image3 from '../../assets/agenda2030.png';
+import Image4 from '../../assets/clm.png';
 
 const cards = [
     {

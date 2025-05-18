@@ -1,0 +1,39 @@
+// middleware de comprobación de tokens de autenticación
+
+const jwt = require('jsonwebtoken');
+
+const authMiddleware = (req, res, next) => {
+    // se obtiene el encabezado de autorización
+    const authHeader = req.headers.authorization;
+
+    // se comprueba que se ha proporcionado un token
+    // si no existe:
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        // se manda mensaje de error
+        return res.status(401).json({ msg: 'No se ha proporcionado token' });
+    }
+
+    // si sí existe:
+    // extrae el token del encabezado
+    const token = authHeader.split(' ')[1]; 
+    // Nota: el encabezado empieza por "Bearer", y el token es el segundo
+    // elemento, con índice 1 en el encabezado
+
+    // una vez extraido el token, se verifica
+    // también se decodifica para extraer el id del usuario, que se añade a la request
+    try {
+        // se verifica que el token procede del servidor mediante clave secreta
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // se incluye el id del usuario en la petición para poder identificar al
+        // usuario en la siguiente ruta sin necesidad de volver a decodificar el token
+        req.userId = decoded.id;
+
+        // llama al controlador de la ruta protegida a la que se va a acceder
+        next(); 
+    } catch (err) { // si la validación no es correcta
+        return res.status(401).json({ msg: 'El token es inválido o ha expirado' });
+    }
+};
+
+module.exports = authMiddleware;

@@ -1,6 +1,6 @@
-import '../styles/Forum.css';
+import '../../styles/ForumPage.css';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaCalendar, FaComment, FaSquareFull } from 'react-icons/fa';
 
 const Forum = () => {

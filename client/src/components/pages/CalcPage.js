@@ -1,5 +1,6 @@
+import '../../styles/CalcPage.css';
+
 import { useState } from 'react';
-import '../styles/EcoCalc.css';
 
 const carbonQuestions = [
     {

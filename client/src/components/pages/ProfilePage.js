@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import '../styles/ProfilePage.css';
+import '../../styles/ProfilePage.css';
 
+import React, { useState } from 'react';
 import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy } from 'react-icons/fa';
 import { FaTree, FaApple, FaCrown, FaStar } from 'react-icons/fa';
 import { FaTrashAlt, FaPen, FaAngleDown, FaAngleUp } from 'react-icons/fa';

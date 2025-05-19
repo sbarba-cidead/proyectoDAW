@@ -1,16 +1,15 @@
 import '../styles/LoginModal.css';
 
+import { useUserContext } from '../context/UserContext';
 import { useState, useEffect, useRef } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
 
-function LoginModal({ onClose }) {
-  const [isRegistering, setIsRegistering] = useState(false);
+function LoginModal( { initialFormData, formData, setFormData, handleInputChange, onClose } ) {
+  const { setUser } = useUserContext();
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationMessageType, setNotificationMessageType] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [credential, setCredential] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullname, setFullname] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const { isRegistering, credential, password, fullname, username, email } = formData;
   const modalRef = useRef(); // referencia para el modal
 
   // toggle para mostrar u ocultar contraseña
@@ -18,15 +17,13 @@ function LoginModal({ onClose }) {
     setShowPassword(!showPassword);
   };
 
-  // cerrar el modal si se hace click fuera de él
-  const handleOutsideClick = (e) => {
-    if (modalRef.current && !modalRef.current.contains(e.target)) {
-      onClose();  // Cierra el modal
-    }
-  };
-
-  // listener para el click fuera del modal
+  // cierra el modal si se hace click fuera de él
   useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();  // cierra el modal
+      }
+    };
     document.addEventListener('mousedown', handleOutsideClick);
 
     // limpia el eventlistener cuando se sale del modal
@@ -38,50 +35,150 @@ function LoginModal({ onClose }) {
   // solicitud al backend para inicio de sesión o registro
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // para registro
-    if (isRegistering) {      
+    
+    if (isRegistering) {  // para registro   
       try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullname,
-          username,
-          email,
-          password,
-        }),
-      });
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fullname,
+            username,
+            email,
+            password,
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (response.ok) {
-        console.log('Registro exitoso:', data);
-        // Podrías guardar el token si el backend lo envía:
-        // localStorage.setItem('token', data.token);
-        onClose(); // o redirigir, o cambiar a login
-      } else {
-        console.error('Error en registro:', data.message);
-        alert(data.message || 'Error al registrar');
+        if (response.ok) {
+          setNotificationMessage('Nuevo usuario registrado correctamente.');
+          setNotificationMessageType('success');
+
+          // pasado un tiempo
+          setTimeout(() => {
+            // oculta la notificación
+            setNotificationMessage('');
+
+            // limpia los campos y redirige a login
+            setFormData(initialFormData);
+          }, 2000); 
+        } else {
+          if (data.msg?.includes('email')) {
+            setNotificationMessage('El correo electrónico ya está en uso.');
+          } else if (data.msg?.includes('nombre')) {
+            setNotificationMessage('El nombre de usuario ya está en uso.');
+          } else {
+            setNotificationMessage('No se ha podido registrar.\nInténtalo más tarde.');
+            console.error('Error en registro:', data.msg);
+          }
+          setNotificationMessageType('error');
+          
+          // oculta el mensaje pasado un tiempo
+          setTimeout(() => {
+            setNotificationMessage('');
+          }, 2000); 
+        }
+      } catch (error) {
+        setNotificationMessage('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.');
+        setNotificationMessageType('error');
+
+        // oculta el mensaje pasado un tiempo
+        setTimeout(() => {
+          setNotificationMessage('');
+        }, 2000); 
+
+        console.error('Error de red:', error);
       }
-    } catch (error) {
-      console.error('Error de red:', error);
-      alert('No se pudo conectar con el servidor');
-    }
-    } else {
-      console.log('Login:', {
-        email,
-        password,
-      });
-      // Aquí iría tu lógica de login
+    } else { // para login
+       try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            credential,
+            password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // guarda el token de forma persistente
+          localStorage.setItem('usertoken', data.token);
+
+          // guarda el nombre de usuario y su foto
+          // en el contexto global del usuario
+          setUser({
+            username: data.user.username,
+            avatar: data.user.avatar,
+          });
+
+          // muestra mensaje de confirmación
+          setNotificationMessage('Se ha iniciado sesión correctamente.');
+          setNotificationMessageType('success');
+
+          // pasado un tiempo
+          setTimeout(() => {
+            // oculta la notificación
+            setNotificationMessage('');
+
+            // limpia los campos
+            setFormData(initialFormData);
+
+            // cierra el modal
+            onClose();
+          }, 2000);
+        } else {
+          setNotificationMessage(data.msg || 'No se pudo iniciar sesión.\nInténtalo más tarde.');
+          setNotificationMessageType('error');
+
+          if (data.msg?.includes('usuario' || 'email')) {
+            setNotificationMessage('El nombre de usuario o email introducido no existe.');
+          } else if (data.msg?.includes('contraseña')) {
+            setNotificationMessage('La contraseña introducida no es correcta.');
+          } else {
+            setNotificationMessage('No se pudo iniciar sesión.\nInténtalo más tarde.');
+            console.error('Error en inicio de sesión:', data.msg);
+          }
+          setNotificationMessageType('error');
+          
+          // oculta el mensaje pasado un tiempo
+          setTimeout(() => {
+            setNotificationMessage('');
+          }, 2000);
+        }
+      } catch (error) {        
+        setNotificationMessage('No se ha pudido conectar con el servidor.\nInténtalo más tarde.');
+        setNotificationMessageType('error');
+
+        // oculta el mensaje pasado un tiempo
+        setTimeout(() => {
+          setNotificationMessage('');
+        }, 2000);
+
+        console.error('Error de red:', error);
+      }
     }
   };
 
 
   return (
     <div className="modal-overlay">
+      {notificationMessage && (
+        <div className={`notification-message ${notificationMessageType}`}>
+            {notificationMessage.split('\n').map((line, index) => (
+              <span key={index}>
+                {line}
+                <br />
+              </span>
+            ))}
+        </div>
+      )}
       <div className="modal" ref={modalRef}>
         <button className="close-button" onClick={onClose}>×</button>
         <h2>{isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
@@ -90,23 +187,26 @@ function LoginModal({ onClose }) {
             <>
               <input
                 type="text"
+                name="fullname"
                 placeholder="Nombre y apellidos"
                 value={fullname}
-                onChange={(e) => setFullname(e.target.value)}
+                onChange={handleInputChange}
                 required
               />
               <input
                 type="text"
+                name="username"
                 placeholder="Nombre de usuario"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleInputChange}
                 required
               />
               <input
               type="email"
+              name="email"
               placeholder="Correo electrónico"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleInputChange}
               required
             />
             </>
@@ -115,9 +215,10 @@ function LoginModal({ onClose }) {
           {!isRegistering && (
             <input
               type="text"
+              name="credential"
               placeholder="Email o nombre de usuario"
               value={credential}
-              onChange={(e) => setCredential(e.target.value)}
+              onChange={handleInputChange}
               required
             />
           )}
@@ -125,9 +226,10 @@ function LoginModal({ onClose }) {
           <div className="password-input-container">
             <input
               type={showPassword ? 'text' : 'password'}
+              name="password"
               placeholder="Contraseña"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleInputChange}
               required
             />
             <span className="password-toggle" onClick={handlePasswordToggle}>
@@ -138,7 +240,7 @@ function LoginModal({ onClose }) {
           <button type="submit">{isRegistering ? 'Registrarse' : 'Entrar'}</button>
         </form>
         <div className="additional-options">
-          <button onClick={() => setIsRegistering(!isRegistering)}>
+          <button onClick={() => {setFormData(prev => ({...initialFormData, isRegistering: !isRegistering}))}}>
             {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
           </button>
 

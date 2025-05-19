@@ -2,15 +2,20 @@ import './App.css';
 
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
+import { UserProvider } from './context/UserContext';
+
+import NotFoundPage from './components/error-pages/NotFoundPage';
+import ProtectedRoute from './components/ProtectedRoute';
+
 import Navbar from './components/Header';
-import Home from './components/pages/HomePage';
+import HomePage from './components/pages/HomePage';
 import ProfilePage from './components/pages/ProfilePage';
-import Tools from './components/pages/ToolsPage';
-import EcoCalc from './components/pages/CalcPage';
-import RecycleMap from './components/pages/MapPage';
-import RecycleBins from './components/pages/GuidePage';
-import Forum from './components/pages/ForumPage';
-import EcoInfo from './components/pages/InfoPage';
+import ToolsPage from './components/pages/ToolsPage';
+import EcoCalcPage from './components/pages/EcoCalcPage';
+import MapPage from './components/pages/MapPage';
+import RecycleBins from './components/pages/RecycleGuidePage';
+import ForumPage from './components/pages/ForumPage';
+import EcoInfoPage from './components/pages/EcoInfoPage';
 
 function AppContent() {
   const location = useLocation(); // página que se está visitando
@@ -26,27 +31,29 @@ function AppContent() {
       <Routes>
         <Route path="/" element={
           <div className={"content home"}>
-            <Home />
+            <HomePage />
           </div>
         } />
         <Route path="/perfil-usuario" element={
           <div className={"content other"}>
-            <ProfilePage />
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
           </div>
         } />
         <Route path="/herramientas" element={
           <div className={"content other"}>
-            <Tools />
+            <ToolsPage />
           </div>
         } />
         <Route path="/calculadora-huella-ecologica" element={
           <div className={"content other"}>
-            <EcoCalc />
+            <EcoCalcPage />
           </div>
         } />
         <Route path="/mapa-reciclaje" element={
           <div className={"content other"}>
-            <RecycleMap />
+            <MapPage />
           </div>
         } />
         <Route path="/contenedores-reciclaje" element={
@@ -56,12 +63,19 @@ function AppContent() {
         } />
         <Route path="/foro" element={
           <div className={"content other"}>
-            <Forum />
+            <ForumPage />
           </div>
         } />
         <Route path="/informacion-sostenibilidad" element={
           <div className={"content other"}>
-            <EcoInfo />
+            <EcoInfoPage />
+          </div>
+        } />
+
+        {/* Ruta para páginas no encontradas */}
+        <Route path="*" element={
+          <div className={"content other"}>
+            <NotFoundPage />
           </div>
         } />
       </Routes>
@@ -79,7 +93,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
     </Router>
   )
 }

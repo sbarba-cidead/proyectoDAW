@@ -149,7 +149,7 @@ function MoveMap({ coords }) {
     return null;
 }
 
-function RecycleMap() {
+function MapPage() {
     const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano
     const [direction, setDirection] = useState('');
     const [result, setResult] = useState(null); // coordenadas de la dirección del usuario
@@ -295,4 +295,4 @@ function RecycleMap() {
         </div>
     );
 
-} export default RecycleMap;
+} export default MapPage;

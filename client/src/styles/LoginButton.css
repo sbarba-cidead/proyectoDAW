@@ -22,6 +22,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: scale(1.1);
 }
 
 .login-button-container .tooltip {
@@ -39,4 +40,63 @@
   pointer-events: none;
   opacity: 1;
   transition: opacity 0.2s ease;
+}
+
+.login-button-container .menu {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    padding: 10px 15px;
+    width: fit-content;
+    padding: 6px 12px;
+    min-width: max-content;
+    z-index: 999;
+}
+
+.login-button-container .menu a {
+    color: #ffffff;
+    text-decoration: none;
+    margin: 4px 0;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.4s forwards;
+}
+
+.login-button-container .menu a::after {
+    content: attr(data-text);
+    font-weight: 700;
+    visibility: hidden;
+    height: 0;
+    display: block;
+    overflow: hidden;
+}
+
+.login-button-container .menu a:hover {
+    color: #f7a200;
+    font-weight: 600;
+}
+
+.login-button-container .menu a:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.login-button-container .menu a:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

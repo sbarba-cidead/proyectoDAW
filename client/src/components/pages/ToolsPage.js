@@ -1,6 +1,6 @@
 import '../../styles/ToolsPage.css';
 
-function Tools() {
+function ToolsPage() {
     return (
         <div className="tools-container">
             <div className="tool">
@@ -22,4 +22,4 @@ function Tools() {
     );
 }
 
-export default Tools;
+export default ToolsPage;

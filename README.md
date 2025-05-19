@@ -1,7 +1,7 @@
-Páginas visitables en testing:
+Páginas visitables:
 
 http://localhost:3000/  
-http://localhost:3000/perfil-usuario  
+http://localhost:3000/perfil-usuario (sólo visitable con usuario)
 http://localhost:3000/herramientas  
 http://localhost:3000/mapa-reciclaje  
 http://localhost:3000/calculadora-huella-ecologica  

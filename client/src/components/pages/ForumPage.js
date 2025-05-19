@@ -3,7 +3,7 @@ import '../../styles/ForumPage.css';
 import { useState, useEffect, useRef } from 'react';
 import { FaCalendar, FaComment, FaSquareFull } from 'react-icons/fa';
 
-const Forum = () => {
+const ForumPage = () => {
   const initialPosts = [
     { id: 1, title: '¿Cómo reciclar correctamente?', content: '¿Cuáles son los mejores métodos para reciclar residuos domésticos?', createdAt: '2023-04-01', lastReplyAt: '2023-04-02', replies: 5, createdBy: 'user12', type: 'post', categories: 'Reciclaje' },
     { id: 2, title: 'Energía renovable en el hogar', content: '¿Qué opciones de energía renovable podemos instalar en casa?', createdAt: '2023-04-03', lastReplyAt: '2023-04-04', replies: 2, createdBy: 'admin1', type: 'event', categories: 'Energía' },
@@ -187,4 +187,4 @@ const Forum = () => {
   );
 };
 
-export default Forum;
+export default ForumPage;

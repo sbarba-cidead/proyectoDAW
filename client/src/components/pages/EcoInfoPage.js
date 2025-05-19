@@ -1,4 +1,4 @@
-import '../../styles/InfoPage.css';
+import '../../styles/EcoInfoPage.css';
 
 import Image1 from '../../assets/sostenibilidad.png';
 import Image2 from '../../assets/ods.png';
@@ -40,7 +40,7 @@ const cards = [
     },
 ];
 
-function EcoInfo() {
+function EcoInfoPage() {
     return (
         <div className="ecoinfo-main-container">
             <div className="ecoinfo-grid">
@@ -86,4 +86,4 @@ function EcoInfo() {
     );
 }
 
-export default EcoInfo;
+export default EcoInfoPage;

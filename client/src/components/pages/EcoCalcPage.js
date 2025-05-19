@@ -1,4 +1,4 @@
-import '../../styles/CalcPage.css';
+import '../../styles/EcoCalcPage.css';
 
 import { useState } from 'react';
 
@@ -101,7 +101,7 @@ const improvementTips = [
 ];
 
 
-function EcoCalc() {
+function EcoCalcPage() {
     const [carbonAnswers, setCarbonAnswers] = useState({});
     const [waterAnswers, setWaterAnswers] = useState({});
     const [carbonFootprint, setCarbonFootprint] = useState(null);
@@ -210,4 +210,4 @@ function EcoCalc() {
     );
 }
 
-export default EcoCalc;
+export default EcoCalcPage;

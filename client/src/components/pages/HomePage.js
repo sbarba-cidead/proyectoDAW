@@ -32,7 +32,7 @@ function HomePage() {
                 >
                     <FaBriefcase className="menu-icon" onClick={() => { setMenuOpen(!menuOpen); setShowTooltip(false)}} />
 
-                    {/* Tooltip */}
+                    {/* tooltip */}
                     {showTooltip && !menuOpen && (<div className="tooltip">Menú</div>)}
                             
                     {menuOpen && (

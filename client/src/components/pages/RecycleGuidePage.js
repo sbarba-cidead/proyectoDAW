@@ -1,4 +1,4 @@
-import '../../styles/GuidePage.css';
+import '../../styles/RecycleGuidePage.css';
 
 import { useState } from "react";
 
@@ -278,7 +278,7 @@ const normalizarTexto = (texto) => {
       .replace(/[\u0300-\u036f]/g, ""); // Elimina los diacríticos (tildes, acentos, etc.)
 };
 
-function RecycleBins() {
+function RecycleGuidePage() {
     const [productoSeleccionado, setProductoSeleccionado] = useState("");
   const [resultado, setResultado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -369,4 +369,4 @@ function RecycleBins() {
   );
 }
 
-export default RecycleBins;
+export default RecycleGuidePage;

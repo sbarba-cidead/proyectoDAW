@@ -10,7 +10,7 @@ const connectDB = require('./config/db'); //importa db.js para conectar a mongoD
 // importa las rutas
 var indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
-// var usersRouter = require('./routes/users');
+var userRouter = require('./routes/user');
 const notesRouter = require('./routes/notes');
 const { domainToASCII } = require('url');
 
@@ -36,16 +36,17 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 // rutas
 app.use('/', indexRouter);
 app.use('/api/auth', authRouter) // ruta de autenticación
-// app.use('/users', usersRouter);
+app.use('/api/user', userRouter); // ruta de comprobación sesión usuario
 app.use('/api/notes', notesRouter);
 
-// Ruta de prueba
-app.get('/', (req, res) => {
-  res.send('Servidor funcionando 🚀');
-});
+// // Ruta de prueba
+// app.get('/', (req, res) => {
+//   res.send('Servidor funcionando');
+// });
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

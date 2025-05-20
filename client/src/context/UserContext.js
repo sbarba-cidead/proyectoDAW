@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+const baseUrl = process.env.REACT_APP_API_URL;
 
 // contexto global para el inicio de sesión de usuario //
 
@@ -32,7 +33,7 @@ export function UserProvider({ children }) {
                     // datos de usuario recibidos se almacenan en contexto
                     setUser({
                         username: data.username,
-                        avatar: data.avatar,
+                        avatar: `${baseUrl}${data.avatar}`,
                     });
                 } else { // token incorrecto o expirado
                     // elimina el token del local
@@ -56,7 +57,7 @@ export function UserProvider({ children }) {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, isLoadingUser }}>
+    <UserContext.Provider value={{ user, setUserGlobalContext: setUser, isLoadingUser }}>
         {children}
     </UserContext.Provider>
   );

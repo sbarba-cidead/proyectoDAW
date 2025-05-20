@@ -28,7 +28,7 @@
 .login-button-container .tooltip {
   position: absolute;
   top: 40px;
-  left: 40%;
+  left: 45%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.8);
   color: white;

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
 import '../styles/UserEditModal.css';
 
-function UserEditModal({ userData, onSave, notificationMessage, notificationMessageType, onClose }) {
+function UserEditModal({ userData, onSave, setNotificationMessage, setNotificationMessageType,
+                          notificationMessage, notificationMessageType, onClose }) {
   const { avatar, fullname, username, email } = userData;
   const [editData, setEditData] = useState({
     avatar: avatar,
@@ -12,6 +13,8 @@ function UserEditModal({ userData, onSave, notificationMessage, notificationMess
   });
   const [initialData, setInitialData] = useState({ avatar, fullname, username, email });
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [reloadImage, setReloadImage] = useState(false);
+  
   const modalRef = useRef();
   const fileInputRef = useRef();
 
@@ -43,16 +46,19 @@ function UserEditModal({ userData, onSave, notificationMessage, notificationMess
 
     const allowedTypes = ['image/jpeg', 'image/png'];    
     if (!allowedTypes.includes(file.type)) {
-      notificationMessage('Formato de imagen no válido.\nFormatos soportados: jpg, png')
-      notificationMessageType('error');
+      setNotificationMessage('Formato de imagen no válido.\nFormatos soportados: jpg, png')
+      setNotificationMessageType('error');
 
       // pasado un tiempo
       setTimeout(() => {
         // oculta la notificación
-        notificationMessage('');
+        setNotificationMessage('');
+      }, 3000);
 
-        return;
-      }, 2000);      
+      //reinicia valor del input file
+      e.target.value = null;
+
+      return;
     }
 
     const reader = new FileReader();
@@ -86,7 +92,11 @@ function UserEditModal({ userData, onSave, notificationMessage, notificationMess
     
     // llama a la función de guardado en BD
     // y le pasa los nuevos datos del usuario
-    onSave(editData, selectedImageFile);
+    const wasAvatarEdited = await onSave(editData, selectedImageFile);
+
+    if (wasAvatarEdited) {
+      setReloadImage(true); // fuerza actualización del avatar en el modal
+    }
   };
 
   return (
@@ -108,7 +118,10 @@ function UserEditModal({ userData, onSave, notificationMessage, notificationMess
         <form onSubmit={handleSubmit}>
           {/* Foto de usuario */}
           <div className="profile-photo-container" onClick={handleAvatarClick}>
-            <img className="profile-photo" src={editData.avatar} alt="Foto de usuario" />
+            <img 
+              className="profile-photo" 
+              src={selectedImageFile && !reloadImage ? editData.avatar : `${editData.avatar}?${Date.now()}`}
+              alt="Foto de usuario" />
             <input
               type="file"
               ref={fileInputRef}

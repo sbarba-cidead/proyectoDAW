@@ -7,14 +7,13 @@ import { FaUserCircle } from 'react-icons/fa';
 import LoginModal from './LoginModal';
 
 function LoginButton() {
-    const { user, isLoadingUser, setUser } = useUserContext();
+    const { user, isLoadingUser, setUserGlobalContext } = useUserContext();
     const [showLogin, setShowLogin] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const menuRef = useRef();
-    const baseUrl = process.env.REACT_APP_API_URL;
 
     // estado inicial de las variables para 
     // guardado temporal de los datos del formulario de login/registro
@@ -44,7 +43,7 @@ function LoginButton() {
     // logout del usuario en el menú
     const handleLogout = () => {
         localStorage.removeItem('usertoken');
-        setUser(null);
+        setUserGlobalContext(null);
         setShowMenu(false);
 
         if (location.pathname === '/perfil-usuario') {
@@ -79,7 +78,7 @@ function LoginButton() {
    
 
     if (isLoadingUser) return null;
-
+   
     return (
         <div className="login-button-container" ref={menuRef}>
             <button
@@ -90,7 +89,7 @@ function LoginButton() {
             >
                 {/* Si hay usuario, muestra su foto; si no, muestra avatar invitado */}            
                 {user ? (
-                    <img src={`${baseUrl}${user.avatar}`} alt="Avatar" className="avatar logged-in" />
+                    <img src={`${user.avatar}?${Date.now()}`} alt="Avatar" className="avatar logged-in" />
                 ) : (
                     <FaUserCircle className="guest-avatar" />
                 )}

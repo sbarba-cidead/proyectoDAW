@@ -4,6 +4,7 @@ import { useState, useEffect, useContext } from 'react';
 import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy } from 'react-icons/fa';
 import { FaTree, FaApple, FaCrown, FaStar } from 'react-icons/fa';
 import { FaTrashAlt, FaPen, FaAngleDown, FaAngleUp } from 'react-icons/fa';
+import { useUserContext } from '../../context/UserContext';
 import UserEditModal from '../UserEditModal';
 
 // Niveles de usuario y sus colores
@@ -41,7 +42,8 @@ const levels = {
   };
 
 function ProfilePage() {
-  const [user, setUser] = useState(null);
+  const [user, setUserLocal] = useState(null);
+  const { setUserGlobalContext } = useUserContext();
   const [loading, setLoading] = useState(true);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -79,7 +81,7 @@ function ProfilePage() {
 
         const data = await res.json();
         if (res.ok) {
-          setUser({
+          setUserLocal({
             avatar: `${baseUrl}${data.avatar}`,
             fullname: data.fullname,
             email: data.email,
@@ -111,15 +113,70 @@ function ProfilePage() {
   // guardado de los datos de edición de perfil,
   // actualiza los datos del usuario en la base de datos
   const handleSave = async (updatedData, selectedImageFile) => {
+    let avatarUpdated = false;
     // solicitud a la API para actualizar los datos en la base de datos
     try {
-      const token = localStorage.getItem('usertoken');  // token del usuario
+      const token = localStorage.getItem('usertoken');  // token del usuario      
+
+      // si se ha actualizado username o email, se comprueba si ya están en uso
+      const isUsernameChanged = updatedData.username !== user.username;
+      const isEmailChanged = updatedData.email !== user.email;
+      if (isUsernameChanged || isEmailChanged) {
+        try {
+          const checkRes = await fetch('http://localhost:5000/api/user/check-updated-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: isUsernameChanged ? updatedData.username : null,
+              email: isEmailChanged ? updatedData.email : null,
+            }),
+          });
+
+          const checkData = await checkRes.json();
+
+          if (!checkRes.ok) { // si devuelve mensaje de error
+            if (checkData.error === 'USERNAME_EXISTS') {
+              setNotificationMessage('El nombre de usuario introducido ya está en uso.');
+              setNotificationMessageType('error');
+            } else if (checkData.error === 'EMAIL_EXISTS') {
+              setNotificationMessage('El correo electrónico introducido ya está en uso.');
+              setNotificationMessageType('error');
+            } else {              
+              setNotificationMessage('Error al verificar los datos.\nIntentálo más tarde.');
+              setNotificationMessageType('error');
+
+              console.error('Error al verificar duplicados:', checkData.error);             
+            }
+
+            // oculta el mensaje pasado un tiempo
+            setTimeout(() => {
+              setNotificationMessage('');
+            }, 2000); 
+
+            return;
+          }
+        } catch (error) {
+          setNotificationMessage('Error al verificar los datos.\nIntentálo más tarde.');
+          setNotificationMessageType('error');
+
+          console.error('Error al verificar duplicados:', error);
+
+          // oculta el mensaje pasado un tiempo
+          setTimeout(() => {
+            setNotificationMessage('');
+          }, 2000);
+
+          return;
+        }
+      }
 
       // si se ha actualizado el avatar, se sube el fichero al servidor
       if (selectedImageFile) {
         const formData = new FormData();
+        formData.append('filename', `${"avatar-"}${updatedData.username}`); // se nombra el fichero con el nombre de usuario
         formData.append('avatar', selectedImageFile);
-        formData.append('username', updatedData.username); // se nombra el fichero con el nombre de usuario
 
         const uploadRes = await fetch('http://localhost:5000/api/user/upload-avatar', {
           method: 'POST',
@@ -145,7 +202,8 @@ function ProfilePage() {
         }
 
         // se actualiza la ruta del avatar en los datos del usuario
-        updatedData.avatar = uploadData.avatarUrl;
+        updatedData.avatar = uploadData.avatarUrl; //ej: /images/miavatar.jpg
+        avatarUpdated = true;
       }
 
       // se mandan los datos actualizados del usuario
@@ -162,14 +220,23 @@ function ProfilePage() {
       const data = await response.json();
 
       if (response.ok) { // si el servidor responde con confirmación exitosa
-        // se actualiza el usuario en contexto global
-        setUser({
+        if (selectedImageFile){ // si se editó el avatar
+          // se actualiza la ruta relativa de la imagen del avatar
+          updatedData.avatar = `${baseUrl}${updatedData.avatar}`;
+        } 
+
+        // se actualizan los datos de usuario en el contexto local:
+        // copia todos los campos de user y los actualiza con los de updatedData
+        setUserLocal({
           ...user,
           ...updatedData,
         });
 
-        // se actualiza el usuario en contexto local de la página
-        setUser(updatedData);
+        // se actualizan los datos de usuario en el contexto global
+        setUserGlobalContext({
+          username: updatedData.username,
+          avatar: updatedData.avatar,
+        });
 
         // se muestra mensaje de confirmación
         setNotificationMessage('Datos actualizados correctamente.');
@@ -184,9 +251,10 @@ function ProfilePage() {
           setShowEditProfile(false);
         }, 2000);        
       } else { // si responde con error
-        setNotificationMessage('Los datos no se han podido actualizar.\nInténtalo más tarde.');
-        console.error('Error al actualizar:', data.msg);
+        setNotificationMessage('Los datos no se han podido actualizar.\nInténtalo más tarde.');        
         setNotificationMessageType('error');
+
+        console.error('Error al actualizar:', data.msg);
 
         // oculta el mensaje pasado un tiempo
         setTimeout(() => {
@@ -204,18 +272,18 @@ function ProfilePage() {
 
       console.error('Error de red:', error);
     }
+    return avatarUpdated;
   };
 
 
-  if (loading) return <div className="loading">Cargando perfil...</div>;
-  // if (isLoadingUser) return <div className="loading">Cargando perfil...</div>;
+  if (loading) return <div className="loading"></div>;
 
   return (
     <div className="profile-container">
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">
-            <img className="profile-photo" src={user.avatar} alt="Foto de usuario" />
+            <img className="profile-photo" src={user.avatar + `?${new Date().getTime()}`} alt="Foto de usuario" />
             <div className="profile-info">
               <h2 className="user-name">{user.fullname}</h2>
               <p className="user-email">{user.email}</p>
@@ -301,6 +369,8 @@ function ProfilePage() {
         <UserEditModal
           userData={user}
           onSave={handleSave}
+          setNotificationMessage={setNotificationMessage}
+          setNotificationMessageType={setNotificationMessageType}
           notificationMessage={notificationMessage}
           notificationMessageType={notificationMessageType}
           onClose={() => setShowEditProfile(false)} />}

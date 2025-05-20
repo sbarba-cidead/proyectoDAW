@@ -2,6 +2,11 @@
     font-family: 'Arial', sans-serif;
 }
 
+.loading {
+    align-self: center;
+    justify-self: center;
+}
+
 .body-section {
     background-color: #f0f0f0; /* blanco un poco oscuro */
     padding: 20px;

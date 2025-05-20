@@ -3,6 +3,8 @@ var router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const fsPromises = require('fs/promises');
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -14,9 +16,9 @@ const storage = multer.diskStorage({
     cb(null, path.join(__dirname, '../public/images'));
   },
   filename: function (req, file, cb) {
-    const username = req.body.username;
+    const filename = req.body.filename;
     const ext = path.extname(file.originalname);
-    cb(null, `${username}${ext}`);
+    cb(null, `${filename}${ext}`);
   }
 });
 
@@ -54,16 +56,34 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // ruta para subir fichero de imagen al servidor
-router.post('/upload-avatar', authMiddleware, upload.single('avatar'), (req, res) => {
+router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ msg: 'No se ha podido subir el archivo del avatar' });
   }
 
-  const filename = req.file.filename;
-  const avatarUrl = `/images/${filename}`;
+  try {
+    const filename = req.body.filename; // nombre sin extensión
+    const fullFilename = req.file.filename; // nombre con extensión
+    const currentExt = path.extname(fullFilename); // extensión
+    const avatarUrl = `/images/${fullFilename}`;
+    const uploadDir = path.join(__dirname, '../public/images');    
+    const extensionsToCheck = ['.jpg', '.jpeg', '.png'];
 
-  // si es correcta la subida se manda el url de subida de la imagen
-  res.status(200).json({ avatarUrl });
+    for (const ext of extensionsToCheck) {
+      if (ext !== currentExt) { // si es distinta a la extensión actual
+        const filePath = path.join(uploadDir, `${filename}${ext}`);
+        if (fs.existsSync(filePath)) {
+          await fsPromises.unlink(filePath); // elimina archivos antiguos
+        }
+      }
+    }
+
+    // si son correctas las operaciones se manda el url de subida de la imagen
+    res.status(200).json({ avatarUrl });
+  } catch (error) {
+    console.error('Error subiendo avatar:', error);
+    res.status(500).json({ msg: 'Error al procesar el avatar en el servidor' });
+  }
 });
 
 // ruta para actualizar datos de usuario

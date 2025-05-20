@@ -5,12 +5,13 @@ import { useState, useEffect, useRef } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
 
 function LoginModal( { initialFormData, formData, setFormData, handleInputChange, onClose } ) {
-  const { setUser } = useUserContext();
+  const { setUserGlobalContext } = useUserContext();
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationMessageType, setNotificationMessageType] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { isRegistering, credential, password, fullname, username, email } = formData;
   const modalRef = useRef(); // referencia para el modal
+  const baseUrl = process.env.REACT_APP_API_URL;
 
   // toggle para mostrar u ocultar contraseña
   const handlePasswordToggle = () => {
@@ -113,9 +114,9 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
 
           // guarda el nombre de usuario y su foto
           // en el contexto global del usuario
-          setUser({
+          setUserGlobalContext({
             username: data.user.username,
-            avatar: data.user.avatar,
+            avatar: `${baseUrl}${data.user.avatar}`,
           });
 
           // muestra mensaje de confirmación

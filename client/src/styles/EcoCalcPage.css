@@ -22,6 +22,7 @@
 .eco-column p,
 .eco-column ul {
     align-self: center;
+    text-align: center;
 }
 
 .eco-column .reset-button {
@@ -88,6 +89,7 @@
     color: red;
     margin-top: 0.5rem;
     align-self: center;
+    text-align: center;
 }
 
 .eco-column .total-notice {
@@ -101,6 +103,7 @@
     font-weight: bold;
     color: #2e7d32;
     align-self: center;
+    text-align: center;
 }
 
 .eco-column .result.info {
@@ -108,8 +111,34 @@
     font-weight: bold;
     color: #112e12;
     align-self: center;
-    font-size: smaller;
     text-align: center;
+    font-size: smaller;
+}
+
+.eco-column .result.div-line {
+    width: 80%;
+    border: 1px dashed #bbb;
+    margin-bottom: 1rem;
+    align-self: center;
+    justify-self: center;
+}
+
+.eco-column .result.info.sub {
+    margin-bottom: 0.5rem;
+}
+
+.eco-column .result.info.link {
+    margin-bottom: 0.5rem;
+    padding: 5px;
+    border: 1px solid #9fb3a0;
+    background-color: #defadf;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.eco-column .result.info.link:hover {
+    margin-bottom: 0.5rem;
+    background-color: #cde6ce;
 }
 
 .eco-column .advice {
@@ -122,10 +151,12 @@
 .eco-column .tips {
     margin-top: 1rem;
     padding-left: 1.2rem;
+    text-align: left;
 }
 
 .eco-column .tips li {
     margin-bottom: 0.4rem;
+    text-align: left;
 }
 
 @media (max-width: 1170px) {

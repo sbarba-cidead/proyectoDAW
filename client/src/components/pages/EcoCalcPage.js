@@ -2,22 +2,7 @@ import '../../styles/EcoCalcPage.css';
 
 import { useState, useEffect } from 'react';
 
-// Valoraciones según el total de huella
-const adviceLevels = [
-    { max: 2, text: '¡Excelente! Tu huella ecológica es muy baja.' },
-    { max: 5, text: 'Bien, pero puedes mejorar reduciendo duchas largas y vuelos.' },
-    { max: Infinity, text: 'Huella alta. Considera reducir transporte, carne y consumo de agua.' },
-];
-
-// Consejos para mejorar la huella
 const improvementIntro = 'Aquí tienes algunos consejos personalizados para mejorar tu impacto ecológico:';
-const improvementTips = [
-    'Usa bicicleta o transporte público.',
-    'Reduce duchas largas.',
-    'Come menos carne roja.',
-    'Llena la lavadora por completo antes de usarla.',
-];
-
 
 function EcoCalcPage() {
     const [carbonQuestions, setCarbonQuestions] = useState([]);
@@ -25,6 +10,9 @@ function EcoCalcPage() {
     const [loading, setLoading] = useState(true);
     const [carbonAnswers, setCarbonAnswers] = useState({});
     const [waterAnswers, setWaterAnswers] = useState({});
+    const [adviceLevels, setAdviceLevels] = useState(null);
+    const [improvementRules, setImprovementRules] = useState(null);
+    const [personalizedTips, setPersonalizedTips] = useState(null);
     const [carbonFootprint, setCarbonFootprint] = useState(null);
     const [waterFootprint, setWaterFootprint] = useState(null);
     const [errors, setErrors] = useState({ carbon: false, water: false });
@@ -49,6 +37,24 @@ function EcoCalcPage() {
             }
         };
         fetchQuestions();
+    }, []);
+
+    //
+    useEffect(() => {
+        const fetchAdviceData = async () => {
+            try {
+                const [adviceRes, rulesRes] = await Promise.all([
+                    fetch(`${apiUrl}/recycle/eco-advice-levels`),
+                    fetch(`${apiUrl}/recycle/eco-improvement-rules`)
+                ]);
+
+                setAdviceLevels(await adviceRes.json());
+                setImprovementRules(await rulesRes.json());
+            } catch (error) {
+                console.error("Error obteniendo las preguntas: ", error);
+            }
+        };
+        fetchAdviceData();
     }, []);
 
     // reinicio de los formularios para nuevo cálculo
@@ -86,11 +92,36 @@ function EcoCalcPage() {
         (parseFloat(carbonFootprint || 0) + parseFloat(waterFootprint || 0)).toFixed(2)
     );
 
-    // consejos personalizados
+    // consejos personalizados en función del nivel de huella
     const getAdvice = () => {
         const total = parseFloat(getTotal());
         return adviceLevels.find(level => total <= level.max)?.text || '';
     };
+
+    // reglas para cálculo de consejos personalizados
+    const getPersonalizedTips = () => {
+        const allAnswers = { ...carbonAnswers, ...waterAnswers };
+
+        const tips = improvementRules
+            .filter(rule => {
+                // respuestas del usuario
+                const answer = allAnswers[rule.questionId];
+                if (answer === undefined) return false; // si no hay respuestas
+
+                switch (rule.operator) { // reglas de cálculo
+                    case 'eq': return answer === rule.value; // igual
+                    case 'gt': return answer > rule.value; // mayor
+                    case 'gte': return answer >= rule.value; // mayor o igual
+                    case 'lt': return answer < rule.value; // menor
+                    case 'lte': return answer <= rule.value; // menor o igual
+                    default: return false;
+                }
+            })
+            .map(rule => rule.tip); // consejo personalizado
+
+        setPersonalizedTips(tips);
+    };
+
 
     // generador de los formularios a partir de los datos
     const renderQuestions = (questions, answers, handleChangeFn) => (
@@ -116,16 +147,22 @@ function EcoCalcPage() {
                 <h3>Huella de Carbono</h3>
                 {renderQuestions(carbonQuestions, carbonAnswers, handleChange(setCarbonAnswers))}
                 <button
-                    onClick={() =>
-                        calculateFootprint(carbonAnswers, carbonQuestions, setCarbonFootprint, 'carbon')
-                    }
+                    onClick={() => {
+                        calculateFootprint(carbonAnswers, carbonQuestions, setCarbonFootprint, 'carbon');
+                        getPersonalizedTips();
+                    }}
                 >
                     Calcular consumo
                 </button>
                 {errors.carbon && <p className="error">Completa todas las preguntas antes de calcular.</p>}
-                {carbonFootprint && <p className="result">Resultado: {carbonFootprint} t CO₂/año</p>}
-                {carbonFootprint && <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 t CO₂/año como máximo por individuo.</p>}
-                {carbonFootprint && <p className="result info">La media actual en España es de 4,68 t CO₂/año por individuo.</p>}
+                {carbonFootprint && [
+                    <p className="result">Resultado: {carbonFootprint} t CO₂/año</p>,
+                    <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 t CO₂/año como máximo por individuo.</p>,
+                    <p className="result info">La media actual en España es de 4,68 t CO₂/año por individuo.</p>,
+                    <div className="result div-line" />,
+                    <p className="result info sub">Más información:</p>,
+                    <a href="https://www.esagua.es/calculo-de-la-huella-hidrica/" className="result info link">¿Qué es la huella hídrica? </a>,
+                ]}                
             </div>
 
             {/* Columna 2 - Huella Hídrica */}
@@ -133,16 +170,24 @@ function EcoCalcPage() {
                 <h3>Huella Hídrica</h3>
                 {renderQuestions(waterQuestions, waterAnswers, handleChange(setWaterAnswers))}
                 <button
-                    onClick={() =>
-                        calculateFootprint(waterAnswers, waterQuestions, setWaterFootprint, 'water')
-                    }
+                    onClick={() => {
+                        calculateFootprint(waterAnswers, waterQuestions, setWaterFootprint, 'water');
+                        getPersonalizedTips();
+                    }}
                 >
                     Calcular consumo
                 </button>
                 {errors.water && <p className="error">Completa todas las preguntas antes de calcular.</p>}
-                {waterFootprint && <p className="result">Resultado: {waterFootprint} m³/año</p>}
-                {waterFootprint && <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 m³/año como máximo por individuo.</p>}
-                {waterFootprint && <p className="result info">La media actual en España es de 4,68 m³/año por individuo.</p>}
+                {waterFootprint &&  [
+                    <p className="result">Resultado: {waterFootprint} m³/año</p>,
+                    <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 m³/año como máximo por individuo.</p>,
+                    <p className="result info">La media actual en España es de 4,68 m³/año por individuo.</p>,
+                    <div className="result div-line" />,
+                    <p className="result info sub">Más información:</p>,
+                    <a href="https://calculatuhuella.consumo.gob.es/" className="result info link">Huella de carbono ciudadana</a>,
+                    <a href="https://www.miteco.gob.es/es/cambio-climatico/temas/mitigacion-politicas-y-medidas/calculadoras.html" className="result info link">Huella de carbono empresarial</a>,
+                    <a href="https://serviciosempresariales.camaramadrid.es/sostenibilidad/calcula-huella-carbono/" className="result info link">Cámara de comercio</a>
+                ]}
             </div>
 
             {/* Columna 3 - Huella total */}
@@ -155,7 +200,7 @@ function EcoCalcPage() {
                         <p className="advice">{getAdvice()}</p>
                         <p>{improvementIntro}</p>
                         <ul className="tips">
-                            {improvementTips.map((tip, idx) => (
+                            {personalizedTips.map((tip, idx) => (
                                 <li key={idx}>{tip}</li>
                             ))}
                         </ul>

@@ -7,115 +7,39 @@ import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
 import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 
+const markerBasePath = '/map-markers/';
+
+const createIcon = (filename) => L.icon({
+    iconUrl: `${markerBasePath}${filename}`,
+    shadowUrl: `${markerBasePath}marker-shadow.png`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
 // contenedor amarillo (plástico)
-const yellowIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-yellow.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const yellowIcon = createIcon('marker-icon-yellow.png');
 // contenedor azul (papel)
-const blueIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-blue.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-  
+const blueIcon = createIcon('marker-icon-blue.png');
 // contenedor verde (vídrio)
-const darkgreenIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-dark-green.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const darkgreenIcon = createIcon('marker-icon-dark-green.png');
 // contenedor marrón (orgánico)
-const orangeIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-orange.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const orangeIcon = createIcon('marker-icon-orange.png');
 // contenedor gris (no reciclable)
-const greyIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-grey.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const greyIcon = createIcon('marker-icon-grey.png');
 // dirección usuario
-const redUSerIcon = L.icon({
-    iconUrl: '/map-markers/marker-user-icon-red.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const redUSerIcon = createIcon('marker-user-icon-red.png');
 // punto SIGRE
-const violetIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-violet.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const violetIcon = createIcon('marker-icon-violet.png');
 // punto pilas
-const blackIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-black.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const blackIcon = createIcon('marker-icon-black.png');
 // punto ropa
-const pinkIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-pink.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const pinkIcon = createIcon('marker-icon-pink.png');
 // punto limpio
-const greenIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-green.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
+const greenIcon = createIcon('marker-icon-green.png');
 // color por defecto para otros puntos
-const whiteIcon = L.icon({
-    iconUrl: '/map-markers/marker-icon-white.png',
-    shadowUrl: '/map-markers/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
+const whiteIcon = createIcon('marker-icon-white.png');
 
 const recyclePoints = [
   { id: 1, name: "Contenedor Azul", coords: [38.687509, -4.106194], type: "azul" },

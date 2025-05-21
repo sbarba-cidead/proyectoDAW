@@ -1,88 +1,6 @@
 import '../../styles/EcoCalcPage.css';
 
-import { useState } from 'react';
-
-const carbonQuestions = [
-    {
-        id: 'carUsage',
-        question: '¿Cuántos kilómetros conduces por semana?',
-        options: [
-            { label: '0-50 km', value: 0.2 },
-            { label: '51-100 km', value: 0.5 },
-            { label: '101-200 km', value: 1 },
-            { label: 'Más de 200 km', value: 1.5 },
-        ]
-    },
-    {
-        id: 'flights',
-        question: '¿Cuántos vuelos en avión realizas al año?',
-        options: [
-            { label: 'Ninguno', value: 0 },
-            { label: '1-2 vuelos', value: 1 },
-            { label: '3-5 vuelos', value: 2 },
-            { label: 'Más de 5 vuelos', value: 3 },
-        ]
-    },
-    {
-        id: 'meat',
-        question: '¿Con qué frecuencia consumes carne?',
-        options: [
-            { label: 'Nunca', value: 0 },
-            { label: '1-2 veces por semana', value: 0.5 },
-            { label: '3-5 veces por semana', value: 1 },
-            { label: 'Todos los días', value: 1.5 },
-        ]
-    },
-    {
-        id: 'recycling',
-        question: '¿Reciclas regularmente?',
-        options: [
-            { label: 'Sí', value: 0 },
-            { label: 'No', value: 0.5 },
-        ]
-    }
-];
-
-const waterQuestions = [
-    {
-        id: 'showerTime',
-        question: '¿Cuánto duran tus duchas diarias?',
-        options: [
-            { label: 'Menos de 5 min', value: 0.2 },
-            { label: '5-10 min', value: 0.5 },
-            { label: 'Más de 10 min', value: 1 },
-        ]
-    },
-    {
-        id: 'laundry',
-        question: '¿Cuántas veces lavas ropa por semana?',
-        options: [
-            { label: '1 vez', value: 0.2 },
-            { label: '2-3 veces', value: 0.5 },
-            { label: 'Más de 3 veces', value: 1 },
-        ]
-    },
-    {
-        id: 'waterTap',
-        question: '¿Cierras el grifo mientras no usas el agua?',
-        options: [
-            { label: 'Sí', value: 0 },
-            { label: 'No', value: 1 },
-            { label: 'A veces', value: 0.5 },
-        ]
-    },
-    {
-        id: 'waterCom',
-        question: '¿Realizas alguna de estas actividades?',
-        options: [
-            { label: 'Riego con frecuencia mi jardín', value: 0.8 },
-            { label: 'Dispongo de una piscina privada', value: 0.5 },
-            { label: 'Dispongo de priscina y riego mi jardín', value: 1 },
-            { label: 'Ninguna de las anteriores', value: 0 },
-        ]
-    }
-];
-
+import { useState, useEffect } from 'react';
 
 // Valoraciones según el total de huella
 const adviceLevels = [
@@ -102,11 +20,45 @@ const improvementTips = [
 
 
 function EcoCalcPage() {
+    const [carbonQuestions, setCarbonQuestions] = useState([]);
+    const [waterQuestions, setWaterQuestions] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [carbonAnswers, setCarbonAnswers] = useState({});
     const [waterAnswers, setWaterAnswers] = useState({});
     const [carbonFootprint, setCarbonFootprint] = useState(null);
     const [waterFootprint, setWaterFootprint] = useState(null);
     const [errors, setErrors] = useState({ carbon: false, water: false });
+    const apiUrl = process.env.REACT_APP_API_URL;
+
+    // se obtienen los datos de las preguntas para crear los formularios
+    useEffect(() => {
+        const fetchQuestions = async () => {
+            try {
+                const response = await fetch(`${apiUrl}/recycle/eco-questions?categories=carbon-calc,water-calc`)
+
+                const allData = await response.json();
+                const dataCarbon = allData.filter(q => q.category === 'carbon-calc');
+                const dataWater = allData.filter(q => q.category === 'water-calc');
+
+                setCarbonQuestions(dataCarbon);
+                setWaterQuestions(dataWater);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error obteniendo las preguntas: ", error);
+                setLoading(false);
+            }
+        };
+        fetchQuestions();
+    }, []);
+
+    // reinicio de los formularios para nuevo cálculo
+    const handleReset = () => {
+        setCarbonAnswers({});
+        setWaterAnswers({});
+        setCarbonFootprint(null);
+        setWaterFootprint(null);
+        setErrors({ carbon: false, water: false });
+    };
 
     const handleChange = (setter) => (e) => {
         const { name, value } = e.target;
@@ -117,6 +69,7 @@ function EcoCalcPage() {
         return questions.every(q => answers.hasOwnProperty(q.id));
     };
 
+    // cálculo parcial de huella hídrica o carbono
     const calculateFootprint = (answers, questions, setter, type) => {
         if (!allAnswered(answers, questions)) {
             setErrors(prev => ({ ...prev, [type]: true }));
@@ -128,15 +81,18 @@ function EcoCalcPage() {
         setter(total.toFixed(2));
     };
 
+    // cálculo total de huella ecológica
     const getTotal = () => (
         (parseFloat(carbonFootprint || 0) + parseFloat(waterFootprint || 0)).toFixed(2)
     );
 
+    // consejos personalizados
     const getAdvice = () => {
         const total = parseFloat(getTotal());
         return adviceLevels.find(level => total <= level.max)?.text || '';
     };
 
+    // generador de los formularios a partir de los datos
     const renderQuestions = (questions, answers, handleChangeFn) => (
         questions.map((q) => (
             <div className="form-group" key={q.id}>
@@ -150,6 +106,8 @@ function EcoCalcPage() {
             </div>
         ))
     );
+
+    if (loading) return <div className="loading"></div>;
 
     return (
         <div className="eco-calc-container">
@@ -201,6 +159,9 @@ function EcoCalcPage() {
                                 <li key={idx}>{tip}</li>
                             ))}
                         </ul>
+                        <button className="reset-button" onClick={handleReset}>
+                            Calcular de nuevo
+                        </button>
                     </>
                 ) : (
                     <p className="total-notice">Calcula ambas huellas para ver tu resultado total.</p>

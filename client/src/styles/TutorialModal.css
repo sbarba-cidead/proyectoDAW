@@ -1,0 +1,142 @@
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* oscuro transparente */
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tutorial-overlay .bold {
+    font-weight: bold;
+}
+
+.tutorial-overlay .tutorial-box {
+    position: absolute;
+    background: #dadada; /* claro */
+    color: #252525; /* negro */
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4); /* oscuro transparente */
+    max-width: 300px;
+    z-index: 1001;
+    animation: fadeInSoft 0.3s ease-out;
+}
+
+.tutorial-box .content h2 {
+    margin-top: 0;
+    color: #2e7d32; /* verde */
+}
+
+.tutorial-box .content p {
+    margin: 0.5rem 0;
+    text-align: justify;
+}
+
+.tutorial-box .content .centered {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.tutorial-box .content .centered svg {
+    min-width: 1rem;
+    vertical-align: middle;
+}
+
+.tutorial-box .content .purple svg {
+    color: #9c48fc;
+}
+
+.tutorial-box .content .blue svg {
+    color: #2a9fec;
+}
+
+.tutorial-box .content ul {
+    list-style: none;
+    margin: 0.5rem 0;
+    /* padding-left: 0; */
+    padding-left: 0.5rem;
+}
+
+.tutorial-box .content ul li {
+    /* margin: 0.5rem 0; */
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem; /* Espacio entre icono y texto */
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.tutorial-box .content ul li svg {
+    margin-top: 5px;
+    color: #2e7d32;
+    min-width: 1rem;
+}
+
+.tutorial-box .content button {
+    margin-top: 1rem;
+    background-color: #ef6c00; /* naranja oscuro */
+    color: #fff; /* blanco */
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+}
+
+.tutorial-box .content button.centered {
+    margin-top: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tutorial-box.top-left {
+    top: 20px;
+    left: 80px;
+    margin-right: 10px;
+}
+
+.tutorial-box.top-right {
+    top: 20px;
+    right: 80px;
+    margin-left: 10px;
+}
+
+.tutorial-box.center {
+    text-align: center;
+}
+
+.tutorial-overlay .arrow {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    margin-bottom: 1rem;
+}
+
+.tutorial-overlay .arrow.arrow-left {
+    border-width: 10px 10px 10px 0;
+    border-color: transparent #dadada transparent transparent; /* blanco */
+    position: absolute;
+    left: -10px;
+    top: 20px;
+}
+
+.tutorial-overlay .arrow.arrow-right {
+    border-width: 10px 0 10px 10px;
+    border-color: transparent transparent transparent #dadada; /* blanco */
+    position: absolute;
+    right: -10px;
+    top: 20px;
+}
+
+@keyframes fadeInSoft {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

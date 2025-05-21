@@ -1,11 +1,15 @@
 import '../../styles/HomePage.css';
+
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { FaBriefcase } from 'react-icons/fa';
+
 import logo from '../../assets/logo.png';
 import LoginButton from '../LoginButton';
-import { FaBriefcase } from 'react-icons/fa';
-import { useState, useEffect, useRef } from 'react';
+import TutorialModal from '../TutorialModal';
 
 function HomePage() {
+    const [showTutorial, setShowTutorial] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef();
@@ -54,9 +58,14 @@ function HomePage() {
                 <div className="main-content">
                     <h1>Bienvenidos a <br/> Puertollano Sostenible</h1>
                     <p>Juntos podemos hacer de nuestra ciudad un lugar mejor.</p>
-                    <button>Descubre cómo</button>
+                    <button onClick={() => setShowTutorial(true)}>Descubre cómo</button>
                 </div>
             </div>
+
+            {/* modal con tutorial de inicio */}
+            {showTutorial && (
+                <TutorialModal onClose={() => setShowTutorial(false)} />
+            )}
         </div>
     );
 }

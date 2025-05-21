@@ -24,6 +24,23 @@
     align-self: center;
 }
 
+.eco-column .reset-button {
+    margin: 20px auto;
+    display: block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.eco-column .reset-button:hover {
+    background-color: #1b5e20;
+}
+
+
 .form-group {
     margin-bottom: 1rem;
 }

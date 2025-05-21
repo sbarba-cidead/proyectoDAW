@@ -7,40 +7,6 @@ import { FaTrashAlt, FaPen, FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import UserEditModal from '../UserEditModal';
 
-// Niveles de usuario y sus colores
-const levels = {
-    beginner: { 
-      color: "#467e05",  // Verde
-      text: "Principiante", 
-      icon: <FaSeedling />  // Icono de semilla
-    },
-    intermediate: { 
-      color: "#118a43",  // Verde azulado oscuro
-      text: "Intermedio", 
-      icon: <FaLeaf />  // Icono de hoja
-    },
-    advanced: { 
-      color: "#ad7909",  // Marrón
-      text: "Avanzado", 
-      icon: <FaTree />  // Icono de árbol
-    },
-    expert: { 
-      color: "#921727",  // Rojo oscuro
-      text: "Experto", 
-      icon: <FaApple />  // Icono de bosque
-    },
-    master: { 
-      color: "#800d94",  // Magenta oscuro
-      text: "Maestro", 
-      icon: <FaCrown />  // Icono de corona
-    },
-    legend: { 
-      color: "#673AB7",  // Púrpura oscuro
-      text: "Leyenda", 
-      icon: <FaStar />  // Icono de estrella
-    }
-  };
-
 function ProfilePage() {
   const [user, setUserLocal] = useState(null);
   const { setUserGlobalContext } = useUserContext();
@@ -73,27 +39,39 @@ function ProfilePage() {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem('usertoken');
-        const res = await fetch('http://localhost:5000/api/user/me', {
+
+        // petición de datos del usuario
+        const resUser = await fetch('http://localhost:5000/api/user/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        const data = await res.json();
-        if (res.ok) {
-          setUserLocal({
-            avatar: `${baseUrl}${data.avatar}`,
-            fullname: data.fullname,
-            email: data.email,
-            username: data.username,
-            score: data.score,
-            level: 'beginner',
-            recyclingActivities: [], // se conectará más adelante
-            messages: [], // se conectará más adelante
-          });
-        } else {
+        const data = await resUser.json();
+
+        if (!resUser.ok) {
           console.error('Error al obtener usuario:', data.msg);
         }
+
+        // petición de datos del nivel del usuario
+        const levelRes = await fetch(`http://localhost:5000/api/level/get-level/${data.score}`);
+        const levelData = await levelRes.json();
+
+        if (!levelRes.ok) {
+          console.error('Error al obtener nivel:', levelData.msg);
+          return;
+        }
+
+        setUserLocal({
+          avatar: `${baseUrl}${data.avatar}`,
+          fullname: data.fullname,
+          email: data.email,
+          username: data.username,
+          score: data.score,
+          level: levelData, // objeto completo con los datos del nivel
+          recyclingActivities: [], // se conectará más adelante
+          messages: [], // se conectará más adelante
+        });
       } catch (error) {
         console.error('Error de red:', error);
       } finally {
@@ -275,6 +253,19 @@ function ProfilePage() {
     return avatarUpdated;
   };
 
+  function getLevelIcon(iconName) {
+    const icons = {
+      FaSeedling: <FaSeedling />,
+      FaLeaf: <FaLeaf />,
+      FaTree: <FaTree />,
+      FaApple: <FaApple />,
+      FaCrown: <FaCrown />,
+      FaStar: <FaStar />
+    };
+
+    return icons[iconName] || null;
+  }
+
 
   if (loading) return <div className="loading"></div>;
 
@@ -298,9 +289,9 @@ function ProfilePage() {
 
           <div className="profile-score">            
             <div className="user-level">
-              {/* <div className="level-info" style={{ color: levels[user.level].color }}>
-                {levels[user.level].icon}
-                <span>{levels[user.level].text}</span>
+              <div className="level-info" style={{ color: user.level.color }}>
+                {getLevelIcon(user.level.icon)}
+                <span>{user.level.text}</span>
                 <div className="tooltip-container">
                     <FaInfoCircle />
                     <div className="tooltip">
@@ -309,7 +300,7 @@ function ProfilePage() {
                             puntos que te permitirán subir de rango.</p>
                     </div>
                 </div>
-              </div> */}
+              </div>
               <div className="user-points">
                 <FaTrophy />
                 <span>{user.score} puntos</span>
@@ -321,10 +312,10 @@ function ProfilePage() {
                         <div className="progress-bar-container">
                             <div
                             className="progress-bar"
-                            style={{ width: `${(user.score / 100) * 100}%` }}
+                            style={{ width: `${(user.score / user.level.maxScore) * 100}%` }}
                             ></div>
                         </div>
-                        <div className="score-number">100</div>
+                        <div className="score-number">{user.level.maxScore}</div>
                     </div>                
               </div>
             </div>

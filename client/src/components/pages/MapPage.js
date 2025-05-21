@@ -9,8 +9,8 @@ import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 
 // contenedor amarillo (plástico)
 const yellowIcon = L.icon({
-    iconUrl: '/marker-icon-yellow.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-yellow.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -19,8 +19,8 @@ const yellowIcon = L.icon({
 
 // contenedor azul (papel)
 const blueIcon = L.icon({
-    iconUrl: '/marker-icon-blue.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-blue.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -29,8 +29,8 @@ const blueIcon = L.icon({
   
 // contenedor verde (vídrio)
 const darkgreenIcon = L.icon({
-    iconUrl: '/marker-icon-dark-green.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-dark-green.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -39,8 +39,8 @@ const darkgreenIcon = L.icon({
 
 // contenedor marrón (orgánico)
 const orangeIcon = L.icon({
-    iconUrl: '/marker-icon-orange.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-orange.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -49,8 +49,8 @@ const orangeIcon = L.icon({
 
 // contenedor gris (no reciclable)
 const greyIcon = L.icon({
-    iconUrl: '/marker-icon-grey.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-grey.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -59,8 +59,8 @@ const greyIcon = L.icon({
 
 // dirección usuario
 const redUSerIcon = L.icon({
-    iconUrl: '/marker-user-icon-red.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-user-icon-red.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -69,8 +69,8 @@ const redUSerIcon = L.icon({
 
 // punto SIGRE
 const violetIcon = L.icon({
-    iconUrl: '/marker-icon-violet.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-violet.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -79,8 +79,8 @@ const violetIcon = L.icon({
 
 // punto pilas
 const blackIcon = L.icon({
-    iconUrl: '/marker-icon-black.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-black.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -89,8 +89,8 @@ const blackIcon = L.icon({
 
 // punto ropa
 const pinkIcon = L.icon({
-    iconUrl: '/marker-icon-pink.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-pink.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -99,8 +99,8 @@ const pinkIcon = L.icon({
 
 // punto limpio
 const greenIcon = L.icon({
-    iconUrl: '/marker-icon-green.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-green.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -109,8 +109,8 @@ const greenIcon = L.icon({
 
 // color por defecto para otros puntos
 const whiteIcon = L.icon({
-    iconUrl: '/marker-icon-white.png',
-    shadowUrl: '/marker-shadow.png',
+    iconUrl: '/map-markers/marker-icon-white.png',
+    shadowUrl: '/map-markers/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],

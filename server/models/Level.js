@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// modelo para creación de un nivel
+// modelo para nivel de usuario según puntuación
 const UserSchema = new mongoose.Schema({
     name: {
         type: String,

@@ -14,7 +14,8 @@ function ProfilePage() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationMessageType, setNotificationMessageType] = useState('');
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const apiUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = process.env.REACT_APP_BASE_URL;
 
   // Datos de prueba del usuario
   // const user = {
@@ -41,7 +42,7 @@ function ProfilePage() {
         const token = localStorage.getItem('usertoken');
 
         // petición de datos del usuario
-        const resUser = await fetch('http://localhost:5000/api/user/me', {
+        const resUser = await fetch(`${apiUrl}/user/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -54,7 +55,7 @@ function ProfilePage() {
         }
 
         // petición de datos del nivel del usuario
-        const levelRes = await fetch(`http://localhost:5000/api/level/get-level/${data.score}`);
+        const levelRes = await fetch(`${apiUrl}/level/get-level/${data.score}`);
         const levelData = await levelRes.json();
 
         if (!levelRes.ok) {
@@ -101,7 +102,7 @@ function ProfilePage() {
       const isEmailChanged = updatedData.email !== user.email;
       if (isUsernameChanged || isEmailChanged) {
         try {
-          const checkRes = await fetch('http://localhost:5000/api/user/check-updated-data', {
+          const checkRes = await fetch(`${apiUrl}/user/check-updated-data`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ function ProfilePage() {
         formData.append('filename', `${"avatar-"}${updatedData.username}`); // se nombra el fichero con el nombre de usuario
         formData.append('avatar', selectedImageFile);
 
-        const uploadRes = await fetch('http://localhost:5000/api/user/upload-avatar', {
+        const uploadRes = await fetch(`${apiUrl}/user/upload-avatar`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -185,7 +186,7 @@ function ProfilePage() {
       }
 
       // se mandan los datos actualizados del usuario
-      const response = await fetch('http://localhost:5000/api/user/update', {
+      const response = await fetch(`${apiUrl}/user/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

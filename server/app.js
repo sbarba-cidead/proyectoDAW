@@ -12,7 +12,7 @@ var indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 var userRouter = require('./routes/user');
 const levelsRouter = require('./routes/levels');
-const notesRouter = require('./routes/notes');
+const recycleRouter = require('./routes/recycle');
 const { domainToASCII } = require('url');
 
 var app = express();
@@ -43,7 +43,7 @@ app.use('/', indexRouter);
 app.use('/api/auth', authRouter) // ruta de autenticación
 app.use('/api/user', userRouter); // ruta de sesión usuario
 app.use('/api/level', levelsRouter); // ruta de niveles de usuario
-app.use('/api/notes', notesRouter);
+app.use('/api/recycle', recycleRouter); // ruta de reciclaje
 
 // // Ruta de prueba
 // app.get('/', (req, res) => {

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-const baseUrl = process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
+const baseUrl = process.env.REACT_APP_BASE_URL;
 
 // contexto global para el inicio de sesión de usuario //
 
@@ -19,7 +20,7 @@ export function UserProvider({ children }) {
         if (token) { // si se encuentra token
             try {
                 // solicitud al backend para comprobar el token
-                const response = await fetch('http://localhost:5000/api/user/me', {
+                const response = await fetch(`${apiUrl}/user/me`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,

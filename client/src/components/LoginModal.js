@@ -11,7 +11,8 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   const [showPassword, setShowPassword] = useState(false);
   const { isRegistering, credential, password, fullname, username, email } = formData;
   const modalRef = useRef(); // referencia para el modal
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const apiUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = process.env.REACT_APP_BASE_URL;
 
   // toggle para mostrar u ocultar contraseña
   const handlePasswordToggle = () => {
@@ -39,7 +40,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
     
     if (isRegistering) {  // para registro   
       try {
-        const response = await fetch('http://localhost:5000/api/auth/register', {
+        const response = await fetch(`${apiUrl}/auth/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -95,7 +96,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
       }
     } else { // para login
        try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
+        const response = await fetch(`${apiUrl}/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

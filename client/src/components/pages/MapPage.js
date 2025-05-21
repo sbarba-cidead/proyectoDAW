@@ -7,10 +7,11 @@ import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
 import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 
-const markerBasePath = '/map-markers/';
+const markerBasePath = '/map-markers/'; // ruta donde se guardan los marcadores
 
-const createIcon = (filename) => L.icon({
-    iconUrl: `${markerBasePath}${filename}`,
+// creación de icono para los marcadores del mapa
+const createIcon = (iconFilename) => L.icon({
+    iconUrl: `${markerBasePath}${iconFilename}`,
     shadowUrl: `${markerBasePath}marker-shadow.png`,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
@@ -18,49 +19,19 @@ const createIcon = (filename) => L.icon({
     shadowSize: [41, 41]
 });
 
-// contenedor amarillo (plástico)
-const yellowIcon = createIcon('marker-icon-yellow.png');
-// contenedor azul (papel)
-const blueIcon = createIcon('marker-icon-blue.png');
-// contenedor verde (vídrio)
-const darkgreenIcon = createIcon('marker-icon-dark-green.png');
-// contenedor marrón (orgánico)
-const orangeIcon = createIcon('marker-icon-orange.png');
-// contenedor gris (no reciclable)
-const greyIcon = createIcon('marker-icon-grey.png');
-// dirección usuario
+// marcador para el usuario
 const redUSerIcon = createIcon('marker-user-icon-red.png');
-// punto SIGRE
-const violetIcon = createIcon('marker-icon-violet.png');
-// punto pilas
-const blackIcon = createIcon('marker-icon-black.png');
-// punto ropa
-const pinkIcon = createIcon('marker-icon-pink.png');
-// punto limpio
-const greenIcon = createIcon('marker-icon-green.png');
-// color por defecto para otros puntos
+// marcador genérico
 const whiteIcon = createIcon('marker-icon-white.png');
 
-const recyclePoints = [
-  { id: 1, name: "Contenedor Azul", coords: [38.687509, -4.106194], type: "azul" },
-  { id: 2, name: "Contenedor Amarillo", coords: [38.688577, -4.107017], type: "amarillo" },
-  { id: 3, name: "Contenedor Verde", coords: [38.691246, -4.108323], type: "verde" },
-  { id: 4, name: "Contenedor Gris", coords: [38.689496, -4.112148], type: "gris" },
-  { id: 5, name: "Contenedor Marrón", coords: [38.686456, -4.111537], type: "marron" },
-  { id: 6, name: "Contenedor Pilas", coords: [38.685250, -4.105217], type: "pilas" },
-  { id: 7, name: "Contenedor SIGRE", coords: [38.686289, -4.104456], type: "sigre" },
-  { id: 8, name: "Contenedor Ropa", coords: [38.687478, -4.098963], type: "ropa" },
-  { id: 9, name: "Punto Limpio", coords: [38.665064, -4.112298], type: "punto-limpio" },
-  { id: 10, name: "Contenedor Azul", coords: [38.68340, -4.09756], type: "azul" },
-  { id: 11, name: "Contenedor Amarillo", coords: [38.68224, -4.08458], type: "amarillo" },
-  { id: 12, name: "Contenedor Verde", coords: [38.68342, -4.09000], type: "verde" },
-  { id: 13, name: "Contenedor Gris", coords: [38.68193, -4.10824], type: "gris" },
-  { id: 14, name: "Contenedor Marrón", coords: [38.68425, -4.11736], type: "marron" },
-  { id: 15, name: "Contenedor Pilas", coords: [38.691121, -4.109477], type: "pilas" },
-  { id: 16, name: "Contenedor SIGRE", coords: [38.697778, -4.107760], type: "sigre" },
-  { id: 17, name: "Contenedor Ropa", coords: [38.684932, -4.115410], type: "ropa" },
-];
+// para puntos genéricos sin referencia a un icono
+const createIconFromName = (filename) => {
+    if (!filename) return whiteIcon;
+    return createIcon(filename);
+};
 
+// manejo del movimiento de zoom del mapa 
+// al cambiar coordenadas de foco
 function MoveMap({ coords }) {
     const map = useMap();
   
@@ -74,14 +45,42 @@ function MoveMap({ coords }) {
 }
 
 function MapPage() {
-    const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano
+    const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano (punto por defecto)
     const [direction, setDirection] = useState('');
     const [result, setResult] = useState(null); // coordenadas de la dirección del usuario
-    const [orderedPoints, setOrderedPoints] = useState(recyclePoints);
+    const [orderedPoints, setOrderedPoints] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null); // punto seleccionado en el mapa
+    const [containerTypes, setContainerTypes] = useState([]);
     const markersRef = useRef([]); // referencia de los marcadores del mapa
     const [error, setError] = useState(''); // mensaje de error en búsqueda de dirección
     const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 368);
+    const apiUrl = process.env.REACT_APP_API_URL;
+
+    // solicita los puntos para el mapa al backend
+    useEffect(() => {
+        fetch(`${apiUrl}/recycle/recycle-points`)
+            .then(res => res.json())
+            .then(data => {
+                setOrderedPoints(data);
+            })
+            .catch(error => {
+                console.error('Error recuperando los puntos de reciclaje:', error);
+            });
+    }, []);
+
+    // solicita los tipos de contenedores de reciclaje
+    useEffect(() => {
+        fetch(`${apiUrl}/recycle/container-types`)
+            .then(res => res.json())
+            .then(data => {
+                setContainerTypes(data);
+                injectContainerColors(data);
+            })
+            .catch(error => {
+                console.error('Error recuperando tipos de contenedores:', error);
+            });
+    }, []);
+
 
     // escucha a los cambios de tamaño de pantalla
     useEffect(() => {
@@ -143,17 +142,19 @@ function MapPage() {
         }
     };
 
-    // mapeo de contenedores con iconos de marcador
-    const iconMap = {
-        'amarillo': yellowIcon,
-        'azul': blueIcon,
-        'verde': darkgreenIcon,
-        'marron': orangeIcon,
-        'gris': greyIcon,
-        'sigre': violetIcon,
-        'pilas': blackIcon,
-        'ropa': pinkIcon,
-        'punto-limpio': greenIcon,
+    // creación de clases de estilo de color a partir de los tipos de contenedores
+    const injectContainerColors = (types) => {
+        if (document.getElementById('dynamic-container-colors')) return;
+
+        const styleSheet = document.createElement("style");
+        styleSheet.id = 'dynamic-container-colors';
+
+        types.forEach(container => {
+            const rule = `.icon-color-${container.type} { color: ${container.color}; }`;
+            styleSheet.appendChild(document.createTextNode(rule));
+        });
+
+        document.head.appendChild(styleSheet);
     };
 
     return (
@@ -168,13 +169,23 @@ function MapPage() {
                     {(result && <MoveMap coords={result} />)}
                     {(selectedPoint && <MoveMap coords={selectedPoint.coords} />)}
 
-                    {orderedPoints.map(p => (
-                        <Marker key={p.id} position={p.coords} icon={iconMap[p.type] || whiteIcon}
+                    {orderedPoints.map(p => {
+                        const containerType = containerTypes.find(c => c.type === p.type);
+                        const icon = containerType ? createIconFromName(containerType.markerIcon) : whiteIcon;
+
+                        return (
+                            <Marker
+                                key={p.id}
+                                position={p.coords}
+                                icon={icon}
                                 eventHandlers={{ click: () => handlePointSelect(p) }}
-                                ref={(el) => { markersRef.current[p.id] = el; }}>
-                            <Popup>{p.name}</Popup>
-                        </Marker>
-                    ))}
+                                ref={(el) => { markersRef.current[p.id] = el; }}
+                            >
+                                <Popup>{p.name}</Popup>
+                            </Marker>
+                        );
+                    })}
+
 
                     {result && (
                         <Marker position={result} icon={redUSerIcon}>
@@ -208,7 +219,7 @@ function MapPage() {
                         <ul className="recycle-list">
                             {orderedPoints.map(p => (
                                 <li key={p.id} onClick={() => handlePointSelect(p)}>
-                                    <FaSquareFull className={`color-indicator tint-contenedor-${p.type}`} />
+                                    <FaSquareFull className={`color-indicator icon-color-${p.type}`} />
                                     {p.name} {p.distance ? `- ${(p.distance / 1000).toFixed(2)} km` : ''}
                                 </li>
                             ))}

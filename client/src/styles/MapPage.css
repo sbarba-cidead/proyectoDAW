@@ -130,35 +130,24 @@
     vertical-align: middle;
 }
 
-.tint-contenedor-amarillo { color: #FFD700; }
-.tint-contenedor-azul { color: #1E90FF; }
-.tint-contenedor-verde { color: #0e490e; }
-.tint-contenedor-marron { color: #A0522D; }
-.tint-contenedor-gris { color: #808080; }
-.tint-contenedor-sigre { color: #8A2BE2; }
-.tint-contenedor-pilas { color: #000000; }
-.tint-contenedor-ropa { color: #FF69B4; }
-.tint-contenedor-punto-limpio { color: #1a9420; }
-
-/* editar aquí */
 @media (max-width: 850px) {
-    .recycle-container {
+    .recyclemap-container {
         flex-direction: column;
     }
     
-    .recycle-container .recycle-sidebar {
+    .recyclemap-container .recycle-sidebar {
         margin: 10px 10px 5px 10px;
     }
 
-    .recycle-container .recycle-map {
+    .recyclemap-container .recycle-map {
         margin: 5px 10px 5px 10px;
     }
     
-    .recycle-container .recycle-map {
+    .recyclemap-container .recycle-map {
         order: 2; /* mueve el mapa abajo */
     }
     
-    .recycle-container .recycle-sidebar {
+    .recyclemap-container .recycle-sidebar {
         order: 1; /* pone el buscador arriba */
         height: 50%;
     }

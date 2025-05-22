@@ -6,6 +6,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { WEBSITE_NAME } from '../config/constants';
 import logo from '../assets/logo.png';
 import LoginButton from './LoginButton';
+import MenuButton from './MenuButton';
 
 
 function Header() {
@@ -33,18 +34,22 @@ function Header() {
   }, [currentTitle]);
 
   return (
-    <nav className="navbar">
-      <div className="nav-links-left">
-        <Link to="#home" id="home-button">Inicio</Link>
-      </div>
+    <nav className="header-main-container">
+      <div className="upper-container">
+        <div className="left-container">
+          <MenuButton variant="header"/>
+        </div>
 
-      <div className="navbar-center">
-        <img src={logo} id="logo" alt="Logo de la web" />
+        <div className="center-container">
+          <Link to="/"><img src={logo} className="logo" alt="Logo de la web" /></Link>                    
+        </div>
+
+        <div className="right-container">
+          <LoginButton className="login-button" />
+        </div>
+      </div>
+      <div className="bottom-container">
         {currentTitle && <h1 className="page-title">{currentTitle}</h1>}
-      </div>
-
-      <div className="nav-links-right">
-        <LoginButton className="login-button" />
       </div>
     </nav>
   );

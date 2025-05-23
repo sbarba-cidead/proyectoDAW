@@ -11,6 +11,8 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.4",
+    "date-fns-tz": "^3.2.0",
+    "geolib": "^3.3.4",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
     "leaflet.locatecontrol": "^0.84.1",
@@ -21,8 +23,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.5.0",
     "react-scripts": "^5.0.1",
-    "web-vitals": "^2.1.4",
-    "geolib": "^3.3.4"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",

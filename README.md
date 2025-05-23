@@ -18,3 +18,7 @@ Para ejecutar el servidor (Node), ejecutar el comando:
 ### `npm start`
 desde la ruta puertollano-sostenible/server
 Se ejecuta en el puerto 5000
+También se puede usar 
+### `npx nodemon ./bin/www `  
+desde la ruta puertollano-sostenible/server  
+para que haga auto-actualizaciones al guardar cambios  

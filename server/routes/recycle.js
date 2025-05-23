@@ -12,7 +12,7 @@ router.get('/recycle-points', async (req, res) => {
   try {
     const points = await RecyclePoint.find({});
     res.json(points);
-  } catch (err) {
+  } catch (error) {
     res.status(500).json({ error: 'Error al obtener los puntos de reciclaje' });
   }
 });
@@ -25,8 +25,8 @@ router.get('/container-types', async (req, res) => {
     console.log(types);
 
     res.json(types);
-  } catch (err) {
-    console.error('Error al recuperar tipos de contenedor:', err);
+  } catch (error) {
+    console.error('Error al recuperar tipos de contenedor:', error);
     res.status(500).json({ error: 'Error al recuperar tipos de contenedor' });
   }
 });
@@ -43,7 +43,7 @@ router.get('/eco-questions', async (req, res) => {
   try {
     const questions = await EcoQuestion.find(filter);
     res.json(questions);
-  } catch (err) {
+  } catch (error) {
     res.status(500).json({ error: 'Error al obtener las preguntas' });
   }
 });

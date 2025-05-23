@@ -13,6 +13,7 @@ const authRouter = require('./routes/auth');
 var userRouter = require('./routes/user');
 const levelsRouter = require('./routes/levels');
 const recycleRouter = require('./routes/recycle');
+const forumRouter = require('./routes/forum');
 const { domainToASCII } = require('url');
 
 var app = express();
@@ -44,6 +45,8 @@ app.use('/api/auth', authRouter) // ruta de autenticación
 app.use('/api/user', userRouter); // ruta de sesión usuario
 app.use('/api/level', levelsRouter); // ruta de niveles de usuario
 app.use('/api/recycle', recycleRouter); // ruta de reciclaje
+app.use('/api/forum', forumRouter); // ruta del foro
+
 
 // // Ruta de prueba
 // app.get('/', (req, res) => {

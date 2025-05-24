@@ -7,13 +7,13 @@ import { UserProvider } from './context/UserContext';
 import NotFoundPage from './components/error-pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import Navbar from './components/Header';
+import Header from './components/Header';
 import HomePage from './components/pages/HomePage';
 import ProfilePage from './components/pages/ProfilePage';
 import ToolsPage from './components/pages/ToolsPage';
 import EcoCalcPage from './components/pages/EcoCalcPage';
 import MapPage from './components/pages/MapPage';
-import RecycleBins from './components/pages/RecycleGuidePage';
+import RecycleContainers from './components/pages/RecycleGuidePage';
 import ForumPage from './components/pages/ForumPage';
 import EcoInfoPage from './components/pages/EcoInfoPage';
 
@@ -26,7 +26,7 @@ function AppContent() {
   return (
     <div className="App">
       {/* Condicional para mostrar la Navbar solo si no es la ruta de Home */}
-      {!isHome && <Navbar />}
+      {!isHome && <Header />}
 
       <Routes>
         <Route path="/" element={
@@ -58,10 +58,15 @@ function AppContent() {
         } />
         <Route path="/contenedores-reciclaje" element={
           <div className={"content other"}>
-            <RecycleBins />
+            <RecycleContainers />
           </div>
         } />
         <Route path="/foro" element={
+          <div className={"content other"}>
+            <ForumPage />
+          </div>
+        } />
+        <Route path="/foro/post/:postId" element={
           <div className={"content other"}>
             <ForumPage />
           </div>

@@ -1,15 +1,20 @@
 import '../../styles/ForumPage.css';
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { format, toZonedTime } from 'date-fns-tz';
-import { FaCalendar, FaComment, FaSquareFull } from 'react-icons/fa';
+import { FaCalendar, FaComment, FaCommentDots, FaSquareFull } from 'react-icons/fa';
 import ForumPostModal from '../ForumPostModal';
+import ForumNewPostModal from '../ForumNewPostModal';
 
 const ForumPage = () => {
   const numberPostShown = 5
   const numberPostLoad = 3
 
+  const { postId } = useParams();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(numberPostShown);
   const [orderBy, setOrderBy] = useState('latest');
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -17,6 +22,8 @@ const ForumPage = () => {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [isSmallWindow, setIsSmallWindow] = useState(window.innerWidth <= 1100);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const apiUrl = process.env.REACT_APP_API_URL;
@@ -29,8 +36,10 @@ const ForumPage = () => {
         const response = await fetch(`${apiUrl}/forum/forum-posts`);
         const data = await response.json();
         setPosts(data);
+        setLoading(false);
       } catch (error) {
         console.error('Error obteniendo los posts:', error);
+        setLoading(false);
       }
     };
 
@@ -56,6 +65,36 @@ const ForumPage = () => {
     fetchCategories();
   }, []);
 
+  // comprueba si había un post abierto al visitar la página
+  // (útil si se recarga la página con un post abierto)
+  useEffect(() => {
+    if (postId) {
+      fetchPostById(postId);
+    }
+  }, [postId]);
+
+  // busca el post por id
+  const fetchPostById = async (id) => {
+    try {
+      const response = await fetch(`${apiUrl}/forum/forum-posts/${id}`);
+      const data = await response.json();
+      setSelectedPost(data);
+    } catch (error) {
+      console.error("Error cargando el post:", error);
+    }
+  };
+
+  // controla la apertura del modal del post desde la ruta
+  const handleOpenModal = (post) => {
+    setSelectedPost(post);
+    navigate(`/foro/post/${post._id}`); // actualiza la URL
+  };
+
+  // controla el cierre del modal del post desde la ruta
+  const handleCloseModal = () => {
+    setSelectedPost(null);
+    navigate('/foro'); // vuelve a la vista sin modal de post
+  };
 
   // para ordenar y filtrar los posts cuando cambian los filtros o el orden
   useEffect(() => {
@@ -76,11 +115,18 @@ const ForumPage = () => {
     } else if (orderBy === 'lastReply') {
       postsFiltered.sort((a, b) => new Date(b.lastReplyAt) - new Date(a.lastReplyAt));
     } else if (orderBy === 'replies') {
-      postsFiltered.sort((a, b) => b.replies - a.replies);
+      postsFiltered.sort((a, b) => b.replies.length - a.replies.length);
     }
 
     setFilteredPosts(postsFiltered);
   }, [selectedCategories, orderBy, posts]);
+
+  // tamaño de pantalla
+  useEffect(() => {
+    const handleResize = () => setIsSmallWindow(window.innerWidth <= 1100);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // actualización de las categorías seleccionadas para filtro
   const handleCategorySelect = (category) => {
@@ -128,12 +174,25 @@ const ForumPage = () => {
     return format(datetimeLocal, 'dd/MM/yyyy HH:mm', { timeZone: spanishZone });
   }
 
+  function handleCreateNewPost() {
+
+  }
+
+  if (loading) return <div className="loading"></div>;
 
   return (
     <div className="forum">
-      <div className="filters-container">
+      <div className="header-container">
+        <div className="new-post-button-wrapper">
+          <button
+            className={`new-post-button ${isSmallWindow ? 'floating' : ''}`}
+            onClick={() => setShowNewPostModal(true)}
+          >
+            {isSmallWindow ? '+' : '+ Nuevo post'}
+          </button>
+        </div>
         <div className="category-select">
-          <label>Filtrar por categorías:</label>
+          <label>Categorías:</label>
           <div className="custom-select">
             <div className={`dropdown ${dropdownOpen ? 'open' : ''}`} ref={dropdownRef}>
               <button
@@ -166,7 +225,7 @@ const ForumPage = () => {
         </div>
 
         <div className="order-select">
-          <label>Ordenar por:</label>
+          <label>Ordenar:</label>
           <select onChange={(e) => setOrderBy(e.target.value)} value={orderBy}>
             <option value="latest">Últimas creadas</option>
             <option value="oldest">Más antiguas</option>
@@ -177,60 +236,79 @@ const ForumPage = () => {
       </div>
 
       <div className="posts">
-        {displayedPosts.map((post) => (
-          <div key={post.id} className="post" onClick={() => setSelectedPost(post)}>
-            <div className="post-header">
-              <p>
-                <span className="created-container">
-                  <span className="date-label">Creado:</span>
-                  <span className="date">{convertUTCDateTime(post.createdAt)}</span>
-                </span>
-                <span className="separator">|</span>
-                <span className="last-updated-container">
-                  <span className="date-label">Última respuesta:</span>
-                  <span className="date">{convertUTCDateTime(post.lastReplyAt)}</span>
-                </span>
-              </p>
-              <div className="post-title">
-                {post.type === 'event' ? <FaCalendar color="#FF6F00" /> : <FaSquareFull color="#FFFFFF" />}
-                <span className="text-container">
-                  <h3>{post.title}</h3>
-                  <span className="category">Categorías: {
-                    Array.isArray(post.categories)
-                      ? post.categories.map(c => c.name).join(', ')
-                      : post.categories?.name || 'Sin categoría'
-                  }</span>
-                </span>
-              </div>
-            </div>
-            <div className="post-footer">
-              <p>
-                <span className="created-by-label">Creado por:</span>
-                <span className="created-by">{post.createdBy?.username || 'Anónimo'}</span>
-              </p>
-              <div className="spacer"></div>
-              <div className="replies">
-                <span className="icon"><FaComment /></span>
-                <span>{post.replies?.length || 0}</span>
-              </div>
-            </div>
+        {posts.length === 0 && (
+          <div className="no-posts-message">
+            <p>Aún no hay publicaciones. ¡Sé el primero en crear una!</p>
           </div>
-        ))}
+        )}
+
+        {filteredPosts.length > 0 && (
+          <>
+            {displayedPosts.map((post) => (
+              <div key={post.id} className="post" onClick={() => handleOpenModal(post)}>
+                <div className="post-header">
+                  <p className="dates">
+                    <span className="created-container">
+                      <span className="date-label">Creado:</span>
+                      <span className="date">{convertUTCDateTime(post.createdAt)}</span>
+                    </span>
+                    <span className="separator">|</span>
+                    <span className="last-updated-container">
+                      <span className="date-label">Última respuesta:</span>
+                      <span className="date">{convertUTCDateTime(post.lastReplyAt)}</span>
+                    </span>
+                  </p>
+                  <div className="post-title">
+                    {post.type === 'event' ? <FaCalendar color="#FF6F00" /> : <FaCommentDots color="#89c26e" />}
+                    <span className="text-container">
+                      <h3>{post.title}</h3>
+                      <span className="category">Categorías: {
+                        Array.isArray(post.categories)
+                          ? post.categories.map(c => c.name).join(', ')
+                          : post.categories?.name || 'Sin categoría'
+                      }</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="post-footer">
+                  <p className="created-info">
+                    <span className="created-by-label">Creado por:</span>
+                    <span className="created-by">{post.createdBy?.username || 'Anónimo'}</span>
+                  </p>
+                  <div className="spacer"></div>
+                  <div className="replies">
+                    <span className="icon"><FaComment /></span>
+                    <span>{post.replies?.length || 0}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* para mostrar si hay más posts y cargarlos si los hay */}
+            {hasMore ? (
+              <div className="load-more">
+                <button className="load-more-btn" onClick={() => setVisibleCount(visibleCount + numberPostLoad)}>
+                  Cargar más
+                </button>
+              </div>
+            ) : (
+              <p className="no-more-posts">Ya no hay más publicaciones.</p>
+            )}
+          </>
+        )}
       </div>
 
-      {hasMore ? (
-        <div className="load-more">
-          <button className="load-more-btn" onClick={() => setVisibleCount(visibleCount + numberPostLoad)}>
-            Cargar más
-          </button>
-        </div>
-      ) : (
-        <p className="no-more-posts">Ya no hay más publicaciones.</p>
+      {/* modal para crear nuevo post */}
+      {showNewPostModal && (
+          <ForumNewPostModal
+              onClose={() => setShowNewPostModal(false)}
+              onPostCreated={(post) => { handleCreateNewPost() }}
+          />
       )}
 
       {/* modal para el post abierto */}
       {selectedPost && (
-        <ForumPostModal post={selectedPost} onClose={() => setSelectedPost(null)} />
+        <ForumPostModal post={selectedPost} onClose={handleCloseModal} />
       )}
 
     </div>

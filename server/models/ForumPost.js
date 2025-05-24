@@ -2,10 +2,6 @@ const mongoose = require('mongoose');
 
 // modelo para un post del foro
 const forumPostSchema = new mongoose.Schema({
-  id: {
-    type: Number,
-    unique: true,
-  },
   title: { 
     type: String, 
     required: true,

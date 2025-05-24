@@ -1,6 +1,6 @@
 import '../styles/Header.css';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { WEBSITE_NAME } from '../config/constants';
@@ -21,16 +21,15 @@ function Header() {
     "/foro": "Comunidad de Sostenibilidad",
     "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
   };
+  
+  // calcula el título basado en la ruta que se está visitando
+  const currentTitle = Object.entries(pageTitles).find(([path]) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`)
+  )?.[1] || "";
 
-  const currentTitle = pageTitles[location.pathname] || "";
-
-  // actualiza el título en la pestaña del navegador
+  // actualiza el título para la cabecera y la pestaña del navegador
   useEffect(() => {
-    if (currentTitle) {
-      document.title = `${currentTitle} - ${WEBSITE_NAME}`;
-    } else {
-      document.title = WEBSITE_NAME;
-    }
+    document.title = currentTitle ? `${currentTitle} - ${WEBSITE_NAME}` : WEBSITE_NAME;
   }, [currentTitle]);
 
   return (

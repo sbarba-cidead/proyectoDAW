@@ -8,9 +8,8 @@ const dotenv = require('dotenv'); // importa variables de entorno
 const connectDB = require('./config/db'); //importa db.js para conectar a mongoDB
 
 // importa las rutas
-var indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
-var userRouter = require('./routes/user');
+const userRouter = require('./routes/user');
 const levelsRouter = require('./routes/levels');
 const recycleRouter = require('./routes/recycle');
 const forumRouter = require('./routes/forum');
@@ -40,7 +39,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 // rutas
-app.use('/', indexRouter);
 app.use('/api/auth', authRouter) // ruta de autenticación
 app.use('/api/user', userRouter); // ruta de sesión usuario
 app.use('/api/level', levelsRouter); // ruta de niveles de usuario

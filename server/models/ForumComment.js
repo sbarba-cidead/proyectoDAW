@@ -18,6 +18,7 @@ const forumCommentSchema = new Schema({
   }, // string con el id del mensaje al que es respuesta, o null si no es respuesta
   user: {
     type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   }, // referencia al usuario creador del mensaje
   createdAt: {

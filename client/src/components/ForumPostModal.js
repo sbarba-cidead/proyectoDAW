@@ -1,6 +1,6 @@
 import '../styles/ForumPostModal.css';
 
-import { useState, useEffect, useRef, useContext } from 'react';
+import { useState, useEffect, useRef, useContext, Fragment } from 'react';
 import { format, toZonedTime } from 'date-fns-tz';
 import { useUserContext } from '../context/UserContext';
 
@@ -15,36 +15,36 @@ const ForumPostModal = ({ post, onClose }) => {
     const [showCommentReplyForm, setShowCommentReplyForm] = useState(false);
     const [replyFormVisibleForComment, setReplyFormVisibleForComment] = useState(null); // id del comentario al que se está respondiendo
     const [newReplyText, setNewReplyText] = useState('');
-    const scrollRefs = useRef({});
+    const scrollRefs = useRef({}); // referencia a comentario/respuesta
+    const scrollContainerRef = useRef(null); // referencia general al modal
     const apiUrl = process.env.REACT_APP_API_URL;
 
-    // const fetchReplies = async () => {
-    //     try {
-    //         const response = await fetch(`${apiUrl}/forum/forum-posts/${post._id}/replies?page=${page}`);
-    //         const data = await response.json();
-    //         setReplies(prevReplies => [...prevReplies, ...data.replies]);
-    //         setTotalPages(data.totalPages);
-    //     } catch (error) {
-    //         console.error('Error obteniendo respuestas:', error);
-    //     }
-    // };
 
-    // useEffect(() => {
-    //     fetchReplies();
-    // }, [page]);
+    // detecta y enlaza la referencia para el scroll del modal,
+    // la posición se almacena como dato de sesión para mantenerla tras la recarga de la página
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
 
+        const handleScroll = () => {
+            sessionStorage.setItem(`forum_post_${post._id}_scrollTop`, container.scrollTop);
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [post._id]);
+
+    // carga de respuestas al post mediante paginación
     const fetchReplies = async (pageToLoad = 1) => {
         try {
             const response = await fetch(`${apiUrl}/forum/forum-posts/${post._id}/replies?page=${pageToLoad}`);
             const data = await response.json();
 
-            console.log("Respuestas recibidas:", data);
-
-            // Añadir a las anteriores si ya hay
+            // añade las respuestas a las anteriores si ya hay
             if (pageToLoad > 1) {
-            setReplies(prev => [...prev, ...data.replies]);
+                setReplies(prev => [...prev, ...data.replies]);
             } else {
-            setReplies(data.replies);
+                setReplies(data.replies);
             }
 
             setTotalPages(data.totalPages);
@@ -54,21 +54,48 @@ const ForumPostModal = ({ post, onClose }) => {
         }
     };
 
+    // guarda el estado de visualización del post por si se recarga la página
+    useEffect(() => {
+        if (repliesVisible) {
+            const savedState = {
+                visible: true,
+                page,
+            };
+            sessionStorage.setItem(`forum_post_${post._id}_state`, JSON.stringify(savedState));
+        }
+    }, [repliesVisible, page]);
 
-    // // Obtener respuestas al post
-    // useEffect(() => {
-    //     const fetchReplies = async () => {
-    //     try {
-    //         const response = await fetch(`${apiUrl}/forum/forum-posts/${post._id}/comments`);
-    //         const data = await response.json();
-    //         setReplies(data);
-    //     } catch (error) {
-    //         console.error('Error obteniendo respuestas:', error);
-    //     }
-    //     };
+    // recuperación de datos guardados de visualización del post al recargar la página
+    useEffect(() => {
+        const restoreState = async () => {
+            const saved = sessionStorage.getItem(`forum_post_${post._id}_state`); // estado del post
+            const savedScrollTop = sessionStorage.getItem(`forum_post_${post._id}_scrollTop`); // scroll del post
 
-    //     fetchReplies();
-    // }, [post._id]);
+            if (saved) {
+                const { visible, page: savedPage } = JSON.parse(saved);
+                if (visible) { // si se estaban visualiando respuestas, las carga
+                    setRepliesVisible(true);
+                    await fetchReplies(1);
+
+                    // carga exactamente el número de respuestas que se estaban visualizando
+                    for (let p = 2; p <= savedPage; p++) { 
+                        await fetchReplies(p);
+                    }
+
+                    setPage(savedPage); // actualiza la paginación
+
+                    // espera a que se renderice el contenido
+                    setTimeout(() => {
+                        if (savedScrollTop && scrollContainerRef.current) {
+                            // mueve el scroll a la posición que se estaba visualizando
+                            scrollContainerRef.current.scrollTop = parseInt(savedScrollTop, 10);
+                        }
+                    }, 100);
+                }
+            }
+        };
+        restoreState();
+    }, [post._id]);
 
     // ordenar las respuestas al post
     const sortedReplies = [...replies].sort((a, b) => {
@@ -154,6 +181,7 @@ const ForumPostModal = ({ post, onClose }) => {
         const datetimeLocal = toZonedTime(datetimeUTC, spanishZone);
         return format(datetimeLocal, 'dd/MM/yyyy HH:mm', { timeZone: spanishZone });
     }
+    
 
     return (
         <div className="postmodal-background" onClick={onClose}>
@@ -161,11 +189,15 @@ const ForumPostModal = ({ post, onClose }) => {
                 <div className="modal-header">
                     <button className="close-btn" onClick={onClose}>✖</button>
                 </div>
-                <div className="modal-content">
-                    <div ref={el => scrollRefs.current['post'] = el} className="post-content">                        
-                        <p className="post-metainfo">Por <span className="username">{post.createdBy?.username || 'Anónimo'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span></p>
-                        <h2>{post.title}</h2>
-                        <p>{post.content}</p>
+                <div className="modal-content" ref={scrollContainerRef}>
+                    <div ref={el => scrollRefs.current['post'] = el} className="post-content">          
+                        <p className="post-metainfo">Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span></p>
+                        <h2 className="post-content-title">{post.title}</h2>
+                        <div className='post-content-text'>
+                            {post.content.split('\\n').map((para, idx) => (
+                                <p key={idx}>{para}</p>
+                            ))}
+                        </div>
                         {user && !showPostReplyForm && (
                             <button className="post-reply-btn" onClick={() => setShowPostReplyForm(true)}>Responder al post</button>
                         )}
@@ -180,14 +212,6 @@ const ForumPostModal = ({ post, onClose }) => {
                         )}
                     </div>
 
-                        {/* <div className="replies-header">
-                            <h3>Respuestas ({replies.length})</h3>
-                            <select value={order} onChange={(e) => setOrder(e.target.value)}>
-                                <option value="asc">Más antiguas primero</option>
-                                <option value="desc">Más recientes primero</option>
-                            </select>
-                        </div> */}
-
                     <div className="replies-header">
                         <h3>Respuestas ({post.replies.length})</h3>
                         <select value={order} onChange={(e) => setOrder(e.target.value)}>
@@ -196,107 +220,86 @@ const ForumPostModal = ({ post, onClose }) => {
                         </select>
                     </div>
 
-                    {!repliesVisible ? (
-                            <div className="load-replies">
-                                <button onClick={() => { fetchReplies(1); setRepliesVisible(true);}}>
-                                    - Mostrar respuestas -
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="replies-list">
-                                    {[...replies]
-                                        .sort((a, b) => order === 'asc'
-                                            ? new Date(a.createdAt) - new Date(b.createdAt)
-                                            : new Date(b.createdAt) - new Date(a.createdAt)
-                                        )
-                                        .map((reply) => (
-                                            <div key={reply._id} ref={el => scrollRefs.current[reply.id] = el} className="reply">
-                                                <p className="reply-metainfo">
-                                                    <span className="username">{reply.user?.username || 'Anónimo'}</span> el{' '}
-                                                    <span className="date">{convertUTCDateTime(reply.createdAt)}</span>
-                                                </p>
-                                                {reply.responseTo && (
-                                                    <p className="reply-reference">
-                                                        ↪ Respuesta a{' '}
-                                                        <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{reply.responseTo}</button>
+                    {post.replies.length > 0 ? (
+                            !repliesVisible ? (
+                                <div className="load-replies">
+                                    <button onClick={() => { fetchReplies(1); setRepliesVisible(true);}}>
+                                        - Mostrar respuestas -
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="replies-list">
+                                        {[...replies]
+                                            .sort((a, b) => order === 'asc'
+                                                ? new Date(a.createdAt) - new Date(b.createdAt)
+                                                : new Date(b.createdAt) - new Date(a.createdAt)
+                                            )
+                                            .map((reply) => (
+                                                <div key={reply._id} ref={el => scrollRefs.current[reply.id] = el} className="reply">
+                                                    <p className="reply-metainfo">
+                                                        <span className="username">
+                                                            {reply.user?.fullname || 'usuario eliminado'}
+                                                            {' '}
+                                                            {reply.user?._id === post.createdBy._id ? '(creador)' : ''}
+                                                        </span>
+                                                        {' '}el{' '}
+                                                        <span className="date">{convertUTCDateTime(reply.createdAt)}</span>
                                                     </p>
-                                                )}
-                                                <p className="reply-text">{reply.text}</p>
+                                                    {reply.responseTo && (
+                                                        <p className="reply-reference">
+                                                            ↪ Respuesta a{' '}
+                                                            <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{reply.responseTo}</button>
+                                                        </p>
+                                                    )}
+                                                    <p className="reply-text">{reply.text}</p>
 
-                                                {user && replyFormVisibleForComment !== reply._id && (
-                                                    <div className="comment-reply-container">
-                                                        <button className="comment-reply-btn" 
-                                                            onClick={() => { setReplyFormVisibleForComment(reply._id); setShowCommentReplyForm(true);} }>
-                                                            <span className="arrow">↪</span> Responder
-                                                        </button>
-                                                    </div>
-
-                                                )}
-
-                                                {showCommentReplyForm && replyFormVisibleForComment === reply._id && (
-                                                    <div className="reply-form">
-                                                        <textarea placeholder={`Tu respuesta a ${reply.user?.username || 'el comentario'}...`} rows="4" />
-                                                        <div className="reply-form-actions">
-                                                            <button className="submit-post-response-btn">Enviar</button>
-                                                            <button className="cancel-post-response-btn" 
-                                                                onClick={() => { setReplyFormVisibleForComment(null); setShowCommentReplyForm(false); }}>
-                                                                Cancelar
+                                                    {user && replyFormVisibleForComment !== reply._id && (
+                                                        <div className="comment-reply-container">
+                                                            <button className="comment-reply-btn" 
+                                                                onClick={() => { setReplyFormVisibleForComment(reply._id); setShowCommentReplyForm(true);} }>
+                                                                <span className="arrow">↪</span> Responder
                                                             </button>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))
-                                    }
-                                </div>
 
-                                {/* botón para cargar más respuestas */}
-                                {page < totalPages && (
-                                    <div className="load-more">
-                                        <button onClick={() => fetchReplies(page + 1)}>- Cargar más respuestas -</button>
+                                                    )}
+
+                                                    {showCommentReplyForm && replyFormVisibleForComment === reply._id && (
+                                                        <div className="reply-form">
+                                                            <textarea placeholder={`Tu respuesta a ${reply.user?.fullname || 'el comentario'}...`} rows="4" />
+                                                            <div className="reply-form-actions">
+                                                                <button className="submit-post-response-btn">Enviar</button>
+                                                                <button className="cancel-post-response-btn" 
+                                                                    onClick={() => { setReplyFormVisibleForComment(null); setShowCommentReplyForm(false); }}>
+                                                                    Cancelar
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        }
                                     </div>
-                                )}
-                                {page >= totalPages && replies.length > 0 && (
-                                    <p className="no-more-replies">Ya no hay más respuestas.</p>
-                                )}
-                            </>
+
+                                    {/* botón para cargar más respuestas */}
+                                    {page < totalPages && (
+                                        <div className="load-more">
+                                            <button onClick={() => fetchReplies(page + 1)}>- Cargar más respuestas -</button>
+                                        </div>
+                                    )}
+                                    {page >= totalPages && replies.length > 0 && (
+                                        <p className="no-more-replies">Ya no hay más respuestas.</p>
+                                    )}
+                                </>
+                            )
+                        ) : (
+                            <div className="load-replies">
+                                Aún no hay respuestas que mostrar.
+                                {' '}
+                                {user && <>Sé el primero en responder.</>}                                
+                            </div>
                         )
-                    }
-
-
-                        {/* <div className="replies-list">
-                            {sortedReplies.map((reply) => (
-                                <div key={reply.id} ref={el => scrollRefs.current[reply.id] = el} className="reply">
-                                    <p className="reply-metainfo">
-                                        <span className="username">{reply.user}</span> el <span className="date">{new Date(reply.createdAt).toLocaleString()}</span>
-                                    </p>
-                                    {reply.responseTo && (
-                                        <p className="reply-reference">
-                                        Respuesta a <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{reply.responseTo}</button>
-                                        </p>
-                                    )}
-                                    <p>{reply.text}</p>
-
-                                    {user && (
-                                        <button className="response-reply-btn" onClick={() => setShowCommentReplyForm(true)}>
-                                            <span className="arrow">↪</span> Responder
-                                        </button>
-                                    )}
-
-                                    {showCommentReplyForm && (
-                                        <div className="reply-form">
-                                        <textarea placeholder={`Tu respuesta a ${reply.user}...`} rows="4" />
-                                        <div className="reply-form-actions">
-                                            <button className="submit-post-response-btn">Enviar</button>
-                                            <button className="cancel-post-response-btn" onClick={() => setShowCommentReplyForm(false)}>Cancelar</button>
-                                        </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div> */}
-                
+                    }                
                 </div>
             </div>
         </div>

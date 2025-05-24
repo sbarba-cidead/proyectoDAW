@@ -4,6 +4,7 @@ const RecyclePoint = require('../models/RecyclePoint');
 const ContainerType = require('../models/ContainerType');
 const EcoQuestion = require('../models/EcoQuestion');
 const AdviceLevel = require('../models/AdviceLevel');
+const EcoInfoCard = require('../models/EcoInfoCard');
 const ImprovementRule = require('../models/ImprovementRule');
 
 
@@ -68,6 +69,16 @@ router.get('/eco-improvement-rules', async (req, res) => {
   }
 });
 
+// información para las tarjetas de la página ecoinfo
+router.get('/eco-info-cards', async (req, res) => {
+    try {
+        const cards = await EcoInfoCard.find();
+        res.status(200).json(cards);
+    } catch (error) {
+        console.error('Error al obtener los datos para ecoinfo:', error);
+        res.status(500).json({ message: 'Error al obtener los datos para ecoinfo' });
+    }
+});
 
 
 module.exports = router;

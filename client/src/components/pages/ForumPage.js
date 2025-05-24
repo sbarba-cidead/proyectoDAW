@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format, toZonedTime } from 'date-fns-tz';
 import { FaCalendar, FaComment, FaCommentDots, FaSquareFull } from 'react-icons/fa';
+import { useUserContext } from '../../context/UserContext';
 import ForumPostModal from '../ForumPostModal';
 import ForumNewPostModal from '../ForumNewPostModal';
 
@@ -13,6 +14,7 @@ const ForumPage = () => {
 
   const { postId } = useParams();
   const navigate = useNavigate();
+  const { user } = useUserContext();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(numberPostShown);
@@ -85,13 +87,20 @@ const ForumPage = () => {
   };
 
   // controla la apertura del modal del post desde la ruta
-  const handleOpenModal = (post) => {
+  const handleOpenPostModal = (post) => {
     setSelectedPost(post);
     navigate(`/foro/post/${post._id}`); // actualiza la URL
   };
 
   // controla el cierre del modal del post desde la ruta
-  const handleCloseModal = () => {
+  const handleClosePostModal = () => {
+    if (selectedPost) {
+      // borra la sesión guardada del post abierto
+      sessionStorage.removeItem(`forum_post_${selectedPost._id}_state`);
+      // borra la posición de scroll de visualización del modal del post
+      sessionStorage.removeItem(`forum_post_${selectedPost._id}_scrollTop`);
+    }
+
     setSelectedPost(null);
     navigate('/foro'); // vuelve a la vista sin modal de post
   };
@@ -183,14 +192,14 @@ const ForumPage = () => {
   return (
     <div className="forum">
       <div className="header-container">
-        <div className="new-post-button-wrapper">
+        {user && (<div className="new-post-button-wrapper">
           <button
             className={`new-post-button ${isSmallWindow ? 'floating' : ''}`}
             onClick={() => setShowNewPostModal(true)}
           >
             {isSmallWindow ? '+' : '+ Nuevo post'}
           </button>
-        </div>
+        </div>)}
         <div className="category-select">
           <label>Categorías:</label>
           <div className="custom-select">
@@ -245,7 +254,7 @@ const ForumPage = () => {
         {filteredPosts.length > 0 && (
           <>
             {displayedPosts.map((post) => (
-              <div key={post.id} className="post" onClick={() => handleOpenModal(post)}>
+              <div key={post._id} className="post" onClick={() => handleOpenPostModal(post)}>
                 <div className="post-header">
                   <p className="dates">
                     <span className="created-container">
@@ -273,7 +282,7 @@ const ForumPage = () => {
                 <div className="post-footer">
                   <p className="created-info">
                     <span className="created-by-label">Creado por:</span>
-                    <span className="created-by">{post.createdBy?.username || 'Anónimo'}</span>
+                    <span className="created-by">{post.createdBy?.username || 'usuario eliminado'}</span>
                   </p>
                   <div className="spacer"></div>
                   <div className="replies">
@@ -302,13 +311,13 @@ const ForumPage = () => {
       {showNewPostModal && (
           <ForumNewPostModal
               onClose={() => setShowNewPostModal(false)}
-              onPostCreated={(post) => { handleCreateNewPost() }}
+              onPostCreated={handleCreateNewPost}
           />
       )}
 
       {/* modal para el post abierto */}
       {selectedPost && (
-        <ForumPostModal post={selectedPost} onClose={handleCloseModal} />
+        <ForumPostModal post={selectedPost} onClose={handleClosePostModal} />
       )}
 
     </div>

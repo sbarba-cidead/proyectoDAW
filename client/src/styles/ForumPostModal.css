@@ -87,6 +87,11 @@
     color: #2a852d;
 }
 
+/* texto del post */
+.post-content .post-content-text {
+    white-space: pre-wrap; /* permite saltos de linea */
+}
+
 /* botón para abrir el formulario de respuesta al post */
 .modal-content .post-content .post-reply-btn {
     background-color: #4CAF50;

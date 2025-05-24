@@ -1,15 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const ForumPost = require('../models/ForumPost');
-const PostCategory = require('../models/PostCategory')
+const PostCategory = require('../models/PostCategory');
 const ForumComment = require('../models/ForumComment');
+const authMiddleware = require('../middleware/authMiddleware');
 const mongoose = require('mongoose');
 
 // obtener todos los posts
 router.get('/forum-posts', async (req, res) => {
     try {
         const posts = await ForumPost.find()
-            .populate('createdBy', 'username')
+            .populate('createdBy', 'username fullname avatar score level')
             .populate('categories', 'name')
             .sort({ createdAt: -1 });  // ordena por fecha de creación más reciente
         res.json(posts);
@@ -34,7 +35,7 @@ router.get('/post-categories', async (req, res) => {
 router.get('/forum-posts/:id', async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id)
-            .populate('createdBy', 'username')
+            .populate('createdBy', 'username fullname avatar score level')
             .populate('categories', 'name');
 
         if (!post) return res.status(404).json({ message: 'Post no encontrado' });
@@ -53,7 +54,7 @@ router.get('/forum-posts/:id/replies', async (req, res) => {
     const replies = await ForumComment.find({ post: req.params.id })
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate('user', 'username')
+      .populate('user', 'username fullname avatar score level')
       .sort({ createdAt: 1 });
 
     const totalReplies = await ForumComment.countDocuments({ post: req.params.id });
@@ -69,23 +70,75 @@ router.get('/forum-posts/:id/replies', async (req, res) => {
   }
 });
 
+// búsqueda de categorías para la creación de post
+router.get('/post-categories-search', async (req, res) => {
+    const search = req.query.search || '';
+    console.log('Búsqueda recibida:', search);
+    try {
+        const categories = await PostCategory.find({
+            name: { $regex: search, $options: 'i' }
+        }).sort({ name: 1 });
+
+        res.json(categories);
+    } catch (error) {
+        console.error('Error al obtener categorías:', error);
+        res.status(500).json({ error: 'Error al obtener las categorías' });
+    }
+});
+
 // Crear un nuevo post
-router.post('/posts', async (req, res) => {
-  const { title, content, createdBy, categories, type } = req.body;
-
-  const newPost = new Post({
-    title,
-    content,
-    createdBy,
-    categories,
-    type
-  });
-
+router.post('/create-post', authMiddleware, async (req, res) => {
   try {
-    const savedPost = await newPost.save();
-    res.status(201).json(savedPost);
+    const { title, content, categories } = req.body;
+    const userId = req.userId; // obtenido del token a través del authMiddleware por seguridad
+
+    if (!title || !content) {
+        return res.status(400).json({ message: 'Faltan datos obligatorios' });
+    }
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Fallo de autenticación de usuario' });
+    }
+
+    const categoryIds = [];
+
+    // nota: las categorías se reciben como un string de _id de categoría si
+    // el usuario selecciona una categoría ya existente en el backend;
+    // y como un objeto con el nombre de la categoría si es una nueva
+
+    for (const cat of categories) {
+      if (typeof cat === 'string') { // el formato es un _id
+        // se incluye en el array
+        categoryIds.push(cat);
+      } else if (typeof cat === 'object' && cat.name) { // formato es objeto
+        // se confirma si la categoría está en el backend
+        let existing = await PostCategory.findOne({ name: cat.name });
+
+        if (!existing) { // si es una categoría nueva
+            // crea la nueva categoría
+            existing = await PostCategory.create({ name: cat.name });
+        }
+
+        // se incluye el _id en el array
+        categoryIds.push(existing._id);
+      }
+    }
+
+    const newPost = new ForumPost({
+        title,
+        content,
+        createdBy: userId,
+        type: 'post',
+        categories: categoryIds,
+        // createdAt, lastReplyAt y replies toman sus valores por defecto
+    });
+
+    await newPost.save(); // se guarda el nuevo post
+
+    res.status(201).json({ message: 'Post creado correctamente', post: newPost });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al crear post:', error);
+    res.status(500).json({ message: 'Error al crear post' });
   }
 });
 

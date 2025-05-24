@@ -5,6 +5,7 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
+const Joi = require('joi');
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -22,17 +23,38 @@ const storage = multer.diskStorage({
   }
 });
 
+// filtro de seguridad para aceptar solo imágenes
+function fileFilter(req, file, cb) {
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato de imagen no permitido. Solo se permiten imágenes JPEG o PNG'), false);
+  }
+}
+
+// subida de la imagen (se limita por seguridad a 10MB de tamaño)
 const upload = multer({
   storage,
-  fileFilter: function (req, file, cb) {
-    const allowedTypes = ['image/jpeg', 'image/png'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Formato de imagen no permitido'));
-    }
-  }
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter
 });
+
+// función de seguridad para comprobar el formato del nombre de 
+// fichero antes de eliminación de avatares antiguos
+function sanitizeFilename(name) {
+  // solo se permiten letras, números, guiones y guiones bajos
+  return name.replace(/[^a-zA-Z0-9-_]/g, '');
+}
+
+// validador de datos de usuario
+const updateUserSchema = Joi.object({
+  avatar: Joi.string().uri().optional(),
+  fullname: Joi.string().min(3).max(50).optional(),
+  username: Joi.string().alphanum().min(3).max(30).optional(),
+  email: Joi.string().email().optional()
+});
+
 
 // RUTAS //
 
@@ -62,7 +84,7 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
   }
 
   try {
-    const filename = req.body.filename; // nombre sin extensión
+    const filename = sanitizeFilename(req.body.filename); // nombre sin extensión
     const fullFilename = req.file.filename; // nombre con extensión
     const currentExt = path.extname(fullFilename); // extensión
     const avatarUrl = `/images/${fullFilename}`;
@@ -89,18 +111,24 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
 // ruta para actualizar datos de usuario
 router.put('/update', authMiddleware, async (req, res) => {
   const userId = req.userId;
-  const { avatar, fullname, username, email } = req.body;
+
+  // se recuperan los datos recibidos y se validan
+  const { error, value } = updateUserSchema.validate(req.body);
+
+  if (error) { // si hay fallo de validación de datos
+    return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
+  }
+
+  // verifica url de origen de la imagen del avatar proviene de /public/images
+  // if (value.avatar && !value.avatar.startsWith('/images/')) {
+  //   return res.status(400).json({ msg: 'URL de avatar inválida' });
+  // }
 
   try {
     // búsqueda y actualización de usuario en BD
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        avatar,
-        fullname,
-        username,
-        email,
-      },
+      value,
       { new: true } // devolverá el user actualizado
     ).select('avatar fullname username email');
 

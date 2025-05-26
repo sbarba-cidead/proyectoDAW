@@ -3,7 +3,8 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     padding: 20px;
-    max-width: 1000px;
+    box-sizing: border-box;
+    height: 100%;
     margin: 0 auto;
     font-family: Arial, sans-serif;
 }
@@ -67,11 +68,12 @@
 .search-products-container .search-suggestions li:hover {
     background-color: #45a049;
 }
+
+/* ---------------- */
   
 .recyclebins-container .results-container {
     display: flex;
     justify-content: center;
-    align-items: center;
     padding: 15px;
     background-color: #f4f4f4;
     border-radius: 10px;
@@ -79,8 +81,11 @@
 }
 
 .recyclebins-container .results-container .notice {
+    display: flex;
+    align-items: center;
     color: rgb(48, 48, 48);
-    text-align: center;
+    justify-content: center;
+    text-align: center;    
 }
   
 .recyclebins-container .results-container h2 {
@@ -93,18 +98,164 @@
     font-size: 16px;
     color: #555;
 }
-  
-.recyclebins-container .results-container img {
-    max-width: 100%;
-    height: auto;
-    margin-top: 20px;
-    border-radius: 10px;
+
+/* título encabezado de sección */
+.results-container .result h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
 }
- 
-@media (max-width: 850px) {
+
+.results-container .result .columns {
+    display: flex;
+    gap: 20px;
+    min-width: 0; 
+    align-items: stretch;
+    height: auto;
+}
+
+.results-container .result .column-left,
+.results-container .result .column-right {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* imagen del producto */
+.results-container .result .column-left img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.results-container .result .column-right {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+}
+
+.results-container .result .column-right > * {
+    flex-shrink: 0;
+}
+
+/* estilos de texto para los datos del producto */
+.results-container .result .column-right p,
+.results-container .result .recyclepoint-container {
+    margin: 10px 0;
+    color: #555;
+    font-size: 16px;
+}
+
+.results-container .result .column-right p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.results-container .result .column-right p strong {
+    flex-shrink: 0;
+}
+
+.results-container .result .column-right p .field-value {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.results-container .result .recyclepoint-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: auto;
+}
+
+/* imagen y texto del punto de reciclaje */
+.results-container .result .recyclepoint-image-container {
+    flex-grow: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 5px;
+}
+
+/* imagen del punto de reciclaje */
+.results-container .result .recyclepoint-image-container img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* descripción del producto */
+.results-container .result .description {
+    margin-top: 20px;
+    font-size: 1rem;
+    line-height: 1.4;
+    color: #555;
+    text-align: center;
+    justify-content: center
+}
+
+@media (max-width: 975px) {
     .recyclebins-container {
-      grid-template-columns: 1fr;
-      gap: 15px;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .results-container .result .column-left {
+        flex: 0 0 150px;
+    }
+
+    .results-container .result .column-left img {
+        width: 100%;
+        height: auto;
+        max-height: 150px;
+        object-fit: contain;
+    }
+}
+
+@media (max-width: 550px) {
+    .results-container .result .columns {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .results-container .result .column-left,
+    .results-container .result .column-right {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .results-container .result .column-right p {
+        display: block;
+        text-align: center;
+        margin: 10px 0;
+    }
+
+    .results-container .result .column-right p strong {
+        display: inline-block;
+        margin-right: 0.3em;
+    }
+
+    .results-container .result .column-right .recyclepoint-container strong{
+        text-align: center;
+    }
+
+    .results-container .result .recyclepoint-container {
+        order: 2;
+        margin-top: 15px;
+    }
+
+    .results-container .result .description {
+        order: 3;
+        margin-top: 20px;
+        text-align: center;
     }
 }
   

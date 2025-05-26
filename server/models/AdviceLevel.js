@@ -15,6 +15,8 @@ const adviceLevelSchema = new mongoose.Schema({
         required: true,
         unique: false,
     },
+}, {
+    collection: 'ecocalc_advicelevels_data'
 });
 
 module.exports = mongoose.model('AdviceLevel', adviceLevelSchema);

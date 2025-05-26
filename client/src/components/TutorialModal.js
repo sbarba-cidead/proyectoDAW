@@ -1,7 +1,9 @@
 import '../styles/TutorialModal.css';
 
 import { useState } from 'react';
-import { FaChartBar, FaCommentDots, FaGlobeEurope, FaGrinTongue, FaLock, FaPaperPlane, FaProjectDiagram, FaTools, FaTrophy } from 'react-icons/fa';
+import { FaChartBar, FaCommentDots, FaGlobeEurope } from 'react-icons/fa';
+import { FaGrinTongue, FaLock, FaPaperPlane } from 'react-icons/fa';
+import { FaProjectDiagram, FaTools, FaTrophy } from 'react-icons/fa';
 
 const TutorialModal = ({ onClose }) => {
   const [step, setStep] = useState(1);

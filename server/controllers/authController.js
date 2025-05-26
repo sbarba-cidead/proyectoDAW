@@ -19,7 +19,8 @@ const register = async (req, res) => {
         if (usernameExists) return res.status(400).json({ msg: 'Ya existe un usuario con ese nombre' });
 
         // encriptación de la contraseña con hash
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         // instanciación de un usuario usando el modelo User
         const newUser = new User({

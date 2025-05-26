@@ -7,9 +7,9 @@ const ContainerTypeSchema = new mongoose.Schema({
         required: true, 
         unique: true,
     },
-    label: {
+    name: {
         type: String,
-        required: true,
+        required: true, 
         unique: false,
     },
     color: {
@@ -19,15 +19,24 @@ const ContainerTypeSchema = new mongoose.Schema({
     },
     markerIcon: {
         type: String,
-        required: true, 
-        unique: false,
+        required: true,
     },
     markerShadow: {
         type: String,
-        required: false, 
-        unique: false,
+        required: false,
         default: "marker-shadow.png"
     },
+    image: {
+        type: String,
+        required: true,
+    },
+    materials: {
+        type: [String],
+        required: false,
+        default: []
+    },
+}, {
+    collection: 'recycle_container_types'
 });
 
 module.exports = mongoose.model('ContainerType', ContainerTypeSchema);

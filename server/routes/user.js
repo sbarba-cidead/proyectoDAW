@@ -3,9 +3,14 @@ var router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
 const Joi = require('joi');
+
+// variables de entorno para la ruta de subida de avatars
+const AVATAR_UPLOAD_DIR = path.join(__dirname, '..', process.env.AVATAR_UPLOAD_DIR);
+const AVATAR_PUBLIC_URL = process.env.AVATAR_PUBLIC_URL;
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -14,7 +19,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 // configuración necesaria para guardar archivos en public/images
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../public/images'));
+    cb(null, AVATAR_UPLOAD_DIR); // dirección a la que se sube la imagen
   },
   filename: function (req, file, cb) {
     const filename = req.body.filename;
@@ -63,6 +68,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     // toma el nombre de usuario y el avatar del usuario de la BD
     const user = await User.findById(req.userId)
+                            .populate('recyclingActivities')
                             .select('fullname username email avatar score');
 
     if (!user) { // si no se encuentra el usuario
@@ -77,6 +83,32 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// ruta para comprobar si username o email ya existen en otros usuarios
+router.post('/check-updated-data', async (req, res) => {
+  const { username, email } = req.body;
+
+  try {
+    if (username) {
+      const userExists = await User.findOne({ username });
+      if (userExists) {
+        return res.status(400).json({ error: 'USERNAME_EXISTS' });
+      }
+    }
+
+    if (email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ error: 'EMAIL_EXISTS' });
+      }
+    }
+
+    return res.status(200).json({ message: 'Datos disponibles' });
+  } catch (error) {
+    console.error('Error en verificación de duplicados:', error);
+    res.status(500).json({ error: 'SERVER_ERROR' });
+  }
+});
+
 // ruta para subir fichero de imagen al servidor
 router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
   if (!req.file) {
@@ -87,8 +119,8 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
     const filename = sanitizeFilename(req.body.filename); // nombre sin extensión
     const fullFilename = req.file.filename; // nombre con extensión
     const currentExt = path.extname(fullFilename); // extensión
-    const avatarUrl = `/images/${fullFilename}`;
-    const uploadDir = path.join(__dirname, '../public/images');    
+    const avatarUrl = `${AVATAR_PUBLIC_URL}/${fullFilename}`;
+    const uploadDir = AVATAR_UPLOAD_DIR;   
     const extensionsToCheck = ['.jpg', '.jpeg', '.png'];
 
     for (const ext of extensionsToCheck) {
@@ -101,7 +133,7 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
     }
 
     // si son correctas las operaciones se manda el url de subida de la imagen
-    res.status(200).json({ avatarUrl });
+    res.status(200).json({ uploadDir, fullFilename });
   } catch (error) {
     console.error('Error subiendo avatar:', error);
     res.status(500).json({ msg: 'Error al procesar el avatar en el servidor' });
@@ -116,7 +148,7 @@ router.put('/update', authMiddleware, async (req, res) => {
   const { error, value } = updateUserSchema.validate(req.body);
 
   if (error) { // si hay fallo de validación de datos
-    return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
+    //return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
   }
 
   // verifica url de origen de la imagen del avatar proviene de /public/images
@@ -141,6 +173,45 @@ router.put('/update', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error actualizando usuario:', error);
     res.status(500).json({ msg: 'Error al actualizar el usuario' });
+  }
+});
+
+// ruta para cambio de contraseña
+router.post('/change-password', authMiddleware, async (req, res) => {
+  const userId = req.userId;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ msg: 'Faltan datos obligatorios.' });
+  }
+
+  try {
+    // busca usuario en base de datos
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'Usuario no encontrado.' });
+    }
+
+    // verificar la contraseña antigua
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ msg: 'La contraseña actual es incorrecta.' });
+    }
+
+    // encriptación de la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // actualiza la contraseña en la base de datos
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ msg: 'Contraseña actualizada correctamente.' });
+
+  } catch (error) {
+    console.error('Error en /change-password:', error);
+    res.status(500).json({ msg: 'Error del servidor.' });
   }
 });
 

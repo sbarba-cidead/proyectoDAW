@@ -1,11 +1,13 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const dotenv = require('dotenv').config(); // importa variables de entorno
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const cors = require('cors'); //importa cors
-const dotenv = require('dotenv'); // importa variables de entorno
 const connectDB = require('./config/db'); //importa db.js para conectar a mongoDB
+
+const { domainToASCII } = require('url');
 
 // importa las rutas
 const authRouter = require('./routes/auth');
@@ -13,14 +15,10 @@ const userRouter = require('./routes/user');
 const levelsRouter = require('./routes/levels');
 const recycleRouter = require('./routes/recycle');
 const forumRouter = require('./routes/forum');
-const { domainToASCII } = require('url');
 
 var app = express();
 
 // FIN DE VARIABLES //
-
-// configura variables de entorno
-dotenv.config();
 
 // conectar a base de datos
 connectDB();
@@ -35,8 +33,7 @@ app.use(logger('dev'));
 app.use(express.json()); // activación de compatibilidad con json para express
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(express.static(path.join(__dirname, 'public'))); // carpeta pública
 
 // rutas
 app.use('/api/auth', authRouter) // ruta de autenticación
@@ -46,10 +43,8 @@ app.use('/api/recycle', recycleRouter); // ruta de reciclaje
 app.use('/api/forum', forumRouter); // ruta del foro
 
 
-// // Ruta de prueba
-// app.get('/', (req, res) => {
-//   res.send('Servidor funcionando');
-// });
+// ------------------//
+// manejo de errores //
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -66,5 +61,6 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
 
 module.exports = app;

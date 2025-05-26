@@ -26,6 +26,8 @@ const ecoQuestionSchema = new mongoose.Schema({
         required: true,
         unique: false,
     }
+}, {
+    collection: 'ecocalc_questions_data'
 });
 
 module.exports = mongoose.model('EcoQuestion', ecoQuestionSchema);

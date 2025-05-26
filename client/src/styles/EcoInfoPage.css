@@ -6,7 +6,7 @@
     justify-content: center;
 }
 
-.ecoinfo-grid {
+.ecoinfo-main-container .ecoinfo-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
@@ -15,7 +15,7 @@
 }
 
 /* enlace que envuelve toda la tarjeta */
-.ecoinfo-card-link {
+.ecoinfo-grid .ecoinfo-card-link {
     text-decoration: none;
     color: inherit;
     display: block;
@@ -23,7 +23,7 @@
 }
 
 /* tarjeta individual */
-.ecoinfo-card {
+.ecoinfo-grid .ecoinfo-card-link .ecoinfo-card {
     background: #f4f4f4;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -37,15 +37,15 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.ecoinfo-card:hover,
-.ecoinfo-card:focus {
+.ecoinfo-grid .ecoinfo-card-link .ecoinfo-card:hover,
+.ecoinfo-grid .ecoinfo-card-link .ecoinfo-card:focus {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
     outline: none;
 }
 
 /* contenedor para la imagen */
-.ecoinfo-image-container {
+.ecoinfo-card .ecoinfo-image-container {
     position: relative;
     width: 100%;
     aspect-ratio: 4 / 3;
@@ -55,7 +55,7 @@
 }
 
 /* imagen */
-.ecoinfo-image {
+.ecoinfo-card .ecoinfo-image {
     position: absolute;
     top: 0;
     left: 0;
@@ -66,7 +66,7 @@
 }
 
 /* título */
-.ecoinfo-title {
+.ecoinfo-card .ecoinfo-title {
     font-size: 18px;
     font-weight: bold;
     margin: 0 0 15px 0;
@@ -77,7 +77,7 @@
 }
 
 /* texto */
-.ecoinfo-text {
+.ecoinfo-card .ecoinfo-text {
     font-size: 14px;
     color: #555;
     margin: 0 0 15px 0;
@@ -89,13 +89,13 @@
     text-align: center;
 }
 
-.ecoinfo-text::after {
+.ecoinfo-card .ecoinfo-text::after {
     content: '';
     flex-grow: 1;
 }
 
 /* info de link */
-.ecoinfo-link-text {
+.ecoinfo-card .ecoinfo-link-text {
     min-height: 60px;
     display: flex;
     justify-content: center;
@@ -106,54 +106,54 @@
 }
 
 @media (max-width: 1050px) {
-    .ecoinfo-grid {
+    .ecoinfo-main-container .ecoinfo-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px 20px;
     }
 
-    .ecoinfo-image-container {
+    .ecoinfo-grid .ecoinfo-card-link .ecoinfo-card .ecoinfo-image-container {
         aspect-ratio: 4 / 2.5;
         margin-bottom: 10px;
     }
 
-    .ecoinfo-image {
+    .ecoinfo-image-container .ecoinfo-image {
         object-position: 50% 30%;
     }
 
-    .ecoinfo-text {
+    .ecoinfo-image-container .ecoinfo-text {
         min-height: 50px;
     }
 
-    .ecoinfo-link-text {
+    .ecoinfo-image-container .ecoinfo-link-text {
         margin-bottom: 5px;
     }
 }
 
 @media (max-width: 700px) {
-    .ecoinfo-grid {
+    .ecoinfo-main-container .ecoinfo-grid {
         grid-template-columns: 1fr;
         gap: 10px 0;
     }
 
-    .ecoinfo-image-container {
+    .ecoinfo-grid .ecoinfo-card-link .ecoinfo-card .ecoinfo-image-container {
         aspect-ratio: 4 / 1.8;
         margin-bottom: 8px;
     }
 
-    .ecoinfo-image {
+    .ecoinfo-image-container .ecoinfo-image {
         object-position: 50% 25%;
     }
 
-    .ecoinfo-title {
+    .ecoinfo-image-container .ecoinfo-title {
         min-height: 60px;
         margin-bottom: 8px;
     }
 
-    .ecoinfo-text {
+    .ecoinfo-image-container .ecoinfo-text {
         min-height: 60px;
     }
 
-    .ecoinfo-link-text {
+    .ecoinfo-image-container .ecoinfo-link-text {
         min-height: 30px;
         margin-bottom: 15px;
     }

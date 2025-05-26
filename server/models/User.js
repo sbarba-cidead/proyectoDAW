@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
     avatar: {
         type: String,
         required: false, 
-        default: '/images/default-avatar.png',
+        default: 'default-avatar.png',
     },
     fullname: {
         type: String,
@@ -38,6 +38,17 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: false,
         default: 'beginner'
+    },
+    recyclingActivities: { 
+        type: [mongoose.Schema.Types.ObjectId], 
+        ref: 'RecyclingActivity',
+        required: false,
+        default: []
+    },
+    messages: {
+        type: [],
+        required: false,
+        default: []
     }
 }, { timestamps: true });
 

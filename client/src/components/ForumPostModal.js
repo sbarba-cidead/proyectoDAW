@@ -1,8 +1,8 @@
 import '../styles/ForumPostModal.css';
 
 import { useState, useEffect, useRef, useContext, Fragment } from 'react';
-import { format, toZonedTime } from 'date-fns-tz';
 import { useUserContext } from '../context/UserContext';
+import { convertUTCDateTime } from '../utils/functions';
 
 const ForumPostModal = ({ post, onClose }) => {
     const { user } = useUserContext();
@@ -172,15 +172,6 @@ const ForumPostModal = ({ post, onClose }) => {
             console.error('Error creando el comentario:', error);
         }
     };
-
-    // convertir fecha/hora de UTC a hora España península
-    // y darle formato adecuado de salida
-    const convertUTCDateTime = (datetimeUTC) => {
-        const spanishZone = 'Europe/Madrid';
-
-        const datetimeLocal = toZonedTime(datetimeUTC, spanishZone);
-        return format(datetimeLocal, 'dd/MM/yyyy HH:mm', { timeZone: spanishZone });
-    }
     
 
     return (

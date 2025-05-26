@@ -73,9 +73,10 @@ router.get('/forum-posts/:id/replies', async (req, res) => {
 // búsqueda de categorías para la creación de post
 router.get('/post-categories-search', async (req, res) => {
     const search = req.query.search || '';
-    console.log('Búsqueda recibida:', search);
+
     try {
         const categories = await PostCategory.find({
+            // busca por coincidencia parcial, case-insensitive
             name: { $regex: search, $options: 'i' }
         }).sort({ name: 1 });
 

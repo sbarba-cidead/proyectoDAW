@@ -1,12 +1,13 @@
+import '../styles/UserEditModal.css';
+
 import { useState, useEffect, useRef } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
-import '../styles/UserEditModal.css';
 
 function UserEditModal({ userData, onSave, setNotificationMessage, setNotificationMessageType,
                           notificationMessage, notificationMessageType, onClose }) {
   const { avatar, fullname, username, email } = userData;
   const [editData, setEditData] = useState({
-    avatar: avatar,
+    avatar: avatar, // imagen de avatar con url completa
     fullname: fullname,
     username: username,
     email: email,
@@ -89,6 +90,29 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
   // función para manejar la confirmación al guardar
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+     // validaciones básicas en front
+    if (!editData.fullname.trim() || !editData.username.trim() || !editData.email.trim()) {
+      setNotificationMessage('Por favor, rellena todos los campos.');
+      setNotificationMessageType('error');
+      setTimeout(() => setNotificationMessage(''), 3000); // se cierra notificación pasado un tiempo
+      return;
+    }
+
+    // verificación si no se ha cambiado nada
+    const isSameData =
+      editData.fullname.trim() === initialData.fullname.trim() &&
+      editData.username.trim() === initialData.username.trim() &&
+      editData.email.trim() === initialData.email.trim() &&
+      !selectedImageFile;
+
+    if (isSameData) {
+      setNotificationMessage('No se han realizado cambios.\nLos datos introducidos son los originales.');
+      setNotificationMessageType('info');
+      setTimeout(() => setNotificationMessage(''), 3000);
+      return;
+    }
+
     
     // llama a la función de guardado en BD
     // y le pasa los nuevos datos del usuario
@@ -139,7 +163,6 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Nombre completo"
               value={editData.fullname}
               onChange={handleInputChange}
-              required
             />
             <div className="reset-icon">
               <FaUndo onClick={() => handleReset('fullname')} />
@@ -154,7 +177,6 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Nombre de usuario"
               value={editData.username}
               onChange={handleInputChange}
-              required
             />
             <div className="reset-icon">
               <FaUndo onClick={() => handleReset('username')} />
@@ -169,7 +191,6 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Correo electrónico"
               value={editData.email}
               onChange={handleInputChange}
-              required
             />
             <div className="reset-icon">
               <FaUndo onClick={() => handleReset('email')} />

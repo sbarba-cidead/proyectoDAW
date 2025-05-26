@@ -6,16 +6,20 @@ import { FaTree, FaApple, FaCrown, FaStar } from 'react-icons/fa';
 import { FaTrashAlt, FaPen, FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import UserEditModal from '../UserEditModal';
+import ChangePasswordModal from '../ChangePasswordModal';
+import { convertUTCDateTime } from '../../utils/functions';
+
 
 function ProfilePage() {
   const [user, setUserLocal] = useState(null);
   const { setUserGlobalContext } = useUserContext();
   const [loading, setLoading] = useState(true);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationMessageType, setNotificationMessageType] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL;
-  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
   // Datos de prueba del usuario
   // const user = {
@@ -64,14 +68,14 @@ function ProfilePage() {
         }
 
         setUserLocal({
-          avatar: `${baseUrl}${data.avatar}`,
+          avatar: `${avatarsUrl}/${data.avatar}`,
           fullname: data.fullname,
           email: data.email,
           username: data.username,
           score: data.score,
           level: levelData, // objeto completo con los datos del nivel
-          recyclingActivities: [], // se conectará más adelante
-          messages: [], // se conectará más adelante
+          recyclingActivities: data.recyclingActivities,
+          messages: data.messages,
         });
       } catch (error) {
         console.error('Error de red:', error);
@@ -89,9 +93,15 @@ function ProfilePage() {
     setShowEditProfile(true);
   };
 
+  // maneja el click en el botón de cambiar contraseña
+  const handleChangePassswordClick = () => {
+    // muestra el modal de cambio de contraseña
+    setShowChangePassword(true);
+  };
+
   // guardado de los datos de edición de perfil,
   // actualiza los datos del usuario en la base de datos
-  const handleSave = async (updatedData, selectedImageFile) => {
+  const handleEditProfileSave = async (updatedData, selectedImageFile) => {
     let avatarUpdated = false;
     // solicitud a la API para actualizar los datos en la base de datos
     try {
@@ -165,7 +175,7 @@ function ProfilePage() {
           body: formData,
         });
 
-        const uploadData = await uploadRes.json();
+        const uploadedImageData = await uploadRes.json(); // datos de la imagen subida, incluye uploadDir y fullFilename
 
         if (!uploadRes.ok) { // si hay error en la subida
           setNotificationMessage('El avatar no se han podido actualizar.\nInténtalo más tarde.');
@@ -181,7 +191,7 @@ function ProfilePage() {
         }
 
         // se actualiza la ruta del avatar en los datos del usuario
-        updatedData.avatar = uploadData.avatarUrl; //ej: /images/miavatar.jpg
+        updatedData.avatar = uploadedImageData.uploadDir; //ej: miavatar.jpg
         avatarUpdated = true;
       }
 
@@ -199,9 +209,11 @@ function ProfilePage() {
       const data = await response.json();
 
       if (response.ok) { // si el servidor responde con confirmación exitosa
+        // se va a cambiar el nombre de la imagen por la ruta completa
+        // para almacenarlo en los datos de usuario locales y del contexto global        
         if (selectedImageFile){ // si se editó el avatar
           // se actualiza la ruta relativa de la imagen del avatar
-          updatedData.avatar = `${baseUrl}${updatedData.avatar}`;
+          updatedData.avatar = `${avatarsUrl}/${updatedData.avatar}`;
         } 
 
         // se actualizan los datos de usuario en el contexto local:
@@ -254,6 +266,54 @@ function ProfilePage() {
     return avatarUpdated;
   };
 
+  // guardado de la nueva contraseña,
+  // actualiza la contraseña del usuario en la base de datos
+  const handleChangePasswordSave = async ({ oldPassword, newPassword, confirmPassword  }) => {
+    if (newPassword !== confirmPassword ) {
+      setNotificationMessage('La nueva contraseña y la confirmación no coinciden.');
+      setNotificationMessageType('error');
+      setTimeout(() => setNotificationMessage(''), 3000);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('usertoken');
+
+      const response = await fetch(`${apiUrl}/user/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setNotificationMessage('Contraseña cambiada correctamente.');
+        setNotificationMessageType('success');
+
+        setTimeout(() => {
+          setNotificationMessage('');
+          setShowChangePassword(false); // cierra el modal
+        }, 2000);
+      } else {
+        setNotificationMessage('Error al cambiar la contraseña. Inténtalo de nuevo.');
+        setNotificationMessageType('error');
+        setTimeout(() => setNotificationMessage(''), 3000); // oculta notificación pasado un tiempo
+      }
+    } catch (error) {
+      setNotificationMessage('No se pudo conectar con el servidor.');
+      setNotificationMessageType('error');
+      setTimeout(() => setNotificationMessage(''), 3000); // oculta notificación pasado un tiempo
+      console.error('Error de red:', error);
+    }
+  }
+
   function getLevelIcon(iconName) {
     const icons = {
       FaSeedling: <FaSeedling />,
@@ -275,13 +335,13 @@ function ProfilePage() {
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">
-            <img className="profile-photo" src={user.avatar + `?${new Date().getTime()}`} alt="Foto de usuario" />
+            <img className="profile-photo" src={`${user.avatar}?${Date.now()}`} alt="Foto de usuario" />
             <div className="profile-info">
               <h2 className="user-name">{user.fullname}</h2>
               <p className="user-email">{user.email}</p>
               <div className="profile-edit">
                 <a href="#" onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</a>
-                <a href="/cambiar-contraseña" className="change-password-link">Cambiar contraseña</a>
+                <a href="#" onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</a>
               </div>
             </div>
           </div>
@@ -321,13 +381,19 @@ function ProfilePage() {
               </div>
             </div>
             <h3>Actividades de Reciclaje</h3>
-            {/* <ul>
-              {user.recyclingActivities.map((activity) => (
-                <li key={activity.id}>
-                  {activity.activity} - {activity.date}
-                </li>
-              ))}
-            </ul> */}
+            {user.recyclingActivities && user.recyclingActivities.length > 0 ? (
+              <ul>
+                {user.recyclingActivities.map((activity) => (
+                  <li key={activity.id}>
+                    {activity.type} - {convertUTCDateTime(activity.date)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-message">
+                Aún no has realizado actividades de reciclaje. ¡Empieza hoy para ayudar al planeta!
+              </p>
+            )}            
           </div>
         </div>
 
@@ -336,21 +402,37 @@ function ProfilePage() {
             <h3>Mensajes en la comunidad</h3>
             <div className="messages-list">
               <h4>Temas iniciados:</h4>
-              {/* {user.messages.filter(msg => msg.type === 'sent').map((msg) => (
-                <div className="message" key={msg.id}>
-                  <p>{msg.content}</p>
-                  <div className="message-actions">
-                    <button className="edit-btn"><FaPen /></button>
-                    <button className="delete-btn"><FaTrashAlt /></button>
-                  </div>
-                </div>
-              ))} */}
+              {user.messages && user.messages.filter(msg => msg.type === 'post').length > 0 ?(
+                user.messages
+                  .filter(msg => msg.type === 'post')
+                  .map((msg) => (
+                    <div className="message" key={msg.id}>
+                      <p>{msg.content}</p>
+                      <div className="message-actions">
+                        <button className="edit-btn"><FaPen /></button>
+                        <button className="delete-btn"><FaTrashAlt /></button>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <p className="empty-message">
+                  Aún no has iniciado ningún tema. ¡Comparte tus ideas con la comunidad!
+                </p>
+              )}
               <h4>Mensajes de respuesta:</h4>
-              {/* {user.messages.filter(msg => msg.type === 'reply').map((msg) => (
-                <div className="message" key={msg.id}>
-                  <p>{msg.content}</p>
-                </div>
-              ))} */}
+              {user.messages && user.messages.filter(msg => msg.type === 'reply').length > 0 ? (
+                user.messages
+                  .filter(msg => msg.type === 'reply')
+                  .map((msg) => (
+                    <div className="message" key={msg.id}>
+                      <p>{msg.content}</p>
+                    </div>
+                  ))
+              ) : (
+                <p className="empty-message">
+                  No tienes mensajes de respuesta todavía. ¡Anímate a participar!
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -360,12 +442,23 @@ function ProfilePage() {
       {showEditProfile && 
         <UserEditModal
           userData={user}
-          onSave={handleSave}
+          onSave={handleEditProfileSave}
           setNotificationMessage={setNotificationMessage}
           setNotificationMessageType={setNotificationMessageType}
           notificationMessage={notificationMessage}
           notificationMessageType={notificationMessageType}
           onClose={() => setShowEditProfile(false)} />}
+
+      {/* modal para editar la contraseña */}
+      {showChangePassword && 
+        <ChangePasswordModal
+          userData={user}
+          onSave={handleChangePasswordSave}
+          setNotificationMessage={setNotificationMessage}
+          setNotificationMessageType={setNotificationMessageType}
+          notificationMessage={notificationMessage}
+          notificationMessageType={notificationMessageType}
+          onClose={() => setShowChangePassword(false)} />}
     </div>
   );
 }

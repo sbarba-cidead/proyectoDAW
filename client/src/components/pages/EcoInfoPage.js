@@ -1,13 +1,35 @@
 import '../../styles/EcoInfoPage.css';
 
 import { useEffect, useState } from 'react';
+import { useUserContext } from '../../context/UserContext';
+import { sendRecyclingActivity } from '../../utils/functions';
+
 
 function EcoInfoPage() {
+    const { user, refreshUser } = useUserContext();
     const [cards, setCards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const apiUrl = process.env.REACT_APP_API_URL;
     const baseUrl = process.env.REACT_APP_BASE_URL;
+    
+
+    // función para guardar una nueva actividad de reciclaje
+    const handleRecyclingActivity = async (link) =>{
+        if (!user) { // si no hay usuario iniciado
+            window.open(link, '_blank'); // se abre la ventana del link
+            return; // si no hay usuario iniciado no guarda la actividad
+        }
+
+        try {
+            await sendRecyclingActivity('Informarse sobre Sostenibilidad');
+            await refreshUser(); // recarga los datos del usuario en contexto global
+        } catch (error) {
+            console.error('Error registrando actividad de reciclaje:', error.message);
+        } finally {
+            window.open(link, '_blank'); // se abre la ventana del link
+        }
+    }    
 
     useEffect(() => {
         fetch(`${apiUrl}/recycle/eco-info-cards`)
@@ -38,9 +60,13 @@ function EcoInfoPage() {
                     <a
                         className="ecoinfo-card-link"
                         href={card.link}
-                        target="_blank"
+                        target="_blank" // se abre en nueva pestaña
                         rel="noopener noreferrer"
                         key={index}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleRecyclingActivity(card.link);
+                        }}
                     >
                         <article className="ecoinfo-card" tabIndex={0}>
                             <div className="ecoinfo-image-container">

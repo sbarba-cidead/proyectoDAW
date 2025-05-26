@@ -274,6 +274,19 @@
     font-weight: bold;
 }
 
+/* diseño para los mensajes alternativos si no hay datos */
+.body-section .empty-message {
+    color: #777;
+    text-align: center;
+    padding: 30px 20px;
+    background-color: #fafafa;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 1.2rem;
+    user-select: none;
+}
+
 /* Sección de mensajes escritos por el usuario */
 .body-section .box-content-2 {
     display: flex;

@@ -12,7 +12,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   const { isRegistering, credential, password, fullname, username, email } = formData;
   const modalRef = useRef(); // referencia para el modal
   const apiUrl = process.env.REACT_APP_API_URL;
-  const baseUrl = process.env.REACT_APP_BASE_URL;
+  const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
   // toggle para mostrar u ocultar contraseña
   const handlePasswordToggle = () => {
@@ -117,7 +117,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
           // en el contexto global del usuario
           setUserGlobalContext({
             username: data.user.username,
-            avatar: `${baseUrl}${data.user.avatar}`,
+            avatar: `${avatarsUrl}/${data.user.avatar}`, // guarda con la url completa
           });
 
           // muestra mensaje de confirmación

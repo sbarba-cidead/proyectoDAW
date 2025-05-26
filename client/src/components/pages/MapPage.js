@@ -6,13 +6,15 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
 import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
+import { useUserContext } from '../../context/UserContext';
+import { sendRecyclingActivity } from '../../utils/functions';
 
-const markerBasePath = '/map-markers/'; // ruta donde se guardan los marcadores
+const mapMarkersUrl = process.env.REACT_APP_MAP_MARKERS_URL;
 
 // creación de icono para los marcadores del mapa
 const createIcon = (iconFilename) => L.icon({
-    iconUrl: `${markerBasePath}${iconFilename}`,
-    shadowUrl: `${markerBasePath}marker-shadow.png`,
+    iconUrl: `${mapMarkersUrl}/${iconFilename}`,
+    shadowUrl: `${mapMarkersUrl}/marker-shadow.png`,
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
@@ -20,9 +22,9 @@ const createIcon = (iconFilename) => L.icon({
 });
 
 // marcador para el usuario
-const redUSerIcon = createIcon('marker-user-icon-red.png');
+const redUSerIcon = createIcon(`${mapMarkersUrl}/marker-user-icon-red.png`);
 // marcador genérico
-const whiteIcon = createIcon('marker-icon-white.png');
+const whiteIcon = createIcon(`${mapMarkersUrl}/marker-icon-white.png`);
 
 // para puntos genéricos sin referencia a un icono
 const createIconFromName = (filename) => {
@@ -45,6 +47,7 @@ function MoveMap({ coords }) {
 }
 
 function MapPage() {
+    const { user, refreshUser } = useUserContext();
     const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano (punto por defecto)
     const [direction, setDirection] = useState('');
     const [result, setResult] = useState(null); // coordenadas de la dirección del usuario
@@ -92,6 +95,18 @@ function MapPage() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // función para guardar una nueva actividad de reciclaje
+    const handleRecyclingActivity = async () =>{
+        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+
+        try {
+            await sendRecyclingActivity('Buscar puntos de reciclaje');
+            await refreshUser(); // recarga los datos del usuario en contexto global
+        } catch (error) {
+            console.error('Error registrando actividad de reciclaje:', error.message);
+        }
+    }  
+
     const searchDirection = async () => {
         if (!direction) return;
 
@@ -117,6 +132,8 @@ function MapPage() {
                     .sort((a, b) => a.distance - b.distance);
 
                     setOrderedPoints(ordered);
+
+                    await handleRecyclingActivity();
             } else {
                 setResult(null);
                 setError('No se ha encontrado ninguna dirección con esos datos.');

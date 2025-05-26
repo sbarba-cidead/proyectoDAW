@@ -40,6 +40,12 @@
   color: #2f855a;
 }
 
+.notification-message.info {
+  background-color: #e6ffed;
+  border: 1px solid #b2f5ea;
+  color: #2f8581;
+}
+
 /* animación para el mensaje de notificación */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-60px); }

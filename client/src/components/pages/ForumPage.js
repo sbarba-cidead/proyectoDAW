@@ -2,11 +2,11 @@ import '../../styles/ForumPage.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { format, toZonedTime } from 'date-fns-tz';
 import { FaCalendar, FaComment, FaCommentDots, FaSquareFull } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import ForumPostModal from '../ForumPostModal';
 import ForumNewPostModal from '../ForumNewPostModal';
+import { convertUTCDateTime } from '../../utils/functions';
 
 const ForumPage = () => {
   const numberPostShown = 5
@@ -174,14 +174,6 @@ const ForumPage = () => {
   // determina si hay más posts disponibles para mostrar
   const hasMore = visibleCount < filteredPosts.length;
 
-  // convertir fecha/hora de UTC a hora España península
-  // y darle formato adecuado de salida
-  const convertUTCDateTime = (datetimeUTC) => {
-    const spanishZone = 'Europe/Madrid';
-
-    const datetimeLocal = toZonedTime(datetimeUTC, spanishZone);
-    return format(datetimeLocal, 'dd/MM/yyyy HH:mm', { timeZone: spanishZone });
-  }
 
   function handleCreateNewPost() {
 

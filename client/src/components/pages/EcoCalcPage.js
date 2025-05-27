@@ -1,10 +1,13 @@
 import '../../styles/EcoCalcPage.css';
 
 import { useState, useEffect } from 'react';
+import { useUserContext } from '../../context/UserContext';
+import { sendRecyclingActivity } from '../../utils/functions';
 
 const improvementIntro = 'Aquí tienes algunos consejos personalizados para mejorar tu impacto ecológico:';
 
 function EcoCalcPage() {
+    const { user, refreshUser } = useUserContext();
     const [carbonQuestions, setCarbonQuestions] = useState([]);
     const [waterQuestions, setWaterQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -39,7 +42,7 @@ function EcoCalcPage() {
         fetchQuestions();
     }, []);
 
-    //
+    // se obtienen los datos para cálculo de resultado y consejos
     useEffect(() => {
         const fetchAdviceData = async () => {
             try {
@@ -56,6 +59,25 @@ function EcoCalcPage() {
         };
         fetchAdviceData();
     }, []);
+
+    useEffect(() => {
+        if (carbonFootprint && waterFootprint) {
+            handleRecyclingActivity();
+        }
+    }, [carbonFootprint, waterFootprint]);
+
+    // función para guardar una nueva actividad de reciclaje
+    const handleRecyclingActivity = async () =>{
+        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+
+        try {
+            await sendRecyclingActivity('Calcular huella ecológica');
+            await refreshUser(); // recarga los datos del usuario en contexto global
+        } catch (error) {
+            console.error('Error registrando actividad de reciclaje:', error.message);
+        }
+    }  
+    
 
     // reinicio de los formularios para nuevo cálculo
     const handleReset = () => {
@@ -161,7 +183,13 @@ function EcoCalcPage() {
                     <p className="result info">La media actual en España es de 4,68 t CO₂/año por individuo.</p>,
                     <div className="result div-line" />,
                     <p className="result info sub">Más información:</p>,
-                    <a href="https://www.esagua.es/calculo-de-la-huella-hidrica/" className="result info link">¿Qué es la huella hídrica? </a>,
+                    <a 
+                        href="https://www.esagua.es/calculo-de-la-huella-hidrica/" 
+                        target="_blank" 
+                        className="result info link"
+                    >
+                        ¿Qué es la huella hídrica?
+                    </a>,
                 ]}                
             </div>
 
@@ -184,9 +212,27 @@ function EcoCalcPage() {
                     <p className="result info">La media actual en España es de 4,68 m³/año por individuo.</p>,
                     <div className="result div-line" />,
                     <p className="result info sub">Más información:</p>,
-                    <a href="https://calculatuhuella.consumo.gob.es/" className="result info link">Huella de carbono ciudadana</a>,
-                    <a href="https://www.miteco.gob.es/es/cambio-climatico/temas/mitigacion-politicas-y-medidas/calculadoras.html" className="result info link">Huella de carbono empresarial</a>,
-                    <a href="https://serviciosempresariales.camaramadrid.es/sostenibilidad/calcula-huella-carbono/" className="result info link">Cámara de comercio</a>
+                    <a 
+                        href="https://calculatuhuella.consumo.gob.es/" 
+                        target="_blank" 
+                        className="result info link"
+                    >
+                        Huella de carbono ciudadana
+                    </a>,
+                    <a 
+                        href="https://www.miteco.gob.es/es/cambio-climatico/temas/mitigacion-politicas-y-medidas/calculadoras.html" 
+                        target="_blank" 
+                        className="result info link"
+                    >
+                        Huella de carbono empresarial
+                    </a>,
+                    <a 
+                        href="https://serviciosempresariales.camaramadrid.es/sostenibilidad/calcula-huella-carbono/" 
+                        target="_blank" 
+                        className="result info link"
+                    >
+                        Cámara de comercio
+                    </a>
                 ]}
             </div>
 

@@ -35,9 +35,9 @@ const UserSchema = new mongoose.Schema({
         }
     },
     level: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserLevel',
         required: false,
-        default: 'beginner'
     },
     recyclingActivities: { 
         type: [mongoose.Schema.Types.ObjectId], 

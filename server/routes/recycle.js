@@ -7,6 +7,7 @@ const EcoQuestion = require('../models/EcoQuestion');
 const AdviceLevel = require('../models/AdviceLevel');
 const EcoInfoCard = require('../models/EcoInfo/EcoInfoCard');
 const RecycleGuideData = require('../models/RecycleGuide/RecycleGuideData');
+const UserLevel = require('../models/UserLevel');
 const User = require('../models/User')
 const RecyclingActivity = require('../models/RecyclingActivity');
 const ImprovementTip = require('../models/ImprovementTip');
@@ -30,13 +31,37 @@ router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
     const savedRecyclingActivity = await newRecyclingActivity.save();
 
     // Actualizar el usuario añadiendo la referencia a la actividad
-    await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       userId,
       { $push: { recyclingActivities: savedRecyclingActivity._id } },
       { new: true }
-    );
+    ).populate('recyclingActivities');
 
-    res.status(201).json({ message: 'Actividad guardada', recyclingActivity: savedRecyclingActivity });
+    // recalcula score del usuario (5 puntos por actividad)
+    const newScore = parseInt(user.recyclingActivities.length * 5, 10);
+
+    // actualiza score del usuario
+    user.score = newScore;    
+
+    // busca el nivel de usuario (userlevel) adecuado para los puntos (score)
+    const userLevel = await UserLevel.findOne({
+      minScore: { $lte: newScore },
+      maxScore: { $gte: newScore }
+    });
+
+    // guarda la referencia al nivel
+    if (userLevel) {
+      user.level = userLevel._id;
+    }
+
+    // actualiza usuario en BD con todos los nuevos datos
+    await user.save();
+
+    res.status(201).json({ 
+      message: 'Actividad guardada', 
+      recyclingActivity: savedRecyclingActivity,
+      newScore: user.score
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error guardando la actividad' });
@@ -46,7 +71,10 @@ router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
 // puntos de reciclaje para el mapa
 router.get('/recycle-points', async (req, res) => {
   try {
-    const points = await MapRecyclePoint.find({});
+    const points = await MapRecyclePoint.find({})
+                                        .populate('containerType')
+                                        .lean();
+
     res.json(points);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los puntos de reciclaje' });
@@ -75,7 +103,7 @@ router.get('/eco-questions', async (req, res) => {
     : {};
 
   try {
-    const questions = await EcoQuestion.find(filter);
+    const questions = await EcoQuestion.find(filter).lean();
     res.json(questions);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener las preguntas' });
@@ -85,7 +113,7 @@ router.get('/eco-questions', async (req, res) => {
 // niveles de huella ecológica para consejos de mejora
 router.get('/eco-advice-levels', async (req, res) => {
   try {
-    const levels = await AdviceLevel.find({});
+    const levels = await AdviceLevel.find({}).lean();
     res.json(levels);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los niveles de consejo' });
@@ -95,7 +123,7 @@ router.get('/eco-advice-levels', async (req, res) => {
 // consejos de mejora para la huella ecológica
 router.get('/eco-improvement-rules', async (req, res) => {
   try {
-    const rules = await ImprovementTip.find({});
+    const rules = await ImprovementTip.find({}).lean();
     res.json(rules);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener las reglas de mejora' });
@@ -105,7 +133,7 @@ router.get('/eco-improvement-rules', async (req, res) => {
 // información para las tarjetas de la página ecoinfo
 router.get('/eco-info-cards', async (req, res) => {
     try {
-        const cards = await EcoInfoCard.find();
+        const cards = await EcoInfoCard.find().lean();
         res.status(200).json(cards);
     } catch (error) {
         console.error('Error al obtener los datos para ecoinfo:', error);
@@ -122,14 +150,14 @@ router.get('/eco-guide-data', async (req, res) => {
         const regex = new RegExp(search, 'i');
 
                 // DEPURACIÓN: imprime todo lo que hay en la colección
-        const allData = await RecycleGuideData.find({});
+        const allData = await RecycleGuideData.find({}).lean();
         console.log("Todos los productos en la colección:", allData.map(p => p.name));
 
         const products = await RecycleGuideData.find({
            // busca por coincidencia parcial, case-insensitive
             // name: { $regex: search, $options: 'i' }
             name: regex
-        }).sort({ name: 1 });
+        }).sort({ name: 1 }).lean();
 
 
         console.log("Productos encontrados:", products.map(p => p.name));

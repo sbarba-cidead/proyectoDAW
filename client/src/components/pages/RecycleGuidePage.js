@@ -1,6 +1,8 @@
 import '../../styles/RecycleGuidePage.css';
 
 import { useState, useEffect } from "react";
+import { useUserContext } from '../../context/UserContext';
+import { sendRecyclingActivity } from '../../utils/functions';
 
 
 // función para eliminar tildes y normalizar texto
@@ -11,6 +13,7 @@ const normalizarTexto = (texto) => {
 };
 
 function RecycleGuidePage() {
+    const { user, refreshUser } = useUserContext();
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState("");
     const [result, setResult] = useState(null);
@@ -39,6 +42,18 @@ function RecycleGuidePage() {
         fetchFilteredProducts();
     }, [searchData, apiUrl]);
 
+    // función para guardar una nueva actividad de reciclaje
+    const handleRecyclingActivity = async () =>{
+        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+
+        try {
+            await sendRecyclingActivity('Usar guía de reciclaje');
+            await refreshUser(); // recarga los datos del usuario en contexto global
+        } catch (error) {
+            console.error('Error registrando actividad de reciclaje:', error.message);
+        }
+    }  
+
     // filtra productos por nombre según lo que el usuario escribe, ignorando tildes
     const filteredProducts = products.filter((product) => {
         const normalizedName = normalizarTexto(product.name.toLowerCase());
@@ -59,6 +74,7 @@ function RecycleGuidePage() {
         setSelectedProduct(product.name);
         setSearchData(""); // limpia el campo de búsqueda
         setResult(product); // muestra la información del producto seleccionado
+        handleRecyclingActivity();
     };
 
     // Manejar la tecla "Enter"

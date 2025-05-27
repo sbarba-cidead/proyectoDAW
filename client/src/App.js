@@ -1,8 +1,10 @@
 import './App.css';
 
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 
 import { UserProvider } from './context/UserContext';
+import { WEBSITE_NAME } from './config/constants';
 
 import NotFoundPage from './components/error-pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,7 +20,32 @@ import ForumPage from './components/pages/ForumPage';
 import EcoInfoPage from './components/pages/EcoInfoPage';
 
 function AppContent() {
-  const location = useLocation(); // página que se está visitando
+  const [headerTitle, setHeaderTitle] = useState(WEBSITE_NAME);
+  const location = useLocation(); // localización de ruta url en la web
+
+  const pageTitles = {
+    "/perfil-usuario": "Datos de usuario",
+    "/herramientas": "Herramientas de Sostenibilidad",
+    "/calculadora-huella-ecologica": "Calculadora de Huella Ecológica",
+    "/mapa-reciclaje": "Mapa de Reciclaje",
+    "/contenedores-reciclaje": "Contenedores de Reciclaje",
+    "/foro": "Comunidad de Sostenibilidad",
+    "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
+  };
+    
+
+  // actualiza el título para la cabecera y la pestaña del navegador
+  useEffect(() => {
+    // calcula el título basado en la ruta que se está visitando
+    const currentPageName = Object.entries(pageTitles).find(([path]) =>
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    )?.[1] || ""; // si el path no está en pageTitles, será ""
+
+    const tabTile = currentPageName ? `${currentPageName} - ${WEBSITE_NAME}` : WEBSITE_NAME;
+
+    setHeaderTitle(currentPageName); // nombre para pasar al header
+    document.title = tabTile; // actualiza el nombre para la pestaña del navegador
+  }, [location.pathname]);
 
   // comprueba si la ruta actual es '/' (home)
   const isHome = location.pathname === '/';
@@ -26,7 +53,7 @@ function AppContent() {
   return (
     <div className="App">
       {/* Condicional para mostrar la Navbar solo si no es la ruta de Home */}
-      {!isHome && <Header />}
+      {!isHome && <Header currentTitle={headerTitle} />}
 
       <Routes>
         <Route path="/" element={

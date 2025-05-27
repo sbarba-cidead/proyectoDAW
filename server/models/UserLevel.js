@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // modelo para nivel de usuario según puntuación
-const UserSchema = new mongoose.Schema({
+const userLevelSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true, 
@@ -40,6 +40,8 @@ const UserSchema = new mongoose.Schema({
         required: true,
         unique: false,
     },
-}, { timestamps: false });
+}, { 
+    collection: 'userlevels'
+});
 
-module.exports = mongoose.model('Level', UserSchema);
+module.exports = mongoose.model('UserLevel', userLevelSchema);

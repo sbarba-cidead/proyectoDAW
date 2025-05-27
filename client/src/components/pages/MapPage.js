@@ -8,6 +8,7 @@ import { getDistance } from 'geolib';
 import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import { sendRecyclingActivity } from '../../utils/functions';
+import userIcon from '../../assets/marker-user-icon-red.png';
 
 const mapMarkersUrl = process.env.REACT_APP_MAP_MARKERS_URL;
 
@@ -21,16 +22,15 @@ const createIcon = (iconFilename) => L.icon({
     shadowSize: [41, 41]
 });
 
-// marcador para el usuario
-const redUSerIcon = createIcon(`${mapMarkersUrl}/marker-user-icon-red.png`);
-// marcador genérico
-const whiteIcon = createIcon(`${mapMarkersUrl}/marker-icon-white.png`);
-
-// para puntos genéricos sin referencia a un icono
-const createIconFromName = (filename) => {
-    if (!filename) return whiteIcon;
-    return createIcon(filename);
-};
+// icono para el usuario
+const redUserIcon = L.icon({
+  iconUrl: userIcon,  // URL importada correcta
+  shadowUrl: `${mapMarkersUrl}/marker-shadow.png`,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 // manejo del movimiento de zoom del mapa 
 // al cambiar coordenadas de foco
@@ -53,7 +53,6 @@ function MapPage() {
     const [result, setResult] = useState(null); // coordenadas de la dirección del usuario
     const [orderedPoints, setOrderedPoints] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null); // punto seleccionado en el mapa
-    const [containerTypes, setContainerTypes] = useState([]);
     const markersRef = useRef([]); // referencia de los marcadores del mapa
     const [error, setError] = useState(''); // mensaje de error en búsqueda de dirección
     const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 368);
@@ -65,25 +64,12 @@ function MapPage() {
             .then(res => res.json())
             .then(data => {
                 setOrderedPoints(data);
+                injectContainerColors(data);
             })
             .catch(error => {
                 console.error('Error recuperando los puntos de reciclaje:', error);
             });
-    }, []);
-
-    // solicita los tipos de contenedores de reciclaje
-    useEffect(() => {
-        fetch(`${apiUrl}/recycle/container-types`)
-            .then(res => res.json())
-            .then(data => {
-                setContainerTypes(data);
-                injectContainerColors(data);
-            })
-            .catch(error => {
-                console.error('Error recuperando tipos de contenedores:', error);
-            });
-    }, []);
-
+    }, [apiUrl]);
 
     // escucha a los cambios de tamaño de pantalla
     useEffect(() => {
@@ -149,30 +135,30 @@ function MapPage() {
         searchDirection();
     };
 
+    // selección de puntos en el mapa
     const handlePointSelect = (point) => {
         setSelectedPoint(point);
 
-        const marker = markersRef.current[point.id];
+        const marker = markersRef.current[point._id];
         
         if (marker) {
             marker.openPopup();
         }
     };
 
-    // creación de clases de estilo de color a partir de los tipos de contenedores
-    const injectContainerColors = (types) => {
+    const injectContainerColors = (points) => {
         if (document.getElementById('dynamic-container-colors')) return;
 
         const styleSheet = document.createElement("style");
         styleSheet.id = 'dynamic-container-colors';
 
-        types.forEach(container => {
-            const rule = `.icon-color-${container.type} { color: ${container.color}; }`;
+        points.forEach(point => {
+            const rule = `.icon-color-${point.containerType._id} { color: ${point.containerType.color}; }`;
             styleSheet.appendChild(document.createTextNode(rule));
         });
 
         document.head.appendChild(styleSheet);
-    };
+    };    
 
     return (
         <div className="recyclemap-container">
@@ -187,16 +173,15 @@ function MapPage() {
                     {(selectedPoint && <MoveMap coords={selectedPoint.coords} />)}
 
                     {orderedPoints.map(p => {
-                        const containerType = containerTypes.find(c => c.type === p.type);
-                        const icon = containerType ? createIconFromName(containerType.markerIcon) : whiteIcon;
+                        const icon = createIcon(p.containerType.markerIcon);
 
                         return (
                             <Marker
-                                key={p.id}
+                                key={p._id}
                                 position={p.coords}
                                 icon={icon}
                                 eventHandlers={{ click: () => handlePointSelect(p) }}
-                                ref={(el) => { markersRef.current[p.id] = el; }}
+                                ref={(el) => { markersRef.current[p._id] = el; }}
                             >
                                 <Popup>{p.name}</Popup>
                             </Marker>
@@ -205,7 +190,7 @@ function MapPage() {
 
 
                     {result && (
-                        <Marker position={result} icon={redUSerIcon}>
+                        <Marker position={result} icon={redUserIcon}>
                             <Popup>Ubicación buscada</Popup>
                         </Marker>
                     )}
@@ -235,8 +220,8 @@ function MapPage() {
                         <h3>Puntos cercanos</h3>
                         <ul className="recycle-list">
                             {orderedPoints.map(p => (
-                                <li key={p.id} onClick={() => handlePointSelect(p)}>
-                                    <FaSquareFull className={`color-indicator icon-color-${p.type}`} />
+                                <li key={p._id} onClick={() => handlePointSelect(p)}>
+                                    <FaSquareFull className={`color-indicator icon-color-${p.containerType?._id}`} />
                                     {p.name} {p.distance ? `- ${(p.distance / 1000).toFixed(2)} km` : ''}
                                 </li>
                             ))}

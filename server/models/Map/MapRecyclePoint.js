@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 
 // modelo para puntos de reciclaje en mapa
 const RecyclePointSchema = new mongoose.Schema({
-    id: {
-        type: Number,
-        required: true, 
-        unique: true,
-    },
     name: {
         type: String,
         required: true, 
@@ -17,8 +12,9 @@ const RecyclePointSchema = new mongoose.Schema({
         required: true,
         unique: false,
     },
-    type: {
+    containerType: {
         type: String,
+        ref: 'ContainerType',
         required: true, 
         unique: false,
     },

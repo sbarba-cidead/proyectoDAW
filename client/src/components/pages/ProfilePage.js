@@ -14,6 +14,7 @@ function ProfilePage() {
   const [user, setUserLocal] = useState(null);
   const { setUserGlobalContext } = useUserContext();
   const [loading, setLoading] = useState(true);
+  const [avatarTimestamp, setAvatarTimestamp] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
@@ -58,22 +59,13 @@ function ProfilePage() {
           console.error('Error al obtener usuario:', data.msg);
         }
 
-        // petición de datos del nivel del usuario
-        const levelRes = await fetch(`${apiUrl}/level/get-level/${data.score}`);
-        const levelData = await levelRes.json();
-
-        if (!levelRes.ok) {
-          console.error('Error al obtener nivel:', levelData.msg);
-          return;
-        }
-
         setUserLocal({
           avatar: `${avatarsUrl}/${data.avatar}`,
           fullname: data.fullname,
           email: data.email,
           username: data.username,
           score: data.score,
-          level: levelData, // objeto completo con los datos del nivel
+          level: data.level, // objeto completo con los datos del nivel
           recyclingActivities: data.recyclingActivities,
           messages: data.messages,
         });
@@ -97,6 +89,13 @@ function ProfilePage() {
   const handleChangePassswordClick = () => {
     // muestra el modal de cambio de contraseña
     setShowChangePassword(true);
+  };
+
+  // mostrar mensaje temporal
+  const showTempNotification = (msg, type, duration) => {
+    setNotificationMessage(msg);
+    setNotificationMessageType(type);
+    setTimeout(() => setNotificationMessage(''), duration);
   };
 
   // guardado de los datos de edición de perfil,
@@ -127,41 +126,60 @@ function ProfilePage() {
 
           if (!checkRes.ok) { // si devuelve mensaje de error
             if (checkData.error === 'USERNAME_EXISTS') {
-              setNotificationMessage('El nombre de usuario introducido ya está en uso.');
-              setNotificationMessageType('error');
+              showTempNotification('El nombre de usuario introducido ya está en uso.', 'error', 3000);
             } else if (checkData.error === 'EMAIL_EXISTS') {
-              setNotificationMessage('El correo electrónico introducido ya está en uso.');
-              setNotificationMessageType('error');
-            } else {              
-              setNotificationMessage('Error al verificar los datos.\nIntentálo más tarde.');
-              setNotificationMessageType('error');
-
+              showTempNotification('El correo electrónico introducido ya está en uso.', 'error', 3000);
+            } else {   
+              showTempNotification('Error al verificar los datos.\nIntentálo más tarde.', 'error', 3000);
               console.error('Error al verificar duplicados:', checkData.error);             
             }
-
-            // oculta el mensaje pasado un tiempo
-            setTimeout(() => {
-              setNotificationMessage('');
-            }, 2000); 
 
             return;
           }
         } catch (error) {
-          setNotificationMessage('Error al verificar los datos.\nIntentálo más tarde.');
-          setNotificationMessageType('error');
-
+          showTempNotification('Error al verificar los datos.\nIntentálo más tarde.', 'error', 3000);
           console.error('Error al verificar duplicados:', error);
-
-          // oculta el mensaje pasado un tiempo
-          setTimeout(() => {
-            setNotificationMessage('');
-          }, 2000);
 
           return;
         }
       }
+      
+      // se mandan los datos actualizados del usuario
+      const updateRes = await fetch(`${apiUrl}/user/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,  // envía el token del usuario
+        },
+        body: JSON.stringify(updatedData),  // envía los nuevos datos del usuario
+      });
+
+      // // si no se va a actualizar el avatar
+      // if (!selectedImageFile && user.avatar.startsWith(avatarsUrl)) {
+      //   updatedData.avatar = user.avatar.replace(`${avatarsUrl}/`, ''); // extrae solo el nombre del archivo
+      // }
+
+      // // se mandan los datos actualizados del usuario
+      // const updateRes = await fetch(`${apiUrl}/user/update`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${token}`,  // envía el token del usuario
+      //   },
+      //   body: JSON.stringify(updatedData),  // envía los nuevos datos del usuario
+      // });
+
+      // se espera confirmación de actualización en base de datos
+      const data = await updateRes.json();
+
+      if (!updateRes.ok) { // si responde con error
+        showTempNotification('Los datos no se han podido actualizar.\nInténtalo más tarde.', 'error', 3000);
+        console.error('Error al actualizar:', data.msg);
+        return;
+      }
 
       // si se ha actualizado el avatar, se sube el fichero al servidor
+      let newAvatarFilename = user.avatar;
       if (selectedImageFile) {
         const formData = new FormData();
         formData.append('filename', `${"avatar-"}${updatedData.username}`); // se nombra el fichero con el nombre de usuario
@@ -178,89 +196,79 @@ function ProfilePage() {
         const uploadedImageData = await uploadRes.json(); // datos de la imagen subida, incluye uploadDir y fullFilename
 
         if (!uploadRes.ok) { // si hay error en la subida
-          setNotificationMessage('El avatar no se han podido actualizar.\nInténtalo más tarde.');
+          showTempNotification('El avatar no se han podido actualizar.\nInténtalo más tarde.', 'error', 3000);
           console.error('Error al actualizar:', data.msg);
-          setNotificationMessageType('error');
-
-          // oculta el mensaje pasado un tiempo
-          setTimeout(() => {
-            setNotificationMessage('');
-          }, 2000);
 
           return;
         }
 
-        // se actualiza la ruta del avatar en los datos del usuario
-        updatedData.avatar = uploadedImageData.uploadDir; //ej: miavatar.jpg
-        avatarUpdated = true;
-      }
+        // // se actualiza la ruta del avatar en los datos del usuario
+        // updatedData.avatar = uploadedImageData.fullFilename; //ej: miavatar.jpg
+        // avatarUpdated = true;
 
-      // se mandan los datos actualizados del usuario
-      const response = await fetch(`${apiUrl}/user/update`, {
+        newAvatarFilename = uploadedImageData.fullname;
+
+        // 🔹 Paso 3: Actualizar solo el avatar
+      const avatarRes = await fetch(`${apiUrl}/user/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,  // envía el token del usuario
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedData),  // envía los nuevos datos del usuario
+        body: JSON.stringify({ avatar: newAvatarFilename }),
       });
 
-      // se espera confirmación de actualización en base de datos
-      const data = await response.json();
-
-      if (response.ok) { // si el servidor responde con confirmación exitosa
-        // se va a cambiar el nombre de la imagen por la ruta completa
-        // para almacenarlo en los datos de usuario locales y del contexto global        
-        if (selectedImageFile){ // si se editó el avatar
-          // se actualiza la ruta relativa de la imagen del avatar
-          updatedData.avatar = `${avatarsUrl}/${updatedData.avatar}`;
-        } 
-
-        // se actualizan los datos de usuario en el contexto local:
-        // copia todos los campos de user y los actualiza con los de updatedData
-        setUserLocal({
-          ...user,
-          ...updatedData,
-        });
-
-        // se actualizan los datos de usuario en el contexto global
-        setUserGlobalContext({
-          username: updatedData.username,
-          avatar: updatedData.avatar,
-        });
-
-        // se muestra mensaje de confirmación
-        setNotificationMessage('Datos actualizados correctamente.');
-        setNotificationMessageType('success');
-
-        // pasado un tiempo
-        setTimeout(() => {
-          // oculta la notificación
-          setNotificationMessage('');
-
-          // cierra el modal
-          setShowEditProfile(false);
-        }, 2000);        
-      } else { // si responde con error
-        setNotificationMessage('Los datos no se han podido actualizar.\nInténtalo más tarde.');        
-        setNotificationMessageType('error');
-
-        console.error('Error al actualizar:', data.msg);
-
-        // oculta el mensaje pasado un tiempo
-        setTimeout(() => {
-          setNotificationMessage('');
-        }, 2000); 
+      if (!avatarRes.ok) {
+        showTempNotification('Error al actualizar el avatar.', 'error', 3000);
+        return;
       }
-    } catch (error) {      
-      setNotificationMessage('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.');
-      setNotificationMessageType('error');
 
-      // oculta el mensaje pasado un tiempo
-      setTimeout(() => {
-        setNotificationMessage('');
-      }, 2000); 
+        // recarga del avatar en la imagen
+        setAvatarTimestamp(Date.now());
+      }
 
+      // se va a cambiar el nombre de la imagen por la ruta completa
+      // para almacenarlo en los datos de usuario locales y del contexto global        
+      // if (selectedImageFile){ // si se editó el avatar
+      //   // se actualiza la ruta relativa de la imagen del avatar
+      //   updatedData.avatar = `${avatarsUrl}/${updatedData.avatar}`;
+      // } 
+
+      // updatedData.avatar = `${avatarsUrl}/${data.avatar}`;
+
+      const updatedUser = {
+        ...user,
+        ...updatedData,
+        avatar: `${avatarsUrl}/${newAvatarFilename}`
+      }
+      
+      setUserLocal(updatedUser);
+
+      setUserGlobalContext({
+        username: updatedUser.username,
+        avatar: updatedUser.avatar,
+      });
+
+      // // se actualizan los datos de usuario en el contexto local:
+      // // copia todos los campos de user y los actualiza con los de updatedData
+      // setUserLocal({
+      //   ...user,
+      //   ...updatedData,
+      // });
+
+      // // se actualizan los datos de usuario en el contexto global
+      // setUserGlobalContext({
+      //   username: updatedData.username,
+      //   avatar: updatedData.avatar,
+      // });
+
+      // se muestra mensaje de confirmación
+      showTempNotification('Datos actualizados correctamente.', 'success', 2000);
+
+      // pasado un tiempo cierra el modal
+      setTimeout(() => { setShowEditProfile(false); }, 2000);        
+    } catch (error) {     
+      showTempNotification('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.', 'error', 3000); 
       console.error('Error de red:', error);
     }
     return avatarUpdated;
@@ -270,16 +278,15 @@ function ProfilePage() {
   // actualiza la contraseña del usuario en la base de datos
   const handleChangePasswordSave = async ({ oldPassword, newPassword, confirmPassword  }) => {
     if (newPassword !== confirmPassword ) {
-      setNotificationMessage('La nueva contraseña y la confirmación no coinciden.');
-      setNotificationMessageType('error');
-      setTimeout(() => setNotificationMessage(''), 3000);
+      showTempNotification('La nueva contraseña y la confirmación no coinciden.', 'error', 3000);
+
       return;
     }
 
     try {
       const token = localStorage.getItem('usertoken');
 
-      const response = await fetch(`${apiUrl}/user/change-password`, {
+      const resChangePassword = await fetch(`${apiUrl}/user/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -291,25 +298,22 @@ function ProfilePage() {
         }),
       });
 
-      const data = await response.json();
+      const dataChangePassword = await resChangePassword.json();
 
-      if (response.ok) {
-        setNotificationMessage('Contraseña cambiada correctamente.');
-        setNotificationMessageType('success');
+      if (resChangePassword.ok) {
+        showTempNotification('Contraseña cambiada correctamente.', 'success', 2000);
 
-        setTimeout(() => {
-          setNotificationMessage('');
-          setShowChangePassword(false); // cierra el modal
-        }, 2000);
+        // cierra el modal
+        setTimeout(() => { setShowChangePassword(false); }, 2000);
       } else {
-        setNotificationMessage('Error al cambiar la contraseña. Inténtalo de nuevo.');
-        setNotificationMessageType('error');
-        setTimeout(() => setNotificationMessage(''), 3000); // oculta notificación pasado un tiempo
+        if (dataChangePassword.error === 'WRONG_CURRENT_PASS') {
+          showTempNotification('La contraseña actual introducida no es correcta.', 'error', 3000);
+        } else {
+          showTempNotification('Error al cambiar la contraseña. Inténtalo de nuevo.', 'error', 3000);
+        }        
       }
     } catch (error) {
-      setNotificationMessage('No se pudo conectar con el servidor.');
-      setNotificationMessageType('error');
-      setTimeout(() => setNotificationMessage(''), 3000); // oculta notificación pasado un tiempo
+      showTempNotification('No se pudo conectar con el servidor.', 'error', 2000);
       console.error('Error de red:', error);
     }
   }
@@ -328,20 +332,20 @@ function ProfilePage() {
   }
 
 
-  if (loading) return <div className="loading"></div>;
+  if (loading || !user) return <div className="loading"></div>;
 
   return (
     <div className="profile-container">
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">
-            <img className="profile-photo" src={`${user.avatar}?${Date.now()}`} alt="Foto de usuario" />
+            <img className="profile-photo" src={`${user.avatar}${avatarTimestamp ? `?t=${avatarTimestamp}` : ''}`} alt="Foto de usuario" />
             <div className="profile-info">
               <h2 className="user-name">{user.fullname}</h2>
               <p className="user-email">{user.email}</p>
               <div className="profile-edit">
-                <a href="#" onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</a>
-                <a href="#" onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</a>
+                <button onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</button>
+                <button onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</button>
               </div>
             </div>
           </div>
@@ -382,13 +386,17 @@ function ProfilePage() {
             </div>
             <h3>Actividades de Reciclaje</h3>
             {user.recyclingActivities && user.recyclingActivities.length > 0 ? (
-              <ul>
-                {user.recyclingActivities.map((activity) => (
-                  <li key={activity.id}>
-                    {activity.type} - {convertUTCDateTime(activity.date)}
-                  </li>
-                ))}
-              </ul>
+              <div className="scrollable-list">
+                <ul>
+                  {user.recyclingActivities
+                    .sort((a, b) => new Date(b.date) - new Date(a.date)) // ordena de más nuevas a más viejas
+                    .map((activity) => (
+                      <li key={activity._id}>
+                        {activity.type} - {convertUTCDateTime(activity.date)}
+                      </li>
+                    ))}
+                </ul>
+              </div>
             ) : (
               <p className="empty-message">
                 Aún no has realizado actividades de reciclaje. ¡Empieza hoy para ayudar al planeta!
@@ -402,37 +410,41 @@ function ProfilePage() {
             <h3>Mensajes en la comunidad</h3>
             <div className="messages-list">
               <h4>Temas iniciados:</h4>
-              {user.messages && user.messages.filter(msg => msg.type === 'post').length > 0 ?(
-                user.messages
-                  .filter(msg => msg.type === 'post')
-                  .map((msg) => (
-                    <div className="message" key={msg.id}>
-                      <p>{msg.content}</p>
-                      <div className="message-actions">
-                        <button className="edit-btn"><FaPen /></button>
-                        <button className="delete-btn"><FaTrashAlt /></button>
+              <div className="scrollable-message-section">
+                {user.messages && user.messages.filter(msg => msg.type === 'post').length > 0 ?(
+                  user.messages
+                    .filter(msg => msg.type === 'post')
+                    .map((msg) => (
+                      <div className="message" key={msg._id}>
+                        <p>{msg.content}</p>
+                        <div className="message-actions">
+                          <button className="edit-btn"><FaPen /></button>
+                          <button className="delete-btn"><FaTrashAlt /></button>
+                        </div>
                       </div>
-                    </div>
-                  ))
-              ) : (
-                <p className="empty-message">
-                  Aún no has iniciado ningún tema. ¡Comparte tus ideas con la comunidad!
-                </p>
-              )}
+                    ))
+                ) : (
+                  <p className="empty-message">
+                    Aún no has iniciado ningún tema. ¡Comparte tus ideas con la comunidad!
+                  </p>
+                )}
+              </div>
               <h4>Mensajes de respuesta:</h4>
-              {user.messages && user.messages.filter(msg => msg.type === 'reply').length > 0 ? (
-                user.messages
-                  .filter(msg => msg.type === 'reply')
-                  .map((msg) => (
-                    <div className="message" key={msg.id}>
-                      <p>{msg.content}</p>
-                    </div>
-                  ))
-              ) : (
-                <p className="empty-message">
-                  No tienes mensajes de respuesta todavía. ¡Anímate a participar!
-                </p>
-              )}
+              <div className="scrollable-message-section">
+                {user.messages && user.messages.filter(msg => msg.type === 'reply').length > 0 ? (
+                  user.messages
+                    .filter(msg => msg.type === 'reply')
+                    .map((msg) => (
+                      <div className="message" key={msg._id}>
+                        <p>{msg.content}</p>
+                      </div>
+                    ))
+                ) : (
+                  <p className="empty-message">
+                    No tienes mensajes de respuesta todavía. ¡Anímate a participar!
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -12,7 +12,6 @@ const { domainToASCII } = require('url');
 // importa las rutas
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
-const levelsRouter = require('./routes/levels');
 const recycleRouter = require('./routes/recycle');
 const forumRouter = require('./routes/forum');
 
@@ -38,7 +37,6 @@ app.use(express.static(path.join(__dirname, 'public'))); // carpeta pública
 // rutas
 app.use('/api/auth', authRouter) // ruta de autenticación
 app.use('/api/user', userRouter); // ruta de sesión usuario
-app.use('/api/level', levelsRouter); // ruta de niveles de usuario
 app.use('/api/recycle', recycleRouter); // ruta de reciclaje
 app.use('/api/forum', forumRouter); // ruta del foro
 

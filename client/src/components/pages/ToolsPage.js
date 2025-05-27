@@ -1,25 +1,57 @@
 import '../../styles/ToolsPage.css';
 
+import { Link } from 'react-router-dom';
+import recyclingMapImg from '../../assets/recycling-map.png';
+import ecoCalcImg from '../../assets/ecocalc.png';
+import recyclingGuideImg from '../../assets/recycling-guide.png';
+
+// diseño flexible por si se quieren añadir más herramientas en un futuro
+const tools = [
+  {
+    title: 'Zonas de Reciclaje',
+    description: 'Encuentra los puntos de reciclaje cercanos.',
+    linkText: 'Ver Mapa',
+    href: '/mapa-reciclaje',
+    imgSrc: recyclingMapImg,
+    imgAlt: 'Zonas de reciclaje',
+  },
+  {
+    title: 'Calculadora de Huella de Carbono',
+    description: 'Calcula tu impacto ambiental.',
+    linkText: 'Calcula ahora',
+    href: '/calculadora-huella-ecologica',
+    imgSrc: ecoCalcImg,
+    imgAlt: 'Calculadora Huella',
+  },
+  {
+    title: 'Reciclaje de Residuos',
+    description: '¿Dónde desechar cada residuo?',
+    linkText: 'Consulta aquí',
+    href: '/contenedores-reciclaje',
+    imgSrc: recyclingGuideImg,
+    imgAlt: 'Residuos',
+  },
+];
+
 function ToolsPage() {
-    return (
-        <div className="tools-container">
-            <div className="tool">
-                <h3>Zonas de Reciclaje</h3>
-                <p>Encuentra los puntos de reciclaje cercanos.</p>
-                <a href="/mapa-reciclaje">Ver Mapa</a>
-            </div>
-            <div className="tool">
-                <h3>Calculadora de <br /> Huella de Carbono</h3>
-                <p>Calcula tu impacto ambiental.</p>
-                <a href="/calculadora-huella-ecologica">Calcula ahora</a>
-            </div>
-            <div className="tool">
-                <h3>Reciclaje de Residuos</h3>
-                <p>¿Dónde desechar cada residuo?</p>
-                <a href="/contenedores-reciclaje">Consulta aquí</a>
-            </div>
-        </div>
-    );
+  return (
+    <div className="tools-container">
+      {tools.map((tool, index) => (
+        <Link
+          key={index}
+          to={tool.href}
+          className="tool-card"
+        >
+          <div className="tool-img-container">
+            <img src={tool.imgSrc} alt={tool.imgAlt} />
+          </div>
+          <div className="tool-title"><h3>{tool.title}</h3></div>
+          <div className="tool-text"><p>{tool.description}</p></div>
+          <div className="tool-link-text">{tool.linkText}</div>
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 export default ToolsPage;

@@ -1,4 +1,4 @@
-.modal-overlay {
+.login-modal-main {
   position: fixed;
   top: 0;
   left: 0;
@@ -11,7 +11,7 @@
   z-index: 1000;
 }
 
-.notification-message {
+.login-modal-main .notification-message {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -28,13 +28,13 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
-.notification-message.error {
+.login-modal-main .notification-message.error {
   background-color: #ffe6e6;
   border: 1px solid #e53e3e;
   color: #c53030;
 }
 
-.notification-message.success {
+.login-modal-main .notification-message.success {
   background-color: #e6ffed;
   border: 1px solid #b2f5ca;
   color: #2f855a;
@@ -46,7 +46,9 @@
   to   { opacity: 1; transform: translateX(-50%) translateY(-50%); }
 }
 
-.modal-overlay .modal {
+/* ------------------ */
+
+.login-modal-main .modal {
   background: white;
   padding: 30px;
   margin: 0px 10px;
@@ -56,7 +58,7 @@
   color: #333;
 }
 
-.modal .close-button {
+.login-modal-main .modal .close-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -68,81 +70,112 @@
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.modal .close-button:hover {
+.login-modal-main .modal .close-button:hover {
   background-color: rgba(233, 164, 164, 0.5);
   border-radius: 20px;
 }
 
-.modal-overlay .modal h2 {
+.login-modal-main .modal h2 {
   margin-bottom: 20px;
   color: #333;
   text-align: center;
 }
 
-.modal-overlay .modal form {
+.login-modal-main .modal form {
   box-sizing: border-box;
   width: 100%;  
 }
 
-.modal-overlay .modal form > input {
-  box-sizing: border-box;
+/* para todos los inputs */
+
+.login-modal-main .modal form .input-wrapper {
+  position: relative;
   width: 100%;
   margin-bottom: 15px;
-  padding: 10px;
+}
+
+.login-modal-main .modal form .input-wrapper .clear-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #aaa;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.login-modal-main .modal form .input-wrapper .clear-icon:hover {
+  color: #555;
+}
+
+.login-modal-main .modal form .input-wrapper input {
+  width: 100%;
+  padding: 0.6rem 2rem 0.6rem 0.5rem;
   font-size: 16px;
   border: 2px solid #ccc;
   border-radius: 5px;
-  display: flex;
+  box-sizing: border-box;  
 }
 
-.modal-overlay .modal form .password-input-container {
-  box-sizing: border-box;
+/* para el input de contraseña  */
+
+.login-modal-main .modal form .input-password-wrapper {
+  position: relative;
   width: 100%;
   margin-bottom: 15px;
+}
+
+.login-modal-main .modal form .input-password-wrapper input {
+  width: 100%;
+  padding: 0.6rem 4rem 0.6rem 0.5rem;
+  font-size: 16px;
   border: 2px solid #ccc;
   border-radius: 5px;
-  display: flex;
+  box-sizing: border-box;  
 }
 
-.modal form input:focus{
-  border: 2px solid #4CAF50;
-  outline: none;
+.login-modal-main .modal form .input-password-wrapper .clear-icon {
+  position: absolute;
+  right: 2.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: #aaa;
+  cursor: pointer;
+  z-index: 2;
 }
 
-.modal-overlay .modal form .password-input-container:focus-within {
-  border: 2px solid #4CAF50;
+.login-modal-main .modal form .input-password-wrapper .clear-icon:hover {
+  color: #555;
 }
 
-.modal form .password-input-container input {
-  flex: 1;
-  font-size: 16px;
-  width: 100%;
-  height: 100%;
-  padding: 10px;
-  border: 0;
-}
-
-.modal form .password-input-container input:focus {
-  border: none;
-  outline: none;
-}
-
-.modal form .password-input-container .password-toggle {
-  margin-right: 10px;
+.login-modal-main .modal form .input-password-wrapper .password-toggle {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.3rem;
+  color: #aaa;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  cursor: pointer;
-  font-size: 18px;
-  color: #666;
-  transition: color 0.2s ease, transform 0.2s ease;
+  justify-content: center;
+  z-index: 2;
 }
 
-.modal form .password-input-container .password-toggle:hover {
-  color: #4CAF50;
-  transform: scale(1.1);
+.login-modal-main .modal form .input-password-wrapper .password-toggle:hover {
+  color: #555;
 }
 
-.modal-overlay .modal form button {
+/* --------------- */
+
+.login-modal-main .modal form input:focus{
+  border: 2px solid #4CAF50;
+  outline: none;
+}
+
+.login-modal-main .modal form button {
   width: 100%;
   padding: 10px;
   background-color: #4CAF50;
@@ -153,13 +186,13 @@
   cursor: pointer;
 }
 
-.modal-overlay .modal form button:hover {
+.login-modal-main .modal form button:hover {
   background-color: #2c8d31;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease-in-out;
 }
 
-.modal .additional-options {
+.login-modal-main .modal .additional-options {
   margin-top: 20px;
   text-align: center;
 }

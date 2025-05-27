@@ -2,7 +2,7 @@ import '../styles/LoginModal.css';
 
 import { useUserContext } from '../context/UserContext';
 import { useState, useEffect, useRef } from 'react';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
+import { FaEye, FaEyeSlash, FaTimesCircle } from 'react-icons/fa'; 
 
 function LoginModal( { initialFormData, formData, setFormData, handleInputChange, onClose } ) {
   const { setUserGlobalContext } = useUserContext();
@@ -34,9 +34,54 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
     };
   }, []);
 
+  // para mostrar mensaje de notificicación
+  const showTempNotification = (msg, type, duration) => {
+    setNotificationMessage(msg);
+    setNotificationMessageType(type);
+    setTimeout(() => setNotificationMessage(''), duration);
+  };
+
+  // validaciones básicas en front para el formulario
+  const validateForm = () => {
+    if (isRegistering) {
+      if (!fullname || !username || !email || !password) {
+        showTempNotification('Todos los campos son obligatorios.', 'error', 2000);
+        return false;
+      }
+
+      const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/;
+      if (!nameRegex.test(fullname)) {
+        showTempNotification('El nombre completo solo puede contener letras y debe tener entre 3 y 50 caracteres.', 'error', 4000);
+        return false;
+      }
+
+      const usernameRegex = /^[A-Za-z0-9._-]{3,30}$/;
+      if (!usernameRegex.test(username)) {
+        showTempNotification('El nombre de usuario solo puede contener letras, números, ".", "-" y "_" y debe tener entre 3 y 30 caracteres.', 'error', 4000);
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showTempNotification('Introduce un correo electrónico válido.', 'error', 3000);
+        return false;
+      }
+
+    } else {
+      if (!credential || !password) {
+        showTempNotification('Todos los campos son obligatorios.', 'error', 2000);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // solicitud al backend para inicio de sesión o registro
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
     
     if (isRegistering) {  // para registro   
       try {
@@ -56,43 +101,23 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
         const data = await response.json();
 
         if (response.ok) {
-          setNotificationMessage('Nuevo usuario registrado correctamente.');
-          setNotificationMessageType('success');
+          showTempNotification('Nuevo usuario registrado correctamente.', 'success', 2000);
 
-          // pasado un tiempo
-          setTimeout(() => {
-            // oculta la notificación
-            setNotificationMessage('');
-
-            // limpia los campos y redirige a login
-            setFormData(initialFormData);
-          }, 2000); 
+          // pasado un tiempo, limpia los campos y redirige a login
+          setTimeout(() => { setFormData(initialFormData); }, 2000); 
         } else {
           if (data.msg?.includes('email')) {
-            setNotificationMessage('El correo electrónico ya está en uso.');
+            showTempNotification('El correo electrónico ya está en uso.', 'error', 2000);
           } else if (data.msg?.includes('nombre')) {
-            setNotificationMessage('El nombre de usuario ya está en uso.');
+            showTempNotification('El nombre de usuario ya está en uso.', 'error', 2000);
           } else {
-            setNotificationMessage('No se ha podido registrar.\nInténtalo más tarde.');
-            console.error('Error en registro:', data.msg);
+            showTempNotification('No se ha podido registrar.\nInténtalo más tarde.', 'error', 3000);
+            if (process.env.NODE_ENV !== 'production') { console.warn('Error en registro:', data.msg); }
           }
-          setNotificationMessageType('error');
-          
-          // oculta el mensaje pasado un tiempo
-          setTimeout(() => {
-            setNotificationMessage('');
-          }, 2000); 
         }
       } catch (error) {
-        setNotificationMessage('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.');
-        setNotificationMessageType('error');
-
-        // oculta el mensaje pasado un tiempo
-        setTimeout(() => {
-          setNotificationMessage('');
-        }, 2000); 
-
-        console.error('Error de red:', error);
+        showTempNotification('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.', 'error', 3000);
+        if (process.env.NODE_ENV !== 'production') { console.warn('Error de red:', error); }
       }
     } else { // para login
        try {
@@ -121,14 +146,10 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
           });
 
           // muestra mensaje de confirmación
-          setNotificationMessage('Se ha iniciado sesión correctamente.');
-          setNotificationMessageType('success');
+          showTempNotification('Se ha iniciado sesión correctamente.', 'success', 2000);
 
           // pasado un tiempo
           setTimeout(() => {
-            // oculta la notificación
-            setNotificationMessage('');
-
             // limpia los campos
             setFormData(initialFormData);
 
@@ -136,41 +157,27 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             onClose();
           }, 2000);
         } else {
-          setNotificationMessage(data.msg || 'No se pudo iniciar sesión.\nInténtalo más tarde.');
-          setNotificationMessageType('error');
-
-          if (data.msg?.includes('usuario' || 'email')) {
-            setNotificationMessage('El nombre de usuario o email introducido no existe.');
-          } else if (data.msg?.includes('contraseña')) {
-            setNotificationMessage('La contraseña introducida no es correcta.');
+          if (data.error === 'USERNAME_NOT_EXISTS') {
+            showTempNotification('El nombre de usuario introducido no existe.', 'error', 3000);
+          } else if (data.error === 'EMAIL_NOT_EXISTS') {
+            showTempNotification('El email introducido no existe.', 'error', 2000);
+          } else if (data.error === 'WRONG_PASSWORD') {
+            showTempNotification('La contraseña introducida no es correcta.', 'error', 3000);
           } else {
-            setNotificationMessage('No se pudo iniciar sesión.\nInténtalo más tarde.');
-            console.error('Error en inicio de sesión:', data.msg);
+            showTempNotification('No se pudo iniciar sesión.\nInténtalo más tarde.', 'error', 3000);
+            if (process.env.NODE_ENV !== 'production') { console.warn('Error en inicio de sesión:', data.msg); }
           }
-          setNotificationMessageType('error');
-          
-          // oculta el mensaje pasado un tiempo
-          setTimeout(() => {
-            setNotificationMessage('');
-          }, 2000);
         }
-      } catch (error) {        
-        setNotificationMessage('No se ha pudido conectar con el servidor.\nInténtalo más tarde.');
-        setNotificationMessageType('error');
-
-        // oculta el mensaje pasado un tiempo
-        setTimeout(() => {
-          setNotificationMessage('');
-        }, 2000);
-
-        console.error('Error de red:', error);
+      } catch (error) {
+        showTempNotification('No se ha pudido conectar con el servidor.\nInténtalo más tarde.', 'error', 3000);
+        if (process.env.NODE_ENV !== 'production') { console.warn('Error de red:', error); }
       }
     }
   };
 
 
   return (
-    <div className="modal-overlay">
+    <div className="login-modal-main">
       {notificationMessage && (
         <div className={`notification-message ${notificationMessageType}`}>
             {notificationMessage.split('\n').map((line, index) => (
@@ -187,53 +194,90 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
         <form onSubmit={handleSubmit}>
           {isRegistering && (
             <>
-              <input
-                type="text"
-                name="fullname"
-                placeholder="Nombre y apellidos"
-                value={fullname}
-                onChange={handleInputChange}
-                required
-              />
-              <input
-                type="text"
-                name="username"
-                placeholder="Nombre de usuario"
-                value={username}
-                onChange={handleInputChange}
-                required
-              />
-              <input
-              type="email"
-              name="email"
-              placeholder="Correo electrónico"
-              value={email}
-              onChange={handleInputChange}
-              required
-            />
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  name="fullname"
+                  placeholder="Nombre y apellidos"
+                  value={fullname.trim()}
+                  onChange={handleInputChange}
+                />
+                {fullname && (
+                  <FaTimesCircle
+                    className="clear-icon"
+                    onClick={() => setFormData(prev => ({ ...prev, fullname: '' }))}
+                  />
+                )}
+              </div>
+              <div className="input-wrapper">
+                  <input
+                  type="text"
+                  name="username"
+                  placeholder="Nombre de usuario"
+                  value={username.trim()}
+                  onChange={handleInputChange}
+                />
+                {username && (
+                  <FaTimesCircle
+                    className="clear-icon"
+                    onClick={() => setFormData(prev => ({ ...prev, username: '' }))}
+                  />
+                )}
+              </div>
+              <div className="input-wrapper">
+                <input
+                  type="text"
+                  name="email"
+                  placeholder="Correo electrónico"
+                  value={email.trim()}
+                  onChange={handleInputChange}
+                />
+                {email && (
+                  <FaTimesCircle
+                    className="clear-icon"
+                    onClick={() => setFormData(prev => ({ ...prev, email: '' }))}
+                  />
+                )}
+              </div>
             </>
           )}
 
           {!isRegistering && (
-            <input
-              type="text"
-              name="credential"
-              placeholder="Email o nombre de usuario"
-              value={credential}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="input-wrapper">
+              <input
+                type="text"
+                name="credential"
+                placeholder="Email o nombre de usuario"
+                value={credential.trim()}
+                onChange={handleInputChange}
+              />
+              {credential && (
+                <FaTimesCircle
+                  className="clear-icon"
+                  onClick={() => setFormData(prev => ({ ...prev, credential: '' }))}
+                />
+              )}
+            </div>            
           )}
 
-          <div className="password-input-container">
+          <div className="input-password-wrapper">
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
               placeholder="Contraseña"
-              value={password}
+              value={password.trim()}
               onChange={handleInputChange}
-              required
             />
+
+            {/* X para limpiar contraseña */}
+            {password && (
+              <FaTimesCircle
+                className="clear-icon"
+                onClick={() => setFormData(prev => ({ ...prev, password: '' }))}
+              />
+            )}
+
+            {/* ojo para mostrar/ocultar contraseña */}
             <span className="password-toggle" onClick={handlePasswordToggle}>
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>

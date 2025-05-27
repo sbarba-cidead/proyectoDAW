@@ -1,8 +1,10 @@
 // controlador para autenticación de usuarios
 
 const User = require('../models/User');
+const UserLevel = require('../models/UserLevel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 
 // registro de usuarios
 const register = async (req, res) => {
@@ -11,7 +13,7 @@ const register = async (req, res) => {
 
     try {
         // comprobación de dirección email
-        const emailExists = await User.findOne({ email });
+        const emailExists = await User.findOne({ email });        
         if (emailExists) return res.status(400).json({ msg: 'Ya existe un usuario con ese email' });
 
         // comprobación de nombre de usuario
@@ -22,13 +24,20 @@ const register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // se busca el nivel principiante
+        const beginnerLevel = await UserLevel.findOne({ name: 'beginner' });
+        if (!beginnerLevel) {
+            return res.status(500).json({ msg: 'No se encontró el nivel inicial (beginner)' });
+        }
+
         // instanciación de un usuario usando el modelo User
         const newUser = new User({
             fullname,
             username,
             email,
+            level: beginnerLevel._id,
             password: hashedPassword,
-        });
+        }); // avatar, recycleActivities, messages, score toman datos default
 
         // se guarda el nuevo usuario
         await newUser.save();
@@ -45,17 +54,26 @@ const register = async (req, res) => {
 const login = async (req, res) => {
     // se recuperan los datos del usuario para inicio de sesión
     const { credential, password } = req.body;
-
+    
     try {
+        let user = {};
+
         // busca un usuario con ese email o nombre
-        const user = await User.findOne({
-            $or: [{ email: credential }, { username: credential }]
-        });
-        if (!user) return res.status(400).json({ msg: 'No existe un usuario con ese email o nombre de usuario' });
+        if (credential.includes('@')) {
+            user = await User.findOne({ email: credential });
+            if (!user) {
+                return res.status(400).json({ error: 'EMAIL_NOT_EXISTS' });
+            }
+        } else {
+            user = await User.findOne({ username: credential });
+            if (!user) {
+                return res.status(400).json({ error: 'USERNAME_NOT_EXISTS' });
+            }
+        }
 
         // comprueba si la contraseña es correcta
         const correctPass = await bcrypt.compare(password, user.password);
-        if (!correctPass) return res.status(400).json({ msg: 'La contraseña es incorrecta' });
+        if (!correctPass) return res.status(400).json({ error: 'WRONG_PASSWORD' });
 
         // crea del token de inicio de sesión
         const token = jwt.sign(

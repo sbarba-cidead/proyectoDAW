@@ -54,8 +54,8 @@ function sanitizeFilename(name) {
 
 // validador de datos de usuario
 const updateUserSchema = Joi.object({
-  avatar: Joi.string().uri().optional(),
-  fullname: Joi.string().min(3).max(50).optional(),
+  avatar: Joi.string().pattern(/\.(jpg|jpeg|png)$/i).optional(),
+  fullname: Joi.string().pattern(/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/).min(3).max(50).optional(),
   username: Joi.string().alphanum().min(3).max(30).optional(),
   email: Joi.string().email().optional()
 });
@@ -69,7 +69,8 @@ router.get('/me', authMiddleware, async (req, res) => {
     // toma el nombre de usuario y el avatar del usuario de la BD
     const user = await User.findById(req.userId)
                             .populate('recyclingActivities')
-                            .select('fullname username email avatar score');
+                            .populate('level')
+                            .select('avatar fullname username email score level recyclingActivities messages');
 
     if (!user) { // si no se encuentra el usuario
       return res.status(404).json({ msg: 'Usuario no encontrado' });
@@ -89,14 +90,14 @@ router.post('/check-updated-data', async (req, res) => {
 
   try {
     if (username) {
-      const userExists = await User.findOne({ username });
+      const userExists = await User.findOne({ username }).lean();
       if (userExists) {
         return res.status(400).json({ error: 'USERNAME_EXISTS' });
       }
     }
 
     if (email) {
-      const emailExists = await User.findOne({ email });
+      const emailExists = await User.findOne({ email }).lean();
       if (emailExists) {
         return res.status(400).json({ error: 'EMAIL_EXISTS' });
       }
@@ -133,7 +134,7 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
     }
 
     // si son correctas las operaciones se manda el url de subida de la imagen
-    res.status(200).json({ uploadDir, fullFilename });
+    res.status(200).json({ avatarUrl, fullFilename });
   } catch (error) {
     console.error('Error subiendo avatar:', error);
     res.status(500).json({ msg: 'Error al procesar el avatar en el servidor' });
@@ -148,16 +149,33 @@ router.put('/update', authMiddleware, async (req, res) => {
   const { error, value } = updateUserSchema.validate(req.body);
 
   if (error) { // si hay fallo de validación de datos
-    //return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
+    return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
   }
 
-  // verifica url de origen de la imagen del avatar proviene de /public/images
-  // if (value.avatar && !value.avatar.startsWith('/images/')) {
-  //   return res.status(400).json({ msg: 'URL de avatar inválida' });
-  // }
-
   try {
-    // búsqueda y actualización de usuario en BD
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: 'Usuario no encontrado' });
+
+    const oldUsername = user.username;
+    const newUsername = value.username;
+
+    // Si el username ha cambiado y tiene avatar con nombre username
+    if (newUsername && oldUsername !== newUsername && user.avatar) {
+      const avatarFilename = path.basename(user.avatar); // nombre imagen + extensión
+      const ext = path.extname(avatarFilename);          // extensión sólo
+      const newFilename = `avatar-${newUsername}${ext}`;
+
+      const oldPath = path.join(AVATAR_UPLOAD_DIR, avatarFilename);
+      const newPath = path.join(AVATAR_UPLOAD_DIR, newFilename);
+
+      // renombra el archivo en el sistema
+      if (fs.existsSync(oldPath)) {
+        await fsPromises.rename(oldPath, newPath); // actualiza nombre fichero
+        value.avatar = newFilename; // actualiza en mongo
+      }
+    }
+
+    // busca y actualiza usuario en BD
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       value,
@@ -196,7 +214,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
     // verificar la contraseña antigua
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ msg: 'La contraseña actual es incorrecta.' });
+      return res.status(401).json({ error: 'WRONG_CURRENT_PASS' });
     }
 
     // encriptación de la nueva contraseña

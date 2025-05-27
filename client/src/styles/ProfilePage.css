@@ -12,6 +12,28 @@
     padding: 20px;
 }
 
+/* para hacer los espacios que muestran datos con scroll */
+
+.scrollable-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.scrollable-list ul {
+  padding-left: 20px;
+}
+
+.scrollable-message-section {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding-right: 10px;
+}
+
+/* ------------------------------- */
+
+
 /* Sección de perfil y actividades */
 
 .body-section .box-content-1 {
@@ -65,19 +87,21 @@
     padding: 20px;
 }
 
-.profile-data .profile-info .profile-edit a {
-    text-decoration: none;
+.profile-data .profile-info .profile-edit button {
     color: #308b35; /* verde */
     font-weight: bold;
+    font-size: 16px;
     padding: 5px 10px;
+    background-color: white;
     border: 1px solid #297e2e; /* verde */
     border-radius: 5px;
     display: inline-block;
     text-align: center;
     white-space: nowrap;
+    cursor: pointer;
 }
 
-.profile-data .profile-info .profile-edit a:hover {
+.profile-data .profile-info .profile-edit button:hover {
     background-color: #297e2e; /* verde */
     color: white;
 }

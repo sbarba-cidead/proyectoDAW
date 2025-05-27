@@ -12,7 +12,8 @@ router.get('/forum-posts', async (req, res) => {
         const posts = await ForumPost.find()
             .populate('createdBy', 'username fullname avatar score level')
             .populate('categories', 'name')
-            .sort({ createdAt: -1 });  // ordena por fecha de creación más reciente
+            .sort({ createdAt: -1 })  // ordena por fecha de creación más reciente
+            .lean();
         res.json(posts);
     } catch (error) {
         console.error('Error al recuperar los posts del foro:', error); 
@@ -23,7 +24,9 @@ router.get('/forum-posts', async (req, res) => {
 // obtener las categorías para los posts
 router.get('/post-categories', async (req, res) => {
     try {
-        const categories = await PostCategory.find().sort({ name: 1 }); // orden alfabético
+        const categories = await PostCategory.find()
+                                            .sort({ name: 1 }) // orden alfabético
+                                            .lean();
         res.json(categories);
     } catch (error) {
         console.error('Error al obtener categorías:', error);
@@ -36,7 +39,8 @@ router.get('/forum-posts/:id', async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id)
             .populate('createdBy', 'username fullname avatar score level')
-            .populate('categories', 'name');
+            .populate('categories', 'name')
+            .lean();
 
         if (!post) return res.status(404).json({ message: 'Post no encontrado' });
 
@@ -55,7 +59,8 @@ router.get('/forum-posts/:id/replies', async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate('user', 'username fullname avatar score level')
-      .sort({ createdAt: 1 });
+      .sort({ createdAt: 1 })
+      .lean();
 
     const totalReplies = await ForumComment.countDocuments({ post: req.params.id });
 
@@ -78,7 +83,7 @@ router.get('/post-categories-search', async (req, res) => {
         const categories = await PostCategory.find({
             // busca por coincidencia parcial, case-insensitive
             name: { $regex: search, $options: 'i' }
-        }).sort({ name: 1 });
+        }).sort({ name: 1 }).lean();
 
         res.json(categories);
     } catch (error) {

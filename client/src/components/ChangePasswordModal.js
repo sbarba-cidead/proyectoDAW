@@ -27,6 +27,13 @@ function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMe
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [onClose]);
 
+  // mostrar mensaje temporal
+  const showTempNotification = (msg, type, duration) => {
+    setNotificationMessage(msg);
+    setNotificationMessageType(type);
+    setTimeout(() => setNotificationMessage(''), duration);
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -37,21 +44,13 @@ function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMe
 
     // validaciones básicas en front
     if (!formData.oldPassword || !formData.newPassword || !formData.confirmPassword) {
-      setNotificationMessage('Por favor, rellena todos los campos.');
-      setNotificationMessageType('error');
-      setTimeout(() => setNotificationMessage(''), 3000); // se cierra notificación pasado un tiempo
+      showTempNotification('Por favor, rellena todos los campos.', 'error', 2000);
       return;
     }
 
-    console.log('newPassword:', JSON.stringify(formData.newPassword));
-console.log('confirmPassword:', JSON.stringify(formData.confirmPassword));
-
-
     // validaciones básicas en front
     if (formData.newPassword.trim() !== formData.confirmPassword.trim()) {
-      setNotificationMessage('La nueva contraseña y su confirmación no coinciden.');
-      setNotificationMessageType('error');
-      setTimeout(() => setNotificationMessage(''), 3000); // se cierra notificación pasado un tiempo
+      showTempNotification('La nueva contraseña y su confirmación no coinciden.', 'error', 3000);
       return;
     }
 
@@ -59,7 +58,7 @@ console.log('confirmPassword:', JSON.stringify(formData.confirmPassword));
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="change-password-modal">
       {notificationMessage && (
         <div className={`notification-message ${notificationMessageType}`}>
           {notificationMessage.split('\n').map((line, i) => (
@@ -80,7 +79,7 @@ console.log('confirmPassword:', JSON.stringify(formData.confirmPassword));
               type={showOldPassword ? 'text' : 'password'}
               name="oldPassword"
               placeholder="Contraseña antigua"
-              value={formData.oldPassword}
+              value={formData.oldPassword.trim()}
               onChange={handleInputChange}
             />
             <span
@@ -96,7 +95,7 @@ console.log('confirmPassword:', JSON.stringify(formData.confirmPassword));
               type={showNewPassword ? 'text' : 'password'}
               name="newPassword"
               placeholder="Nueva contraseña"
-              value={formData.newPassword}
+              value={formData.newPassword.trim()}
               onChange={handleInputChange}
             />
             <span
@@ -112,7 +111,7 @@ console.log('confirmPassword:', JSON.stringify(formData.confirmPassword));
               type={showConfirmPassword ? 'text' : 'password'}
               name="confirmPassword"
               placeholder="Confirmar nueva contraseña"
-              value={formData.confirmPassword}
+              value={formData.confirmPassword.trim()}
               onChange={handleInputChange}
             />
             <span

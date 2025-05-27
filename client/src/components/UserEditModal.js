@@ -87,32 +87,59 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
     });
   };
 
+  // para mostrar mensaje de notificicación
+  const showTempNotification = (msg, type, duration) => {
+    setNotificationMessage(msg);
+    setNotificationMessageType(type);
+    setTimeout(() => setNotificationMessage(''), duration);
+  };
+
+  // validaciones básicas en front para el formulario
+  const validateForm = () => {
+    if (!editData.fullname || !editData.username || !editData.email) {
+      showTempNotification('Por favor, rellena todos los campos.', 'error', 2000);
+      return false;
+    }
+
+    const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/;
+    if (!nameRegex.test(editData.fullname)) {
+      showTempNotification('El nombre completo solo puede contener letras y debe tener entre 3 y 50 caracteres.', 'error', 4000);
+      return false;
+    }
+
+    const usernameRegex = /^[A-Za-z0-9._-]{3,30}$/;
+    if (!usernameRegex.test(editData.username)) {
+      showTempNotification('El nombre de usuario solo puede contener letras, números, ".", "-" y "_" y debe tener entre 3 y 30 caracteres.', 'error', 4000);
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editData.email)) {
+      showTempNotification('Introduce un correo electrónico válido.', 'error', 3000);
+      return false;
+    }
+
+    return true;
+  };
+
   // función para manejar la confirmación al guardar
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-     // validaciones básicas en front
-    if (!editData.fullname.trim() || !editData.username.trim() || !editData.email.trim()) {
-      setNotificationMessage('Por favor, rellena todos los campos.');
-      setNotificationMessageType('error');
-      setTimeout(() => setNotificationMessage(''), 3000); // se cierra notificación pasado un tiempo
-      return;
-    }
-
     // verificación si no se ha cambiado nada
     const isSameData =
-      editData.fullname.trim() === initialData.fullname.trim() &&
-      editData.username.trim() === initialData.username.trim() &&
-      editData.email.trim() === initialData.email.trim() &&
+      editData.fullname === initialData.fullname &&
+      editData.username === initialData.username &&
+      editData.email === initialData.email &&
       !selectedImageFile;
 
     if (isSameData) {
-      setNotificationMessage('No se han realizado cambios.\nLos datos introducidos son los originales.');
-      setNotificationMessageType('info');
-      setTimeout(() => setNotificationMessage(''), 3000);
+      showTempNotification('No se han realizado cambios.\nLos datos introducidos son los originales.', 'info', 4000);
       return;
     }
 
+    // validaciones básicas de formato en front
+    if (!validateForm()) return;
     
     // llama a la función de guardado en BD
     // y le pasa los nuevos datos del usuario
@@ -161,7 +188,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               type="text"
               name="fullname"
               placeholder="Nombre completo"
-              value={editData.fullname}
+              value={editData.fullname.trim()}
               onChange={handleInputChange}
             />
             <div className="reset-icon">
@@ -175,7 +202,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               type="text"
               name="username"
               placeholder="Nombre de usuario"
-              value={editData.username}
+              value={editData.username.trim()}
               onChange={handleInputChange}
             />
             <div className="reset-icon">
@@ -186,10 +213,10 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
           {/* Input Email */}
           <div className="input-container">
             <input
-              type="email"
+              type="text"
               name="email"
               placeholder="Correo electrónico"
-              value={editData.email}
+              value={editData.email.trim()}
               onChange={handleInputChange}
             />
             <div className="reset-icon">

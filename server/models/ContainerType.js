@@ -2,10 +2,9 @@ const mongoose = require('mongoose');
 
 // modelo para tipos de puntos de reciclaje
 const ContainerTypeSchema = new mongoose.Schema({
-    type: {
+    _id: {
         type: String,
-        required: true, 
-        unique: true,
+        required: true,
     },
     name: {
         type: String,

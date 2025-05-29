@@ -137,7 +137,7 @@ router.get('/eco-info-cards', async (req, res) => {
         res.status(200).json(cards);
     } catch (error) {
         console.error('Error al obtener los datos para ecoinfo:', error);
-        res.status(500).json({ message: 'Error al obtener los datos para ecoinfo' });
+        res.status(500).json({ error: 'Error al obtener los datos para ecoinfo' });
     }
 });
 

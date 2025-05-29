@@ -39,6 +39,8 @@ const forumPostSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId], 
     ref: 'PostCategory' 
   } // array de categorías asociadas al post
+}, {
+  collection: "forum-posts"
 });
 
 const Post = mongoose.model('ForumPost', forumPostSchema);

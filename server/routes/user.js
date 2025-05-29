@@ -73,13 +73,13 @@ router.get('/me', authMiddleware, async (req, res) => {
                             .select('avatar fullname username email score level recyclingActivities messages');
 
     if (!user) { // si no se encuentra el usuario
-      return res.status(404).json({ msg: 'Usuario no encontrado' });
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
     // envía la respuesta al front
     res.json(user);
   } catch (error) {    
-    res.status(500).json({ msg: 'Error del servidor'});
+    res.status(500).json({ error: 'Error del servidor'});
     console.log('Error en el servidor:', error);
   }
 });
@@ -113,7 +113,7 @@ router.post('/check-updated-data', async (req, res) => {
 // ruta para subir fichero de imagen al servidor
 router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ msg: 'No se ha podido subir el archivo del avatar' });
+    return res.status(400).json({ error: 'No se ha podido subir el archivo del avatar' });
   }
 
   try {
@@ -137,7 +137,7 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
     res.status(200).json({ avatarUrl, fullFilename });
   } catch (error) {
     console.error('Error subiendo avatar:', error);
-    res.status(500).json({ msg: 'Error al procesar el avatar en el servidor' });
+    res.status(500).json({ error: 'Error al procesar el avatar en el servidor' });
   }
 });
 
@@ -149,12 +149,12 @@ router.put('/update', authMiddleware, async (req, res) => {
   const { error, value } = updateUserSchema.validate(req.body);
 
   if (error) { // si hay fallo de validación de datos
-    return res.status(400).json({ msg: 'Datos inválidos', details: error.details });
+    return res.status(400).json({ error: 'Datos inválidos', details: error.details });
   }
 
   try {
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ msg: 'Usuario no encontrado' });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     const oldUsername = user.username;
     const newUsername = value.username;
@@ -183,14 +183,14 @@ router.put('/update', authMiddleware, async (req, res) => {
     ).select('avatar fullname username email');
 
     if (!updatedUser) { // si no se devuelve user
-      return res.status(404).json({ msg: 'Usuario no encontrado' });
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
     // si todo es correcto, se responde con el user actualizado
     res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error actualizando usuario:', error);
-    res.status(500).json({ msg: 'Error al actualizar el usuario' });
+    res.status(500).json({ error: 'Error al actualizar el usuario' });
   }
 });
 
@@ -200,7 +200,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   if (!oldPassword || !newPassword) {
-    return res.status(400).json({ msg: 'Faltan datos obligatorios.' });
+    return res.status(400).json({ error: 'Faltan datos obligatorios.' });
   }
 
   try {
@@ -208,7 +208,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ msg: 'Usuario no encontrado.' });
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
     // verificar la contraseña antigua
@@ -229,7 +229,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error en /change-password:', error);
-    res.status(500).json({ msg: 'Error del servidor.' });
+    res.status(500).json({ error: 'Error del servidor.' });
   }
 });
 

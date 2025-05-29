@@ -7,6 +7,7 @@ import { useUserContext } from '../../context/UserContext';
 import ForumPostModal from '../ForumPostModal';
 import ForumNewPostModal from '../ForumNewPostModal';
 import { convertUTCDateTime } from '../../utils/functions';
+import { sendRecyclingActivity } from '../../utils/functions';
 
 const ForumPage = () => {
   const numberPostShown = 5
@@ -14,7 +15,7 @@ const ForumPage = () => {
 
   const { postId } = useParams();
   const navigate = useNavigate();
-  const { user } = useUserContext();
+  const { user, refreshUser } = useUserContext();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(numberPostShown);
@@ -35,7 +36,7 @@ const ForumPage = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch(`${apiUrl}/forum/forum-posts`);
+        const response = await fetch(`${apiUrl}/forum/posts`);
         const data = await response.json();
         setPosts(data);
         setLoading(false);
@@ -52,7 +53,7 @@ const ForumPage = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch(`${apiUrl}/forum/post-categories`);
+        const res = await fetch(`${apiUrl}/forum/posts/post-categories`);
         const data = await res.json();
 
         // orden de las categorías por orden alfabético
@@ -78,7 +79,7 @@ const ForumPage = () => {
   // busca el post por id
   const fetchPostById = async (id) => {
     try {
-      const response = await fetch(`${apiUrl}/forum/forum-posts/${id}`);
+      const response = await fetch(`${apiUrl}/forum/posts/${id}`);
       const data = await response.json();
       setSelectedPost(data);
     } catch (error) {
@@ -174,10 +175,37 @@ const ForumPage = () => {
   // determina si hay más posts disponibles para mostrar
   const hasMore = visibleCount < filteredPosts.length;
 
+  // refresca la lista de posts para mostrar el nuevo
+  function handleCreateNewPost(newPost) {
+    setPosts(prev => [newPost, ...prev]);
 
-  function handleCreateNewPost() {
+    // si el nuevo post tiene nuevas categorías, se añaden a las dispinibles para filtrar
+    const newCategories = newPost.categories || [];
+    setAvailableCategories(prevCategories => {
+      const existingCatNames = prevCategories.map(cat => cat.name);
+      const categoriesToAdd = newCategories.filter(cat => !existingCatNames.includes(cat.name));
 
+      // evita duplicados
+      if (categoriesToAdd.length === 0) return prevCategories;
+
+      return [...prevCategories, ...categoriesToAdd];
+    });
+
+    // se añade actividad de reciclaje
+    handleRecyclingActivity();
   }
+
+  // función para guardar una nueva actividad de reciclaje
+  const handleRecyclingActivity = async () =>{
+      if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+
+      try {
+          await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
+          await refreshUser(); // recarga los datos del usuario en contexto global
+      } catch (error) {
+          console.error('Error registrando actividad de reciclaje:', error.message);
+      }
+  } 
 
   if (loading) return <div className="loading"></div>;
 
@@ -195,7 +223,7 @@ const ForumPage = () => {
         <div className="category-select">
           <label>Categorías:</label>
           <div className="custom-select">
-            <div className={`dropdown ${dropdownOpen ? 'open' : ''}`} ref={dropdownRef}>
+            <div className="dropdown" ref={dropdownRef}>
               <button
                 className="dropdown-btn"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -274,7 +302,7 @@ const ForumPage = () => {
                 <div className="post-footer">
                   <p className="created-info">
                     <span className="created-by-label">Creado por:</span>
-                    <span className="created-by">{post.createdBy?.username || 'usuario eliminado'}</span>
+                    <span className="created-by">{post.createdBy?.fullname || 'usuario eliminado'}</span>
                   </p>
                   <div className="spacer"></div>
                   <div className="replies">

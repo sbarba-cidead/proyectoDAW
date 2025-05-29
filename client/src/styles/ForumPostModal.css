@@ -9,33 +9,37 @@
     justify-content: center;
     align-items: center;
     z-index: 2000;
-    }
+}
 
 /* contenedor para dar bordes redondeados a pesar de scroll */
 .postmodal-background .modal-wrapper {
     background: white;
     width: 80vw;
-    max-width: 1000px;
+    height: 90vh;
+    transform: translateY(-20px);
     border-radius: 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
+    
 }
 
-.modal-wrapper .modal-header {
+/* contenedor para el botón de cerrar */
+.postmodal-background .modal-wrapper .modal-header {
   display: flex;
   justify-content: flex-end;
   padding: 15px 15px 10px 0px;
+  align-items: center;
 }
 
 /* botón para cerrar el modal */
-.modal-header .close-btn {
+.postmodal-background .modal-wrapper .modal-header .close-btn {
   background: none;
   border: none;
+  border-radius: 50%;
   font-size: 20px;
   cursor: pointer;
-  padding: 0;
+  padding: 2px 4px;
   margin: 0;
   line-height: 1;
   display: flex;
@@ -43,96 +47,139 @@
   justify-content: center;
 }
 
-.modal-header .close-btn:hover {
+.postmodal-background .modal-wrapper .modal-header .close-btn:hover {
   background-color: rgba(233, 164, 164, 0.5);
-  border-radius: 20px;
 }
 
-.modal-wrapper .modal-content {
+.postmodal-background .modal-wrapper .modal-content {
     overflow-y: auto;
     padding: 20px 20px 40px 20px;
     box-sizing: border-box;
     flex-grow: 1;
 }
 
-/* contenedor para el botón de cerrar */
-.modal-content .modal-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-}
-
 /* --------------- */
 
-/* título del post */
-.modal-content .post-content h2 {
-    margin-top: 0;
-}
-
 /* información del post (autor y fecha) */
-.modal-content .post-content .post-metainfo {
-    /* color: #2a852d; */
-    font-size: 14px;
-    text-align: end;
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.post-metainfo .username,
-.reply-metainfo .username {
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .post-categories {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .category-tag {
+  background-color: #e6f4ea;
+  color: #2a852d;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .category-tag.uncategorized {
+  background-color: #ececec;
+  color: #555555;
+}
+
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .post-created-by {
+  text-align: right;
+  color: black;
+}
+
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .post-created-by .username,
+.postmodal-background .modal-wrapper 
+    .replies-list .reply .reply-metainfo .username {
     font-weight: bold;
     color: #2a852d;
 }
 
-.post-metainfo .date,
-.reply-metainfo .date {
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-metainfo .post-created-by .date,
+.postmodal-background .modal-wrapper
+    .replies-list .reply .reply-metainfo .date {
+    color: #2a852d;
+}
+
+/* título del post */
+.postmodal-background .modal-wrapper .modal-content 
+    .post-content .post-content-title {
+    margin-top: 0;
+    text-align: center;
     color: #2a852d;
 }
 
 /* texto del post */
-.post-content .post-content-text {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .post-content-text {
     white-space: pre-wrap; /* permite saltos de linea */
 }
 
 /* botón para abrir el formulario de respuesta al post */
-.modal-content .post-content .post-reply-btn {
-    background-color: #4CAF50;
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .post-reply-btn {
+    background-color: #54af57;
+    border: 1px solid #43ac47;
     color: white;
-    border: none;
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    margin-top: 30px;
+    margin-top: 20px;
     display: block;
     margin-left: auto;
-    margin-right: auto;
+    margin-right: 10px;
 }
 
 /* formulario de respuesta al post */
-.modal-content .post-content .reply-form {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .reply-form {
     margin-top: 10px;
 }
 
 /* input para escribir la respuesta al post */
-.post-content .reply-form textarea,
-.reply .reply-form textarea {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .reply-form textarea,
+.postmodal-background .modal-wrapper
+    .replies-list .reply .reply-form textarea {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     border-radius: 8px;
     border: 1px solid #ccc;
     padding: 10px;
+    resize: none;
+    overflow-y: auto;
 }
 
 /* botones del formulario de respuesta al post */
-.post-content .reply-form .reply-form-actions,
-.reply .reply-form .reply-form-actions {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .reply-form .reply-form-actions,
+.postmodal-background .modal-wrapper
+    .replies-list .reply .reply-form .reply-form-actions {
     margin-top: 8px;
     display: flex;
     gap: 10px;
     justify-content: flex-end;
 }
 
-.post-content .reply-form-actions .submit-post-response-btn,
-.reply .reply-form-actions .submit-post-response-btn {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .reply-form .reply-form-actions .submit-post-response-btn,
+.postmodal-background .modal-wrapper .replies-list 
+    .reply .reply-form-actions .submit-post-response-btn {
     padding: 6px 12px;
     background-color: #4CAF50;
     color: white;
@@ -141,8 +188,10 @@
     cursor: pointer;
 }
 
-.post-content .reply-form-actions .cancel-post-response-btn,
-.reply .reply-form-actions .cancel-post-response-btn {
+.postmodal-background .modal-wrapper .modal-content
+    .post-content .reply-form .reply-form-actions .cancel-post-response-btn,
+.postmodal-background .modal-wrapper .replies-list 
+    .reply .reply-form-actions .cancel-post-response-btn {
     padding: 6px 12px;
     background-color: #ccc;
     border: none;
@@ -153,20 +202,20 @@
 /* --------------- */
 
 /* cabecera de respuestas, incluye filtros */
-.modal-content .replies-header {
+.postmodal-background .modal-wrapper .modal-content .replies-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 30px 0px 20px 0px;
-    padding-bottom: 10px;
+    margin: 40px 0px 20px 0px;
+    padding-bottom: 20px;
     border-bottom: 1px solid #ddd;
 }
 
-.modal-content .replies-header h3 {
+.postmodal-background .modal-wrapper .modal-content .replies-header h3 {
     margin: 0;
 }
 
-.replies-header select {
+.postmodal-background .modal-wrapper .modal-content .replies-header select {
     padding: 5px 10px;
     font-size: 16px;
     border-radius: 12px;
@@ -176,20 +225,28 @@
     cursor: pointer;
 }
 
-.replies-header select:hover,
-.replies-header select:focus {
+.postmodal-background .modal-wrapper .modal-content .replies-header select:hover,
+.postmodal-background .modal-wrapper .modal-content .replies-header select:focus {
     border-color: #4CAF50;
     outline: none;
 }
 
-.modal-content .load-replies {
+.postmodal-background .modal-wrapper
+    .modal-content .no-replies {
+    text-align: center;
+    color: #888
+}
+
+.postmodal-background .modal-wrapper
+    .modal-content .load-replies {
     display: flex;
     justify-content: center;
     margin-top: 10px;
 }
 
 /* botón para mostrar las respuestas al post */
-.load-replies button {
+.postmodal-background .modal-wrapper
+    .modal-content .load-replies button {
     background: none;
     color: #104603;
     border: none;
@@ -200,14 +257,16 @@
     padding: 0;
 }
 
-.modal-content .load-replies button:hover {
+.postmodal-background .modal-wrapper
+    .modal-content .load-replies button:hover {
   color: #388E3C;
 }
 
 /* --------------- */
 
 /* lista de respuestas al post */
-.modal-content .replies-list {
+.postmodal-background .modal-wrapper
+    .modal-content .replies-list {
     margin-top: 15px;
 }
 
@@ -222,14 +281,14 @@
 }
 
 /* info de la respuesta (autor y fecha) */
-.reply .reply-metainfo {    
+.replies-list .reply .reply-metainfo {    
     font-size: 13px;
     margin: 0;
     padding-right: 10px;
 }
 
 /* referencia a otra respuesta, si la tiene */
-.reply .reply-reference {
+.replies-list .reply .reply-reference {
     font-size: 12px;
     color: #888;
     margin-top: 20px;
@@ -237,7 +296,7 @@
 }
 
 /* link a la referenncia */
-.reply .reply-reference button {
+.replies-list .reply .reply-reference button {
     background: none;
     border: none;
     color: #4CAF50;
@@ -246,7 +305,7 @@
     font-size: 13px;
 }
 
-.reply .reply-reference button:hover {
+.replies-list .reply .reply-reference button:hover {
     color: #388E3C;
 }
 
@@ -254,7 +313,7 @@
     margin: 10px 0px;
 }
 
-.reply .comment-reply-container {
+.replies-list .reply .comment-reply-container {
     display: flex;
     justify-content: flex-end;
     margin-top: 5px;
@@ -276,12 +335,14 @@
     color: #388E3C;
 }
 
-.comment-reply-container .response-reply-btn .arrow {
+.post-content .comment-reply-btn .arrow,
+.comment-reply-container .post-reply-btn .arrow {
     margin-right: 4px;
     font-size: 16px;
 }
 
-.modal-content .load-more {
+.postmodal-background .modal-wrapper
+    .modal-content .load-more {
     display: flex;
     justify-content: center;
     margin-top: 20px;
@@ -289,7 +350,8 @@
 }
 
 /* botón para cargar más respuestas al post */
-.modal-content .load-more button {
+.postmodal-background .modal-wrapper
+    .modal-content .load-more button {
     background: none;
     color: #104603;
     border: none;
@@ -300,12 +362,14 @@
     padding: 0;
 }
 
-.modal-content .load-more button:hover {
+.postmodal-background .modal-wrapper
+    .modal-content .load-more button:hover {
   color: #388E3C;
 }
 
 /* mensaje cuando no hay más respuestas para cargar */
-.modal-content .no-more-replies {
+.postmodal-background .modal-wrapper
+    .modal-content .no-more-replies {
     font-size: 14px;
     color: #646464;
     text-align: center;

@@ -1,4 +1,4 @@
-/* Fondo del modal */
+/* fondo del modal */
 .newpostmodal-background {
     position: fixed;
     top: 0;
@@ -9,10 +9,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 2000;
 }
 
-/* Contenedor principal del modal */
+/* contenedor principal del modal */
 .newpostmodal-background .modal-wrapper {
     background: white;
     width: 80vw;
@@ -24,7 +24,7 @@
     max-height: 90vh;
 }
 
-/* Contenido del modal */
+/* contenido del modal */
 .modal-wrapper .modal-content {
     overflow-y: auto;
     padding: 20px 20px 40px 20px;
@@ -32,64 +32,146 @@
     flex-grow: 1;
 }
 
-/* Encabezado del modal con botón cerrar */
+/* encabezado del modal con botón cerrar */
 .modal-content .modal-header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
 }
 
-/* Botón cerrar */
-.modal-header .close-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 5px;
-}
-
-/* Título del formulario */
-.modal-content h2 {
+/* título del formulario */
+.modal-header h2 {
     text-align: center;
     margin-bottom: 20px;
     font-size: 24px;
     color: #2a852d;
 }
 
-/* Formulario para nuevo post */
-.modal-content .reply-form {
+/* formulario para nuevo post */
+.modal-content .newpost-form {
     margin-top: 10px;
 }
 
-/* Campos del formulario */
-.reply-form input[type="text"],
-.reply-form select,
-.reply-form textarea {
-    width: 100%;
+/* campos del formulario */
+.newpost-form .title-input,
+.newpost-form .content-textarea {
+    width: 100%; 
     max-width: 100%;
     box-sizing: border-box;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    padding: 10px;
-    font-size: 15px;
-    margin-bottom: 12px;
+    font-size: 1rem;
+    margin: 10px 0 12px 0; 
+    padding: 10px; 
+    border-radius: 8px; 
+    border: 2px solid #ccc;
+    font-family: Poppins;
 }
 
-/* Altura predeterminada del selector múltiple */
-.reply-form select[multiple] {
-    height: 100px;
-    resize: vertical;
+.newpost-form .title-input:focus,
+.newpost-form .content-textarea:focus {
+    border: 2px solid #4CAF50;
+    color: #000000;
+    outline: none;
+}
+
+/* estilo interno del selector de categorías */
+.newpost-form .categories-select .select__control {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: Poppins;
+    padding: 4px;
+}
+
+/* estilo interno del selector de categorías cuando está seleccionado */
+.newpost-form .categories-select .select__control--is-focused {
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    color: #000000;
+    box-shadow: none;
+}
+
+/* estilo para categoría seleccionada en selector de categorías */
+.newpost-form .categories-select .select__multi-value {
+    background-color: #dfe2e6;
+    border-radius: 8px;
+    padding: 2px 6px;
+    font-family: Poppins;
+    align-items: center;
+}
+
+/* icono X de cada etiqueta seleccionada en el selector de categorías */
+.newpost-form .categories-select .select__multi-value__remove {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 50%;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+/* efecto hover sobre la X de cada etiqueta seleccionada en el selector de categorías */
+.newpost-form .categories-select .select__multi-value__remove:hover {
+  background-color: rgba(250, 134, 134, 0.1);
+  border-radius: 90;
+}
+
+/* x para limpiar el contenedor */
+.newpost-form .categories-select .select__clear-indicator {
+  cursor: pointer;
+}
+
+/* estilo para el contenedor del menú desplegable de categorías */
+.newpost-form .categories-select .select__menu {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* estilo para el interior del menú desplegable de categorías */
+.newpost-form .categories-select .select__menu-list {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: Poppins;
+  font-size: 1rem;
+}
+
+/* estilo de las opciones dentro del menú desplegable de categorías */
+.newpost-form .categories-select .select__option {
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+/* resaltado de opciones dentro del menú desplegable de categorías */
+.newpost-form .categories-select .select__option--is-focused {
+  background-color: #f0f0f0;
+}
+
+/* resaltado de opción seleccionada dentro del menú desplegable de categorías */
+.newpost-form .categories-select .select__option--is-selected {
+  background-color: #2a852d;
+  color: white;
+}
+
+/* el campo de texto no es redimensionable pero es scrolleable */
+.newpost-form .content-textarea {
+    resize: none;
+    overflow-y: auto;
 }
 
 /* Botones del formulario */
-.reply-form .reply-form-actions {
+.newpost-form .newpost-form-actions {
     margin-top: 12px;
     display: flex;
     gap: 10px;
     justify-content: flex-end;
 }
 
-.reply-form .submit-post-response-btn {
+.newpost-form .submit-post-response-btn {
     padding: 8px 16px;
     background-color: #4CAF50;
     color: white;
@@ -100,11 +182,11 @@
     transition: background-color 0.3s ease;
 }
 
-.reply-form .submit-post-response-btn:hover:not(:disabled) {
+.newpost-form .submit-post-response-btn:hover:not(:disabled) {
     background-color: #388E3C;
 }
 
-.reply-form .cancel-post-response-btn {
+.newpost-form .cancel-post-response-btn {
     padding: 8px 16px;
     background-color: #ccc;
     color: #333;
@@ -115,7 +197,7 @@
     transition: background-color 0.3s ease;
 }
 
-.reply-form .cancel-post-response-btn:hover:not(:disabled) {
+.newpost-form .cancel-post-response-btn:hover:not(:disabled) {
     background-color: #b3b3b3;
 }
 

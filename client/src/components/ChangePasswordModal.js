@@ -2,6 +2,7 @@ import '../styles/ChangePasswordModal.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import NotificationMessage from './NotificationMessage';
 
 function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMessageType, 
                               notificationMessage, notificationMessageType, onClose }) {
@@ -59,16 +60,11 @@ function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMe
 
   return (
     <div className="change-password-modal">
-      {notificationMessage && (
-        <div className={`notification-message ${notificationMessageType}`}>
-          {notificationMessage.split('\n').map((line, i) => (
-            <span key={i}>
-              {line}
-              <br />
-            </span>
-          ))}
-        </div>
-      )}
+      {notificationMessage && 
+        <NotificationMessage
+          textMessage={notificationMessage}
+          notificationType={notificationMessageType} />
+      }
       <div className="modal" ref={modalRef}>
         <button className="close-button" onClick={onClose}>×</button>
         <h2>Editar contraseña</h2>

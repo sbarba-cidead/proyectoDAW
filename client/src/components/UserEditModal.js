@@ -2,6 +2,7 @@ import '../styles/UserEditModal.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
+import NotificationMessage from './NotificationMessage';
 
 function UserEditModal({ userData, onSave, setNotificationMessage, setNotificationMessageType,
                           notificationMessage, notificationMessageType, onClose }) {
@@ -152,16 +153,11 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
 
   return (
     <div className="modal-overlay">
-      {notificationMessage && (
-        <div className={`notification-message ${notificationMessageType}`}>
-            {notificationMessage.split('\n').map((line, index) => (
-              <span key={index}>
-                {line}
-                <br />
-              </span>
-            ))}
-        </div>
-      )}
+      {notificationMessage && 
+        <NotificationMessage
+          textMessage={notificationMessage}
+          notificationType={notificationMessageType} />
+      }
       <div className="modal" ref={modalRef}>
         <button className="close-button" onClick={onClose}>×</button>
         <h2>Editar perfil</h2>

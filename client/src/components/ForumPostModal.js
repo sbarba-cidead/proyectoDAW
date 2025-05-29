@@ -3,18 +3,25 @@ import '../styles/ForumPostModal.css';
 import { useState, useEffect, useRef, useContext, Fragment } from 'react';
 import { useUserContext } from '../context/UserContext';
 import { convertUTCDateTime } from '../utils/functions';
+import NotificationMessage from './NotificationMessage';
+import { sendRecyclingActivity } from '../utils/functions';
 
 const ForumPostModal = ({ post, onClose }) => {
-    const { user } = useUserContext();
+    const { user, refreshUser } = useUserContext();
     const [repliesVisible, setRepliesVisible] = useState(false);
     const [replies, setReplies] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [order, setOrder] = useState('asc');
+    const [replyCount, setReplyCount] = useState(post.replies.length);
     const [showPostReplyForm, setShowPostReplyForm] = useState(false);
     const [showCommentReplyForm, setShowCommentReplyForm] = useState(false);
     const [replyFormVisibleForComment, setReplyFormVisibleForComment] = useState(null); // id del comentario al que se está respondiendo
-    const [newReplyText, setNewReplyText] = useState('');
+    const [newCommentReplyText, setNewCommentReplyText] = useState('');
+    const [newPostReplayText, setNewPostReplayText] = useState('')
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationMessageType, setNotificationMessageType] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollRefs = useRef({}); // referencia a comentario/respuesta
     const scrollContainerRef = useRef(null); // referencia general al modal
     const apiUrl = process.env.REACT_APP_API_URL;
@@ -37,7 +44,7 @@ const ForumPostModal = ({ post, onClose }) => {
     // carga de respuestas al post mediante paginación
     const fetchReplies = async (pageToLoad = 1) => {
         try {
-            const response = await fetch(`${apiUrl}/forum/forum-posts/${post._id}/replies?page=${pageToLoad}`);
+            const response = await fetch(`${apiUrl}/forum/posts/${post._id}/replies?page=${pageToLoad}`);
             const data = await response.json();
 
             // añade las respuestas a las anteriores si ya hay
@@ -127,62 +134,189 @@ const ForumPostModal = ({ post, onClose }) => {
         }
     };
 
-    // enviar nueva respuesta a post
-    const handlePostSubmit = async (postContent) => {
+    // para mostrar mensaje de notificicación
+    const showTempNotification = (msg, type, duration) => {
+        setNotificationMessage(msg);
+        setNotificationMessageType(type);
+        setTimeout(() => setNotificationMessage(''), duration);
+    };
+
+    // función para guardar una nueva actividad de reciclaje
+    const handleRecyclingActivity = async () =>{
+        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+
         try {
-            const response = await fetch('/api/posts', {
+            await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
+            await refreshUser(); // recarga los datos del usuario en contexto global
+        } catch (error) {
+            console.error('Error registrando actividad de reciclaje:', error.message);
+        }
+    }  
+
+    // enviar nueva respuesta a post
+    const handlePostReplySubmit = async (postReplyText) => {
+        try {
+            if (!postReplyText.trim()) {
+                showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
+                return;
+            }
+
+            // acceso al token del usuario almacenado en local
+            const token = localStorage.getItem('usertoken');
+            if (!token) {
+                console.error("Token de autenticación no válido.");
+                return;
+            }
+
+            setIsSubmitting(true);
+
+            const response = await fetch(`${apiUrl}/forum/posts/${post._id}/create-comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    title: 'Nuevo Post',
-                    content: postContent,
-                    createdBy: "userId",  // El ID del usuario logueado
-                    categories: ['Reciclaje'],
-                    type: 'post',
-                }),
+                body: JSON.stringify({ text: postReplyText.trim() }),
             });
 
-            const newPost = await response.json();
-            console.log('Post creado:', newPost);
+            const data = await response.json();
+
+            if (!response.ok) {
+                showTempNotification('Error al enviar el comentario.\nInténtalo de nuevo.', 'error', 3000);
+                console.error(data.error);
+            }
+
+            // añade la nueva respuesta a la lista para que se 
+            // recargen las respuestas al post
+            setReplies(prev => [...prev, data.comment]);
+            // aumenta número de respuestas
+            setReplyCount(prev => prev + 1);
+
+            // limpia el formulario
+            setNewPostReplayText(''); // limpia el formulario
+            setShowPostReplyForm(false); // oculta el forumario          
+
+            // se añade actividad de reciclaje
+            handleRecyclingActivity();
+
+            // si no estaba activada la visualización de respuestas, la activa
+            if (!repliesVisible) { setRepliesVisible(true); }
+            
+            setTimeout(() => { // pasado un tiempo
+                // scroll hacia el nuevo comentario
+                const el = scrollRefs.current[data.comment._id];
+                if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            }, 100);    
         } catch (error) {
-            console.error('Error creando el post:', error);
+            console.error('Error creando el comentario:', error);
+            showTempNotification('Error al enviar el comentario.\nInténtalo de nuevo.', 'error', 2000);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // enviar nueva respuesta a otra respuesta
-    const handleCommentSubmit = async (commentContent, postId) => {
+    const handleCommentReplySubmit = async (commentContent, postId, responseToId) => {
         try {
-            const response = await fetch(`/api/posts/${postId}/comments`, {
+            if (!commentContent.trim()) {
+                showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
+                return;
+            }
+
+            const token = localStorage.getItem('usertoken');
+            if (!token) {
+                console.error("Token de autenticación no válido.");
+                return;
+            }
+
+            setIsSubmitting(true);
+
+            const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    text: commentContent,
-                    createdBy: "userId",  // El ID del usuario logueado
-                    postId,
+                body: JSON.stringify({ 
+                    text: commentContent.trim(), 
+                    postId: postId 
                 }),
             });
 
-            const newComment = await response.json();
-            console.log('Comentario creado:', newComment);
+            const data = await response.json();
+
+            if (!response.ok) {
+                showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
+                console.error(data.error);
+                return;
+            }
+
+            // añade la nueva respuesta a la lista para que se 
+            // recargen las respuestas al post
+            setReplies(prev => [...prev, data.reply]);
+            // aumenta número de respuestas
+            setReplyCount(prev => prev + 1);
+
+            // limpia el formulario
+            setNewCommentReplyText(''); // limpia el formulario
+            setShowCommentReplyForm(false); // oculta el forumario
+            setReplyFormVisibleForComment(null);
+
+            // si no estaba activada la visualización de respuestas, la activa
+            if (!repliesVisible) setRepliesVisible(true);
+
+            setTimeout(() => { // pasado un tiempo
+                // scroll hacia la nueva respuesta
+                const el = scrollRefs.current[data.reply._id];
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+
+            // se añade actividad de reciclaje
+            handleRecyclingActivity();
         } catch (error) {
-            console.error('Error creando el comentario:', error);
+            console.error('Error creando la respuesta:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
+
+    // creación de id temporal para las respuestas (usado para referencias en front)
+    const tempIdMap = {};
+        sortedReplies.forEach((r, index) => {
+        tempIdMap[r._id] = index + 1;
+    });
     
 
     return (
         <div className="postmodal-background" onClick={onClose}>
+            {notificationMessage && 
+                <NotificationMessage
+                textMessage={notificationMessage}
+                notificationType={notificationMessageType} />
+            }
             <div className="modal-wrapper" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <button className="close-btn" onClick={onClose}>✖</button>
                 </div>
                 <div className="modal-content" ref={scrollContainerRef}>
                     <div ref={el => scrollRefs.current['post'] = el} className="post-content">          
-                        <p className="post-metainfo">Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span></p>
+                        {/* <p className="post-metainfo">Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span></p> */}
+                        <div className="post-metainfo">
+                            <div className="post-categories">
+                                {Array.isArray(post.categories) && post.categories.length > 0 ? (
+                                    post.categories.map((cat) => (
+                                        <span key={cat._id || cat.name} className="category-tag">
+                                            {cat.name}
+                                        </span>
+                                    ))
+                                    ) : (
+                                        <span className="category-tag uncategorized">Sin categorías</span>
+                                )}
+                            </div>
+                            <div className="post-created-by">
+                                Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span>
+                            </div>
+                        </div>
                         <h2 className="post-content-title">{post.title}</h2>
                         <div className='post-content-text'>
                             {post.content.split('\\n').map((para, idx) => (
@@ -190,28 +324,46 @@ const ForumPostModal = ({ post, onClose }) => {
                             ))}
                         </div>
                         {user && !showPostReplyForm && (
-                            <button className="post-reply-btn" onClick={() => setShowPostReplyForm(true)}>Responder al post</button>
+                            <button className="post-reply-btn" onClick={() => setShowPostReplyForm(true)}><span className="arrow">↪</span> Responder al post</button>
                         )}
                         {showPostReplyForm && (
                             <div className="reply-form">
-                                <textarea placeholder="Tu respuesta al post..." rows="4" />
+                                <textarea 
+                                    placeholder="Tu respuesta al post..." 
+                                    rows="4"
+                                    value={newPostReplayText}
+                                    onChange={(e) => setNewPostReplayText(e.target.value)} />
                                 <div className="reply-form-actions">
-                                    <button className="submit-post-response-btn" onClick={() => setShowPostReplyForm(false)}>Enviar</button>
-                                    <button className="cancel-post-response-btn" onClick={() => setShowPostReplyForm(false)}>Cancelar</button>
+                                    <button 
+                                        className="submit-post-response-btn" 
+                                        type="button"
+                                        onClick={() => handlePostReplySubmit(newPostReplayText)}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Enviando...' : 'Enviar'}
+                                    </button>
+                                    <button 
+                                        className="cancel-post-response-btn"
+                                        type="button"
+                                        onClick={() => setShowPostReplyForm(false)}
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancelar
+                                    </button>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     <div className="replies-header">
-                        <h3>Respuestas ({post.replies.length})</h3>
+                        <h3>Respuestas ({replyCount})</h3>
                         <select value={order} onChange={(e) => setOrder(e.target.value)}>
                             <option value="asc">Más antiguas primero</option>
                             <option value="desc">Más recientes primero</option>
                         </select>
                     </div>
 
-                    {post.replies.length > 0 ? (
+                    {replyCount > 0 ? (
                             !repliesVisible ? (
                                 <div className="load-replies">
                                     <button onClick={() => { fetchReplies(1); setRepliesVisible(true);}}>
@@ -227,7 +379,7 @@ const ForumPostModal = ({ post, onClose }) => {
                                                 : new Date(b.createdAt) - new Date(a.createdAt)
                                             )
                                             .map((reply) => (
-                                                <div key={reply._id} ref={el => scrollRefs.current[reply.id] = el} className="reply">
+                                                <div key={reply._id} ref={el => scrollRefs.current[reply._id] = el} className="reply">
                                                     <p className="reply-metainfo">
                                                         <span className="username">
                                                             {reply.user?.fullname || 'usuario eliminado'}
@@ -240,7 +392,7 @@ const ForumPostModal = ({ post, onClose }) => {
                                                     {reply.responseTo && (
                                                         <p className="reply-reference">
                                                             ↪ Respuesta a{' '}
-                                                            <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{reply.responseTo}</button>
+                                                            <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{tempIdMap[reply.responseTo] || 'mensaje eliminado'}</button>
                                                         </p>
                                                     )}
                                                     <p className="reply-text">{reply.text}</p>
@@ -257,11 +409,28 @@ const ForumPostModal = ({ post, onClose }) => {
 
                                                     {showCommentReplyForm && replyFormVisibleForComment === reply._id && (
                                                         <div className="reply-form">
-                                                            <textarea placeholder={`Tu respuesta a ${reply.user?.fullname || 'el comentario'}...`} rows="4" />
+                                                            <textarea 
+                                                                placeholder={`Tu respuesta a ${reply.user?.fullname || 'el comentario'}...`} 
+                                                                rows="4"
+                                                                value={newCommentReplyText}
+                                                                onChange={(e) => setNewCommentReplyText(e.target.value)} />                                                                
                                                             <div className="reply-form-actions">
-                                                                <button className="submit-post-response-btn">Enviar</button>
-                                                                <button className="cancel-post-response-btn" 
-                                                                    onClick={() => { setReplyFormVisibleForComment(null); setShowCommentReplyForm(false); }}>
+                                                                <button
+                                                                    type="button"
+                                                                    className="submit-post-response-btn"
+                                                                    onClick={() => handleCommentReplySubmit(newCommentReplyText, post._id, reply._id)}
+                                                                    disabled={isSubmitting}
+                                                                >
+                                                                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                                                                </button>
+                                                                <button 
+                                                                    className="cancel-post-response-btn"
+                                                                    type="button"
+                                                                    onClick={() => { 
+                                                                        setReplyFormVisibleForComment(null); 
+                                                                        setShowCommentReplyForm(false); }}
+                                                                    disabled={isSubmitting}
+                                                                    >
                                                                     Cancelar
                                                                 </button>
                                                             </div>
@@ -284,7 +453,7 @@ const ForumPostModal = ({ post, onClose }) => {
                                 </>
                             )
                         ) : (
-                            <div className="load-replies">
+                            <div className="no-replies">
                                 Aún no hay respuestas que mostrar.
                                 {' '}
                                 {user && <>Sé el primero en responder.</>}                                

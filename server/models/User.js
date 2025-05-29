@@ -46,8 +46,24 @@ const UserSchema = new mongoose.Schema({
         default: []
     },
     messages: {
-        type: [],
-        required: false,
+        type: [
+            {
+                _id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    refPath: 'messages.type'
+                },
+                model: {
+                    type: String,
+                    enum: ['ForumPost', 'ForumComment'],
+                    required: true
+                },
+                type: {
+                    type: String,
+                    enum: ['post', 'reply'],
+                    required: true
+                }
+            }
+        ],
         default: []
     }
 }, { timestamps: true });

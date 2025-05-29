@@ -3,6 +3,7 @@ import '../styles/ForumNewPostModal.css';
 import { useState, useCallback } from 'react';
 import AsyncCreatableSelect from 'react-select/async-creatable';
 import makeAnimated from 'react-select/animated';
+import NotificationMessage from './NotificationMessage';
 
 const animatedComponents = makeAnimated();
 
@@ -10,8 +11,17 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
     const [title, setTitle] = useState('');
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [content, setContent] = useState('');
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationMessageType, setNotificationMessageType] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const apiUrl = process.env.REACT_APP_API_URL;
+
+    // para mostrar mensaje de notificicación
+    const showTempNotification = (msg, type, duration) => {
+        setNotificationMessage(msg);
+        setNotificationMessageType(type);
+        setTimeout(() => setNotificationMessage(''), duration);
+    };
 
     // carga las categorías para el post desde el backend
     const loadCategoryOptions = useCallback(async (inputValue) => {
@@ -28,12 +38,28 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
         }
     }, [apiUrl]);
 
+    // manejo de creación de categorías por el usuario
+    const handleCreateCategory = (inputValue) => {
+        const trimmedValue = inputValue.trim();
+
+        if (!trimmedValue) { // si sólo es espacios, no agrega la categoría
+            return;
+        }
+
+        // hace trim a la categoría escrita antes de añadirla al input
+        const newOption = { label: trimmedValue, value: trimmedValue };
+
+        // agrega al array de categorías seleccionadas
+        setSelectedCategories(prev => [...prev, newOption]);
+    };
+
+
     // envío del formulario para la creación del post
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!title.trim() || !content.trim()) {
-            alert("Por favor completa el título y el contenido del post.");
+            showTempNotification('Por favor completa el título y el contenido del post.', 'error', 3000);
             return;
         }
 
@@ -52,18 +78,18 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
             const isObjectId = /^[0-9a-fA-F]{24}$/.test(cat.value);
 
             // si es correcto devuelve el mismo valor, o sino lo formatea
-            return isObjectId ? cat.value : { name: cat.label };
+            return isObjectId ? cat.value : { name: cat.label.trim() };
         });
 
         // datos que se mandarán para crear el post
         const postData = {
-            title,
-            content,
+            title: title.trim(),
+            content: content.trim(),
             categories: categoriesFormatted,
         };
 
         try {
-            const res = await fetch(`${apiUrl}/forum/create-post`, {
+            const res = await fetch(`${apiUrl}/forum/posts/create-post`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -75,81 +101,45 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
             const data = await res.json();
 
             if (res.ok) {
-                alert('Post creado correctamente');
-                onPostCreated(data.post); // función para actualizar lista o cerrar modal
-                onClose();
+                showTempNotification('Post creado correctamente', 'success', 2000);
+
+                // pasado un tiempo
+                setTimeout(() => { 
+                    onPostCreated(data.post); // actualizar lista de posts
+                    onClose(); // cerrar modal
+                }, 1000);                 
             } else {
-                alert('Error: ' + data.message);
+                showTempNotification('Error al crear el post.\nInténtalo de nuevo.', 'error', 2000);
+                console.error(data.error);
             }
         } catch (error) {
-            alert('Error al enviar la petición');
+            showTempNotification('Error al crear el post.\nInténtalo de nuevo.', 'error', 2000);
             console.error(error);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // const handleSubmit = async () => {
-    //     if (!title.trim() || !content.trim()) {
-    //         alert("Por favor completa el título y el contenido del post.");
-    //         return;
-    //     }
-
-    //     setIsSubmitting(true);
-
-    //     try {
-    //         const response = await fetch(`${process.env.REACT_APP_API_URL}/forum/forum-posts`, {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: JSON.stringify({
-    //                 title,
-    //                 content,
-    //                 categories,
-    //                 createdBy: user?._id,
-    //             }),
-    //         });
-
-    //         const newPost = await response.json();
-    //         console.log('Post creado:', newPost);
-    //         if (onPostCreated) onPostCreated(newPost);
-    //         onClose();
-    //     } catch (error) {
-    //         console.error('Error al crear el post:', error);
-    //         alert("Hubo un error al crear el post.");
-    //     } finally {
-    //         setIsSubmitting(false);
-    //     }
-    // };
-
-    // -----------
-
-    // const handleCategoryChange = (e) => {
-    //     const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-    //     setSelectedCategories(selected);
-    // };
-
-    // const animatedComponents = makeAnimated();
-
 
     return (
-        <div className="postmodal-background" onClick={onClose}>
+        <div className="newpostmodal-background">
+            {notificationMessage && 
+                <NotificationMessage
+                textMessage={notificationMessage}
+                notificationType={notificationMessageType} />
+            }
             <div className="modal-wrapper" onClick={e => e.stopPropagation()}>
                 <div className="modal-content">
                     <div className="modal-header">
-                        <button className="close-btn" onClick={onClose}>✖</button>
+                        <h2>Crear nuevo post</h2>
                     </div>
-
-                    <h2>Crear nuevo post</h2>
-
-                    <form className="reply-form" onSubmit={handleSubmit}>
+                    <form className="newpost-form" onSubmit={handleSubmit}>
                         <input
                             type="text"
                             placeholder="Título del post"
+                            className="title-input"
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            style={{ width: '100%', marginBottom: '10px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
                         />
 
                         <AsyncCreatableSelect
@@ -158,28 +148,24 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
                             cacheOptions
                             defaultOptions
                             loadOptions={loadCategoryOptions}
-                            formatCreateLabel={inputValue => `Agregar "${inputValue}"`}
+                            formatCreateLabel={inputValue => `Agregar "${inputValue.trim()}"`}
                             onChange={setSelectedCategories}
+                            onCreateOption={handleCreateCategory}
                             value={selectedCategories}
-                            placeholder="Escribe o selecciona categorías..."
+                            placeholder="Escribe o selecciona categorías... (opcional)"
+                            className="categories-select"
+                            classNamePrefix="select"
                         />
 
                         <textarea
-                            placeholder="Escribe aquí el contenido principal del post..."
+                            placeholder="Escribe aquí el contenido del post..."
+                            className="content-textarea"
                             rows="6"
                             value={content}
                             onChange={e => setContent(e.target.value)}
-                            style={{ width: '100%', marginTop: '10px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
                         />
 
-                        <div className="reply-form-actions">
-                            <button
-                                className="submit-post-response-btn"
-                                type="submit"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Creando...' : 'Crear post'}
-                            </button>
+                        <div className="newpost-form-actions">
                             <button
                                 className="cancel-post-response-btn"
                                 type="button"
@@ -188,6 +174,13 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
                             >
                                 Cancelar
                             </button>
+                            <button
+                                className="submit-post-response-btn"
+                                type="submit"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Creando...' : 'Crear post'}
+                            </button>                            
                         </div>
                     </form>
                 </div>

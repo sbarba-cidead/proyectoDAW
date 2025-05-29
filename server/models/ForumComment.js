@@ -2,19 +2,16 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const forumCommentSchema = new Schema({
-  id: {
-    type: Number, 
-    required: true,
-    unique: true
-  }, // id incremental autogenerado
   post: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
+    ref: 'ForumPost',
     required: true
   }, // referencia al post padre
   responseTo: {
-    type: String,
-    default: null
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ForumComment',
+    default: null,
+    required: false
   }, // string con el id del mensaje al que es respuesta, o null si no es respuesta
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,6 +26,8 @@ const forumCommentSchema = new Schema({
     type: String,
     required: true
   } // contenido del mensaje
+}, {
+  collection: "forum-comments"
 });
 
 module.exports = mongoose.model('ForumComment', forumCommentSchema);

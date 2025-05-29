@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
 const ForumPost = require('../models/ForumPost');
 const PostCategory = require('../models/PostCategory');
 const ForumComment = require('../models/ForumComment');
@@ -7,7 +8,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const mongoose = require('mongoose');
 
 // obtener todos los posts
-router.get('/forum-posts', async (req, res) => {
+router.get('/posts', async (req, res) => {
     try {
         const posts = await ForumPost.find()
             .populate('createdBy', 'username fullname avatar score level')
@@ -22,7 +23,7 @@ router.get('/forum-posts', async (req, res) => {
 });
 
 // obtener las categorías para los posts
-router.get('/post-categories', async (req, res) => {
+router.get('/posts/post-categories', async (req, res) => {
     try {
         const categories = await PostCategory.find()
                                             .sort({ name: 1 }) // orden alfabético
@@ -35,14 +36,14 @@ router.get('/post-categories', async (req, res) => {
 });
 
 // obtener un post específico
-router.get('/forum-posts/:id', async (req, res) => {
+router.get('/posts/:id', async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id)
             .populate('createdBy', 'username fullname avatar score level')
             .populate('categories', 'name')
             .lean();
 
-        if (!post) return res.status(404).json({ message: 'Post no encontrado' });
+        if (!post) return res.status(404).json({ error: 'Post no encontrado' });
 
         res.json(post);
     } catch (error) {
@@ -51,13 +52,15 @@ router.get('/forum-posts/:id', async (req, res) => {
 });
 
 // obtener las respuestas de un post de forma progresiva
-router.get('/forum-posts/:id/replies', async (req, res) => {
+router.get('/posts/:id/replies', async (req, res) => {
   const { page = 1, limit = 5 } = req.query; // 5 respuestas cada vez
+  const pageNumber = parseInt(page, 10) || 1;
+  const limitNumber = parseInt(limit, 10) || 5;
 
   try {
     const replies = await ForumComment.find({ post: req.params.id })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
       .populate('user', 'username fullname avatar score level')
       .sort({ createdAt: 1 })
       .lean();
@@ -67,8 +70,8 @@ router.get('/forum-posts/:id/replies', async (req, res) => {
     res.json({
       replies,
       totalReplies,
-      totalPages: Math.ceil(totalReplies / limit),
-      currentPage: page,
+      totalPages: Math.ceil(totalReplies / limitNumber),
+      currentPage: pageNumber,
     });
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener las respuestas al post' });
@@ -88,22 +91,27 @@ router.get('/post-categories-search', async (req, res) => {
         res.json(categories);
     } catch (error) {
         console.error('Error al obtener categorías:', error);
-        res.status(500).json({ error: 'Error al obtener las categorías' });
+        res.status(500).json({ error: error.message, stack: error.stack });
+        // res.status(500).json({ error: 'Error al obtener las categorías' });
     }
 });
 
-// Crear un nuevo post
-router.post('/create-post', authMiddleware, async (req, res) => {
+// crear un nuevo post
+router.post('/posts/create-post', authMiddleware, async (req, res) => {
   try {
     const { title, content, categories } = req.body;
     const userId = req.userId; // obtenido del token a través del authMiddleware por seguridad
 
     if (!title || !content) {
-        return res.status(400).json({ message: 'Faltan datos obligatorios' });
+        return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
     if (!userId) {
-        return res.status(400).json({ message: 'Fallo de autenticación de usuario' });
+        return res.status(400).json({ error: 'Fallo de autenticación de usuario' });
+    }
+
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({ error: 'Categorías inválidas' });
     }
 
     const categoryIds = [];
@@ -141,39 +149,154 @@ router.post('/create-post', authMiddleware, async (req, res) => {
 
     await newPost.save(); // se guarda el nuevo post
 
-    res.status(201).json({ message: 'Post creado correctamente', post: newPost });
-  } catch (error) {
-    console.error('Error al crear post:', error);
-    res.status(500).json({ message: 'Error al crear post' });
-  }
-});
-
-// Crear un comentario para un post específico
-router.post('/posts/:id/comments', async (req, res) => {
-  const { text, createdBy, responseTo } = req.body;
-  const postId = req.params.id;
-
-  const newComment = new ForumComment({
-    text,
-    post: postId,
-    user: createdBy,
-    responseTo
-  });
-
-  try {
-    const savedComment = await newComment.save();
-
-    // Añadir el comentario a la lista de respuestas del post
-    await Post.findByIdAndUpdate(postId, {
-      $push: { replies: savedComment._id },
-      $set: { lastReplyAt: savedComment.createdAt }
+    // añade el post al array de mensajes del usuario
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        messages: {
+          _id: newPost._id,
+          model: 'ForumPost',
+          type: 'post',
+        },
+      },
     });
 
-    res.status(201).json(savedComment);
+    const populatedNewPost = await ForumPost.findById(newPost._id)
+                                            .populate('createdBy', 'fullname')
+                                            .populate('categories', 'name')
+                                            .lean();
+
+    res.status(201).json({ messsage: 'Post creado correctamente', post: populatedNewPost });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al crear post:', error);
+    res.status(500).json({ error: 'Error al crear post' });
   }
 });
 
+// crear un comentario para un post específico
+router.post('/posts/:id/create-comment', authMiddleware, async (req, res) => {
+  try {
+    const postId = req.params.id; // de la ruta de post a la API
+    const userId = req.userId; // del middleware de auth
+    const { text } = req.body;
+
+    // comprobación de que el contenido de la respuesta no está vacío
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ error: 'El texto del comentario es obligatorio' });
+    }
+
+    // verifica que el id del post dado existe
+    const post = await ForumPost.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post no encontrado' });
+    }
+
+    // creación de objeto comentario según el modelo
+    const newComment = new ForumComment({
+      post: postId,
+      user: userId,
+      text,
+    }); // responseTo toma valor el defecto null, createdAt toma el defecto que es now
+
+    // guarda el comentario en BD
+    const savedComment = await newComment.save();
+
+    // actualiza el post con el nuevo comentario y fecha de última respuesta
+    post.replies.push(savedComment._id); // añade el id del comentario nuevo al array de respuestas del post
+    post.lastReplyAt = savedComment.createdAt; // actualiza fecha de última edición del post
+    await post.save(); // guarda los cambios
+
+    // se añade la respuesta al perfil del usuario
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        messages: {
+          _id: savedComment._id,
+          model: 'ForumComment',
+          type: 'reply',
+        },
+      },
+    });
+
+    const populatedComment = await ForumComment.findById(savedComment._id)
+                                               .populate('user', 'fullname')
+                                               .lean();
+
+    return res.status(201).json({ message: 'Comentario creado correctamente', comment: populatedComment });
+  } catch (error) {
+    console.error('Error creando comentario:', error);
+    return res.status(500).json({ error: 'Error creando comentario' });
+  }
+});
+
+// crear un comentario para un comentario específico
+router.post('/comments/:id/create-comment', authMiddleware, async (req, res) => {
+  try {
+    const parentCommentId = req.params.id; // de la ruta de post a la API
+    const userId = req.userId; // del middleware de auth
+    const { postId, text } = req.body;
+
+    // valida el id de referencia al comentario
+    if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
+      return res.status(400).json({ error: 'ID de referencia al comentario no válido' });
+    }
+
+    // valida el id de referencia al post
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'ID de referencia al post no válido' });
+    }
+
+    // comprobación de que el contenido de la respuesta no está vacío
+    if (!text || text.trim() === '') {
+      return res.status(400).json({ error: 'El texto del comentario es obligatorio' });
+    }
+
+    // verifica que el comentario original al que se responde existe
+    const parentComment = await ForumComment.findById(parentCommentId);
+    if (!parentComment) {
+      return res.status(404).json({ error: 'Comentario original no encontrado' });
+    }
+
+    // verifica que el post relacionado existe
+    const post = await ForumPost.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post de referencia no encontrado' });
+    }
+
+    // nuevo comentario como respuesta al anterior
+    const newReply = new ForumComment({
+      post: postId, // _id del post padre
+      user: userId, // _id del usuario que escribe la respuesta
+      text, // contenido de la respuesta
+      responseTo: parentCommentId, // _id de a qué comentario responde
+    }); // createdat toma el valor por defecto now
+
+    // se guarda la respuesta en BD
+    const savedReply = await newReply.save();
+
+    // agrega la respuesta al array de respuestas del post
+    post.replies.push(savedReply._id);
+    post.lastReplyAt = savedReply.createdAt;
+    await post.save();
+
+    // agregar la respuesta al array de mensajes del usuario
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        messages: {
+          _id: savedReply._id,
+          model: 'ForumComment',
+          type: 'reply',
+        },
+      },
+    });
+
+    const populatedReply = await ForumComment.findById(savedReply._id)
+                                             .populate('user', 'fullname')
+                                             .lean();
+
+    res.status(201).json({ reply: populatedReply });
+  } catch (error) {
+    console.error('Error al crear respuesta al comentario:', error);
+    res.status(500).json({ error: 'Error al crear respuesta' });
+  }
+});
 
 module.exports = router;

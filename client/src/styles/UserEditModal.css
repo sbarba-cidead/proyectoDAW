@@ -11,41 +11,6 @@
   z-index: 1000;
 }
 
-.notification-message {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 250px;
-  max-width: 350px;
-  text-align: center;
-  padding: 15px 25px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  z-index: 1000;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.notification-message.error {
-  background-color: #ffe6e6;
-  border: 1px solid #e53e3e;
-  color: #c53030;
-}
-
-.notification-message.success {
-  background-color: #e6ffed;
-  border: 1px solid #b2f5ca;
-  color: #2f855a;
-}
-
-.notification-message.info {
-  background-color: #e6ffed;
-  border: 1px solid #b2f5ea;
-  color: #2f8581;
-}
-
 /* animación para el mensaje de notificación */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateX(-50%) translateY(-60px); }

@@ -3,6 +3,7 @@ import '../styles/LoginModal.css';
 import { useUserContext } from '../context/UserContext';
 import { useState, useEffect, useRef } from 'react';
 import { FaEye, FaEyeSlash, FaTimesCircle } from 'react-icons/fa'; 
+import NotificationMessage from './NotificationMessage';
 
 function LoginModal( { initialFormData, formData, setFormData, handleInputChange, onClose } ) {
   const { setUserGlobalContext } = useUserContext();
@@ -178,16 +179,11 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
 
   return (
     <div className="login-modal-main">
-      {notificationMessage && (
-        <div className={`notification-message ${notificationMessageType}`}>
-            {notificationMessage.split('\n').map((line, index) => (
-              <span key={index}>
-                {line}
-                <br />
-              </span>
-            ))}
-        </div>
-      )}
+      {notificationMessage && 
+        <NotificationMessage
+          textMessage={notificationMessage}
+          notificationType={notificationMessageType} />
+      }
       <div className="modal" ref={modalRef}>
         <button className="close-button" onClick={onClose}>×</button>
         <h2>{isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</h2>

@@ -1,25 +1,69 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const UserLevel = require('../models/UserLevel')
 const ForumPost = require('../models/ForumPost');
 const PostCategory = require('../models/PostCategory');
 const ForumComment = require('../models/ForumComment');
 const authMiddleware = require('../middleware/authMiddleware');
 const mongoose = require('mongoose');
 
+// función para dar mismo formato a todos los nombres de categoría de post
+function normalizeCategoryName(name) {
+  if (!name || typeof name !== 'string') return '';
+  name = name.trim().toLowerCase(); // todo minúsculas
+  return name.charAt(0).toUpperCase() + name.slice(1); // mayúscula primera letra
+}
+
 // obtener todos los posts
 router.get('/posts', async (req, res) => {
     try {
-        const posts = await ForumPost.find()
-            .populate('createdBy', 'username fullname avatar score level')
-            .populate('categories', 'name')
-            .sort({ createdAt: -1 })  // ordena por fecha de creación más reciente
-            .lean();
-        res.json(posts);
+      let posts = await ForumPost.find()
+          .populate('createdBy', 'username fullname avatar score level')
+          .populate('categories', 'name')
+          .sort({ createdAt: -1 })  // ordena por fecha de creación más reciente
+          .lean();
+
+      // elimina duplicados en los niveles
+      const levelIds = [...new Set(posts.map(p => p.createdBy.level).filter(Boolean))];
+
+      // obtiene la información de los niveles
+      const levels = await UserLevel.find({ _id: { $in: levelIds } }).lean();
+
+      // creación de un diccionario para almacenar
+      const levelMap = levels.reduce((acc, lvl) => {
+        acc[lvl._id.toString()] = lvl;
+        return acc;
+      }, {});
+
+      // almacena los datos de los niveles
+      posts = posts.map(post => {
+        const levelData = levelMap[post.createdBy.level?.toString()];
+        return {
+          ...post,
+          createdBy: {
+            ...post.createdBy,
+            level: levelData || post.createdBy.level,
+          }
+        };
+      });
+
+      res.json(posts);
     } catch (error) {
         console.error('Error al recuperar los posts del foro:', error); 
         res.status(500).json({ error: "Error al recuperar los posts del foro" });
     }
+});
+
+// número de posts disponibles en BD para el foro
+router.get('/posts/post-count', async (req, res) => {
+  try {
+    const count = await ForumPost.countDocuments();
+    res.json({ count });
+  } catch (error) {
+    console.error('Error al obtener el número de posts:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // obtener las categorías para los posts
@@ -58,12 +102,41 @@ router.get('/posts/:id/replies', async (req, res) => {
   const limitNumber = parseInt(limit, 10) || 5;
 
   try {
-    const replies = await ForumComment.find({ post: req.params.id })
+    let replies = await ForumComment.find({ post: req.params.id })
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
       .populate('user', 'username fullname avatar score level')
       .sort({ createdAt: 1 })
       .lean();
+
+    // elimina niveles duplicados
+    const levelIds = [...new Set(
+      replies
+        .map(reply => reply.user?.level)
+        .filter(Boolean)
+        .map(levelId => levelId.toString())
+    )];
+
+    // obtiene los datos de los niveles
+    const levels = await UserLevel.find({ _id: { $in: levelIds } }).lean();
+
+    // crea un diccionario con los niveles
+    const levelMap = levels.reduce((acc, lvl) => {
+      acc[lvl._id.toString()] = lvl;
+      return acc;
+    }, {});
+
+    // inserta los datos del nivel
+    replies = replies.map(reply => {
+      const levelData = levelMap[reply.user?.level?.toString()];
+      return {
+        ...reply,
+        user: {
+          ...reply.user,
+          level: levelData || reply.user.level,
+        }
+      };
+    });
 
     const totalReplies = await ForumComment.countDocuments({ post: req.params.id });
 
@@ -125,25 +198,30 @@ router.post('/posts/create-post', authMiddleware, async (req, res) => {
         // se incluye en el array
         categoryIds.push(cat);
       } else if (typeof cat === 'object' && cat.name) { // formato es objeto
+        const normalizedCat = normalizeCategoryName(cat.name);
+
         // se confirma si la categoría está en el backend
-        let existing = await PostCategory.findOne({ name: cat.name });
+        let existing = await PostCategory.findOne({ name: normalizedCat });
 
         if (!existing) { // si es una categoría nueva
             // crea la nueva categoría
-            existing = await PostCategory.create({ name: cat.name });
+            existing = await PostCategory.create({ name: normalizedCat });
         }
 
         // se incluye el _id en el array
-        categoryIds.push(existing._id);
+        categoryIds.push(existing._id.toString());
       }
     }
+
+    // elimina posibles duplicados en la lista de categorías
+    const uniqueCategoryIds = [...new Set(categoryIds)];
 
     const newPost = new ForumPost({
         title,
         content,
         createdBy: userId,
         type: 'post',
-        categories: categoryIds,
+        categories: uniqueCategoryIds,
         // createdAt, lastReplyAt y replies toman sus valores por defecto
     });
 
@@ -165,7 +243,7 @@ router.post('/posts/create-post', authMiddleware, async (req, res) => {
                                             .populate('categories', 'name')
                                             .lean();
 
-    res.status(201).json({ messsage: 'Post creado correctamente', post: populatedNewPost });
+    res.status(201).json({ message: 'Post creado correctamente', post: populatedNewPost });
   } catch (error) {
     console.error('Error al crear post:', error);
     res.status(500).json({ error: 'Error al crear post' });

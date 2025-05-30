@@ -1,12 +1,14 @@
 import '../styles/ForumPostModal.css';
 
-import { useState, useEffect, useRef, useContext, Fragment } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
 import { convertUTCDateTime } from '../utils/functions';
 import NotificationMessage from './NotificationMessage';
 import { sendRecyclingActivity } from '../utils/functions';
+import UserCardTooltip from './UserCardTooltip';
 
-const ForumPostModal = ({ post, onClose }) => {
+const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
     const { user, refreshUser } = useUserContext();
     const [repliesVisible, setRepliesVisible] = useState(false);
     const [replies, setReplies] = useState([]);
@@ -24,8 +26,28 @@ const ForumPostModal = ({ post, onClose }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const scrollRefs = useRef({}); // referencia a comentario/respuesta
     const scrollContainerRef = useRef(null); // referencia general al modal
+    const location = useLocation();
     const apiUrl = process.env.REACT_APP_API_URL;
+    const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
+    // para acceso directo por url a una respuesta de un post
+    const searchParams = new URLSearchParams(location.search);
+    const replyIdToScroll = searchParams.get('replyId')
+
+    useEffect(() => {
+        if (!replyIdToScroll) return;
+
+        const loadAndScroll = async () => {
+            setRepliesVisible(true);
+            await fetchReplies(1);
+            for (let p = 2; p <= totalPages; p++) {
+            await fetchReplies(p);
+            }
+            setTimeout(() => tryScrollTo(replyIdToScroll), 200);
+        };
+
+        loadAndScroll();
+    }, [replyIdToScroll]);
 
     // detecta y enlaza la referencia para el scroll del modal,
     // la posición se almacena como dato de sesión para mantenerla tras la recarga de la página
@@ -111,26 +133,29 @@ const ForumPostModal = ({ post, onClose }) => {
         : new Date(b.createdAt) - new Date(a.createdAt);
     });
 
+    // scroll simple a una respuesta
+    const tryScrollTo = (id) => {
+        const el = scrollRefs.current[id];
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return true;
+        }
+        return false;
+    };
+
     // hace scroll hacia el mensaje al que hacía referencia la respuesta
     const handleScrollTo = async (id) => {
-        const tryScroll = () => {
-            const el = scrollRefs.current[id];
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return true;
-            }
-            return false;
-        };
+        tryScrollTo(id);
 
         // intentar hacer scroll directamente si ya está visible
-        if (tryScroll()) return;
+        if (tryScrollTo(id)) return;
 
         // si no está visible, cargar más respuestas hasta encontrarlo
         for (let nextPage = page + 1; nextPage <= totalPages; nextPage++) {
             await fetchReplies(nextPage);
             await new Promise(resolve => setTimeout(resolve, 100)); // espera un poco por si aún no ha renderizado
 
-            if (tryScroll()) return;
+            if (tryScrollTo(id)) return;
         }
     };
 
@@ -201,6 +226,8 @@ const ForumPostModal = ({ post, onClose }) => {
 
             // si no estaba activada la visualización de respuestas, la activa
             if (!repliesVisible) { setRepliesVisible(true); }
+
+            setlastRepliedPost && setlastRepliedPost(post._id);
             
             setTimeout(() => { // pasado un tiempo
                 // scroll hacia el nuevo comentario
@@ -288,7 +315,7 @@ const ForumPostModal = ({ post, onClose }) => {
     
 
     return (
-        <div className="postmodal-background" onClick={onClose}>
+        <div className="postmodal-background">
             {notificationMessage && 
                 <NotificationMessage
                 textMessage={notificationMessage}
@@ -299,8 +326,7 @@ const ForumPostModal = ({ post, onClose }) => {
                     <button className="close-btn" onClick={onClose}>✖</button>
                 </div>
                 <div className="modal-content" ref={scrollContainerRef}>
-                    <div ref={el => scrollRefs.current['post'] = el} className="post-content">          
-                        {/* <p className="post-metainfo">Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span></p> */}
+                    <div ref={el => scrollRefs.current['post'] = el} className="post-content">
                         <div className="post-metainfo">
                             <div className="post-categories">
                                 {Array.isArray(post.categories) && post.categories.length > 0 ? (
@@ -312,9 +338,37 @@ const ForumPostModal = ({ post, onClose }) => {
                                     ) : (
                                         <span className="category-tag uncategorized">Sin categorías</span>
                                 )}
-                            </div>
+                            </div>                            
                             <div className="post-created-by">
-                                Por <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span> el <span className="date">{convertUTCDateTime(post.createdAt)}</span>
+                                Por
+                                {' '}
+                                <UserCardTooltip
+                                    avatar={`${avatarsUrl}/${post.createdBy.avatar}`}
+                                    fullname={post.createdBy.fullname}
+                                    username={post.createdBy.username}
+                                    levelIcon={post.createdBy.level.icon}
+                                    levelText={post.createdBy.level.text}
+                                    levelColor={post.createdBy.level.color}
+                                >
+                                    <Link
+                                        className="created-by"
+                                        to={
+                                            user && post.createdBy.username === user.username
+                                            ? `/perfil-usuario`
+                                            : `/perfil-usuario/${post.createdBy.username}`
+                                        }
+                                        state={ 
+                                            user && post.createdBy.username === user.username
+                                            ? undefined
+                                            : { userId: post.createdBy._id }
+                                        }
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <span className="username">{post.createdBy?.fullname || 'usuario eliminado'}</span>
+                                    </Link>
+                                </UserCardTooltip>
+                                {' '}
+                                el <span className="date">{convertUTCDateTime(post.createdAt)}</span>
                             </div>
                         </div>
                         <h2 className="post-content-title">{post.title}</h2>
@@ -380,15 +434,38 @@ const ForumPostModal = ({ post, onClose }) => {
                                             )
                                             .map((reply) => (
                                                 <div key={reply._id} ref={el => scrollRefs.current[reply._id] = el} className="reply">
-                                                    <p className="reply-metainfo">
+                                                    <div className="reply-metainfo">
                                                         <span className="username">
-                                                            {reply.user?.fullname || 'usuario eliminado'}
-                                                            {' '}
-                                                            {reply.user?._id === post.createdBy._id ? '(creador)' : ''}
+                                                            <UserCardTooltip
+                                                                avatar={`${avatarsUrl}/${reply.user?.avatar}`}
+                                                                fullname={reply.user?.fullname}
+                                                                username={reply.user?.username}
+                                                                levelIcon={reply.user?.level.icon}
+                                                                levelText={reply.user?.level.text}
+                                                                levelColor={reply.user?.level.color}
+                                                            >
+                                                                <Link
+                                                                    className="created-by"
+                                                                    to={
+                                                                        user && reply.user?.username === user.username
+                                                                        ? `/perfil-usuario`
+                                                                        : `/perfil-usuario/${reply.user?.username}`
+                                                                    }
+                                                                    state={ 
+                                                                        user && reply.user?.username === user.username
+                                                                        ? undefined
+                                                                        : { userId: reply.user?._id }
+                                                                    }
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    {reply.user?.fullname || 'usuario eliminado'}
+                                                                    {reply.user?._id === post.createdBy._id ? ' (creador)' : ''}
+                                                                </Link>
+                                                            </UserCardTooltip>
                                                         </span>
                                                         {' '}el{' '}
                                                         <span className="date">{convertUTCDateTime(reply.createdAt)}</span>
-                                                    </p>
+                                                    </div>
                                                     {reply.responseTo && (
                                                         <p className="reply-reference">
                                                             ↪ Respuesta a{' '}

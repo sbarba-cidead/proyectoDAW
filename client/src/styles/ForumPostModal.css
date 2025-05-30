@@ -108,6 +108,21 @@
     color: #2a852d;
 }
 
+.postmodal-background .modal-wrapper .modal-content .post-content .post-metainfo .post-created-by a.created-by,
+.postmodal-background .modal-wrapper .replies-list .reply .reply-metainfo .username a.created-by {
+  all: unset; /* reinicia estilos heredados */
+  cursor: pointer;
+  font-weight: 600;
+  color: #2a852d;
+  transition: color 0.3s ease;
+}
+
+.postmodal-background .modal-wrapper .modal-content .post-content .post-metainfo .post-created-by a.created-by:hover,
+.postmodal-background .modal-wrapper .replies-list .reply .reply-metainfo .username a.created-by:hover {
+  color: #236425;
+  text-decoration: underline;
+}
+
 .postmodal-background .modal-wrapper .modal-content 
     .post-content .post-metainfo .post-created-by .date,
 .postmodal-background .modal-wrapper
@@ -375,4 +390,58 @@
     text-align: center;
     margin-top: 20px;
     margin-bottom: 0px;
+}
+
+@media (max-width: 1100px) {
+    .postmodal-background .modal-wrapper {
+        width: 95vw;
+        height: 90vh;
+    }
+
+    .postmodal-background .modal-wrapper .modal-content {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}
+
+@media (max-width: 632px) {
+    .postmodal-background .modal-wrapper {
+        width: 97vw;
+        height: 93vh;
+        transform: translateY(-15px);
+    }
+
+    .postmodal-background .modal-wrapper .modal-header {
+        padding: 12px 12px 8px 0px;
+    }
+
+    .postmodal-background .modal-wrapper .modal-content {
+        padding: 16px 12px 30px 12px;
+    }
+
+    .postmodal-background .modal-wrapper .modal-content .replies-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0px;
+    }
+
+    .postmodal-background .modal-wrapper 
+        .modal-content .replies-header select {
+            align-self: flex-end;
+    }
+}
+
+@media (max-width: 470px) {
+    .postmodal-background .modal-wrapper .modal-content 
+        .post-content .post-metainfo .post-created-by {
+        width: 100%;
+        text-align: right;
+        margin-top: 6px;
+    }
+
+    .postmodal-background .modal-wrapper {
+        width: 98vw;
+        height: 94vh;
+        transform: translateY(-15px);
+    }
 }

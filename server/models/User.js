@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
     score: {
         type: Number,
         required: false,
@@ -50,21 +55,27 @@ const UserSchema = new mongoose.Schema({
             {
                 _id: {
                     type: mongoose.Schema.Types.ObjectId,
-                    refPath: 'messages.type'
-                },
+                    refPath: 'messages.model'
+                }, // id referencia al post o comentario
                 model: {
                     type: String,
                     enum: ['ForumPost', 'ForumComment'],
                     required: true
-                },
+                }, // si el mensaje es post o comentario (para mongoDB)
                 type: {
                     type: String,
                     enum: ['post', 'reply'],
                     required: true
-                }
+                } // si el mensaje es post o comentario (para filtrado en front)
             }
         ],
         default: []
+    },
+    resetPasswordToken: { 
+        type: String,
+    },
+    resetPasswordExpires: { 
+        type: Date,
     }
 }, { timestamps: true });
 

@@ -7,7 +7,7 @@ const postCategorySchema = new mongoose.Schema({
         unique: true 
     }, // nombre de la categoría
 }, {
-    collection: "forum-post-categories"
+    collection: "forum_post_categories"
 });
 
 module.exports = mongoose.model('PostCategory', postCategorySchema);

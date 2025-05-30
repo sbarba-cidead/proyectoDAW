@@ -7,7 +7,6 @@ const UserContext = createContext();
 
 // acceso al token del usuario almacenado en local
 const token = localStorage.getItem('usertoken');
-if (!token) { console.error("Token de autenticación no válido."); }
 
 // provider para el contexto
 export function UserProvider({ children }) {

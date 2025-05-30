@@ -1,7 +1,7 @@
 import '../styles/LoginModal.css';
 
 import { useUserContext } from '../context/UserContext';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { FaEye, FaEyeSlash, FaTimesCircle } from 'react-icons/fa'; 
 import NotificationMessage from './NotificationMessage';
 
@@ -10,6 +10,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationMessageType, setNotificationMessageType] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const { isRegistering, credential, password, fullname, username, email } = formData;
   const modalRef = useRef(); // referencia para el modal
   const apiUrl = process.env.REACT_APP_API_URL;
@@ -19,21 +20,6 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   const handlePasswordToggle = () => {
     setShowPassword(!showPassword);
   };
-
-  // cierra el modal si se hace click fuera de él
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        onClose();  // cierra el modal
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-
-    // limpia el eventlistener cuando se sale del modal
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, []);
 
   // para mostrar mensaje de notificicación
   const showTempNotification = (msg, type, duration) => {
@@ -45,7 +31,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   // validaciones básicas en front para el formulario
   const validateForm = () => {
     if (isRegistering) {
-      if (!fullname || !username || !email || !password) {
+      if (!fullname.trim() || !username.trim() || !email.trim() || !password.trim()) {
         showTempNotification('Todos los campos son obligatorios.', 'error', 2000);
         return false;
       }
@@ -68,7 +54,18 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
         return false;
       }
 
-    } else {
+    } else if (isRecoveringPassword) {
+      if (!email.trim()) {
+        showTempNotification('El correo electrónico es obligatorio.', 'error', 3000);
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        showTempNotification('Introduce un correo electrónico válido.', 'error', 3000);
+        return false;
+      }
+    } else { // login
       if (!credential || !password) {
         showTempNotification('Todos los campos son obligatorios.', 'error', 2000);
         return false;
@@ -92,10 +89,10 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            fullname,
-            username,
-            email,
-            password,
+            fullname: fullname.trim(),
+            username: username.trim(),
+            email: email.trim(),
+            password: password.trim(),
           }),
         });
 
@@ -107,18 +104,42 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
           // pasado un tiempo, limpia los campos y redirige a login
           setTimeout(() => { setFormData(initialFormData); }, 2000); 
         } else {
-          if (data.msg?.includes('email')) {
+          if (data.error?.includes('email')) {
             showTempNotification('El correo electrónico ya está en uso.', 'error', 2000);
-          } else if (data.msg?.includes('nombre')) {
+          } else if (data.error?.includes('nombre')) {
             showTempNotification('El nombre de usuario ya está en uso.', 'error', 2000);
           } else {
             showTempNotification('No se ha podido registrar.\nInténtalo más tarde.', 'error', 3000);
-            if (process.env.NODE_ENV !== 'production') { console.warn('Error en registro:', data.msg); }
+            if (process.env.NODE_ENV !== 'production') { console.warn('Error en registro:', data.error); }
           }
         }
       } catch (error) {
         showTempNotification('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.', 'error', 3000);
         if (process.env.NODE_ENV !== 'production') { console.warn('Error de red:', error); }
+      }
+    } else if (isRecoveringPassword) { // recuperación de contraseña
+      try {
+        const response = await fetch(`${apiUrl}/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showTempNotification('Si tu correo electrónico está registrado recibirás un email de recuperación.', 'success', 3000);
+          setTimeout(() => {
+            setFormData(initialFormData);
+            setIsRecoveringPassword(false);
+          }, 4000);
+        } else {          
+          showTempNotification('No se pudo enviar el correo de recuperación.', 'error', 3000);
+          if (process.env.NODE_ENV !== 'production') { console.warn('Error en solicitud recuperación de contraseña:', data.error); }
+        }
+      } catch (error) {
+        showTempNotification('Error al conectar con el servidor.', 'error', 3000);
+        if (process.env.NODE_ENV !== 'production') { console.warn('Error:', error); }
       }
     } else { // para login
        try {
@@ -166,7 +187,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             showTempNotification('La contraseña introducida no es correcta.', 'error', 3000);
           } else {
             showTempNotification('No se pudo iniciar sesión.\nInténtalo más tarde.', 'error', 3000);
-            if (process.env.NODE_ENV !== 'production') { console.warn('Error en inicio de sesión:', data.msg); }
+            if (process.env.NODE_ENV !== 'production') { console.warn('Error en inicio de sesión:', data.error); }
           }
         }
       } catch (error) {
@@ -186,16 +207,34 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
       }
       <div className="modal" ref={modalRef}>
         <button className="close-button" onClick={onClose}>×</button>
-        <h2>{isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
+        <h2>{isRecoveringPassword ? 'Recuperar contraseña' : isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}</h2>
         <form onSubmit={handleSubmit}>
-          {isRegistering && (
+          {isRecoveringPassword && (
+            <div className="input-wrapper">
+              <input
+                type="text"
+                name="email"
+                placeholder="Introduce tu correo electrónico"
+                value={email}
+                onChange={handleInputChange}
+              />
+              {email && (
+                <FaTimesCircle
+                  className="clear-icon"
+                  onClick={() => setFormData(prev => ({ ...prev, email: '' }))}
+                />
+              )}
+            </div>
+          )}
+
+          {isRegistering && !isRecoveringPassword && (
             <>
               <div className="input-wrapper">
                 <input
                   type="text"
                   name="fullname"
                   placeholder="Nombre y apellidos"
-                  value={fullname.trim()}
+                  value={fullname}
                   onChange={handleInputChange}
                 />
                 {fullname && (
@@ -210,7 +249,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                   type="text"
                   name="username"
                   placeholder="Nombre de usuario"
-                  value={username.trim()}
+                  value={username}
                   onChange={handleInputChange}
                 />
                 {username && (
@@ -225,7 +264,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                   type="text"
                   name="email"
                   placeholder="Correo electrónico"
-                  value={email.trim()}
+                  value={email}
                   onChange={handleInputChange}
                 />
                 {email && (
@@ -238,13 +277,13 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             </>
           )}
 
-          {!isRegistering && (
+          {!isRegistering && !isRecoveringPassword && (
             <div className="input-wrapper">
               <input
                 type="text"
                 name="credential"
                 placeholder="Email o nombre de usuario"
-                value={credential.trim()}
+                value={credential}
                 onChange={handleInputChange}
               />
               {credential && (
@@ -256,41 +295,51 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             </div>            
           )}
 
-          <div className="input-password-wrapper">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              placeholder="Contraseña"
-              value={password.trim()}
-              onChange={handleInputChange}
-            />
-
-            {/* X para limpiar contraseña */}
-            {password && (
-              <FaTimesCircle
-                className="clear-icon"
-                onClick={() => setFormData(prev => ({ ...prev, password: '' }))}
+          {!isRecoveringPassword && (
+            <div className="input-password-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={handleInputChange}
               />
-            )}
 
-            {/* ojo para mostrar/ocultar contraseña */}
-            <span className="password-toggle" onClick={handlePasswordToggle}>
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
-          </div>
+              {/* X para limpiar contraseña */}
+              {password && (
+                <FaTimesCircle
+                  className="clear-icon"
+                  onClick={() => setFormData(prev => ({ ...prev, password: '' }))}
+                />
+              )}
 
-          <button type="submit">{isRegistering ? 'Registrarse' : 'Entrar'}</button>
+              {/* ojo para mostrar/ocultar contraseña */}
+              <span className="password-toggle" onClick={handlePasswordToggle}>
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
+            </div>
+          )}
+
+          <button type="submit">{isRecoveringPassword ? 'Recuperar contraseña' : isRegistering ? 'Registrarse' : 'Entrar'}</button>
         </form>
         <div className="additional-options">
-          <button onClick={() => {setFormData(prev => ({...initialFormData, isRegistering: !isRegistering}))}}>
-            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
-          </button>
+            {isRecoveringPassword && (
+              <button onClick={() => setIsRecoveringPassword(false)}>
+                Volver
+              </button>
+            )}
 
-          {!isRegistering && (
-            <button onClick={() => console.log('Recuperar contraseña')}>
-              ¿Olvidaste tu contraseña?
-            </button>
-          )}
+            {!isRecoveringPassword && (
+              <button onClick={() => {setFormData(prev => ({...initialFormData, isRegistering: !isRegistering}))}}>
+                {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+              </button>
+            )}
+
+            {!isRegistering && !isRecoveringPassword && (
+              <button onClick={() => setIsRecoveringPassword(true)}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}     
         </div>
       </div>
     </div>

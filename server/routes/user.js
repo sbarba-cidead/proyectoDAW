@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
 const Joi = require('joi');
+const mongoose = require('mongoose');
 
 // variables de entorno para la ruta de subida de avatars
 const AVATAR_UPLOAD_DIR = path.join(__dirname, '..', process.env.AVATAR_UPLOAD_DIR);
@@ -66,14 +67,45 @@ const updateUserSchema = Joi.object({
 // ruta para comprobación de token usuario iniciado
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    // toma el nombre de usuario y el avatar del usuario de la BD
+    // toma los datos de usuario de la BD
     const user = await User.findById(req.userId)
                             .populate('recyclingActivities')
                             .populate('level')
-                            .select('avatar fullname username email score level recyclingActivities messages');
-
+                            .populate({
+                              path: 'messages._id',
+                              select: 'title content text post responseTo createdAt model',
+                            })
+                            .select('avatar fullname username email score level role recyclingActivities messages');
+    
     if (!user) { // si no se encuentra el usuario
       return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // para los mensajes que son replies (ForumComment), 
+    // se va a buscar y agregar el título del post padre
+    const commentMessageIds = user.messages
+      .filter(msg => msg.model === 'ForumComment' && msg._id && msg._id.post)
+      .map(msg => msg._id.post);
+
+    if (commentMessageIds.length > 0) {
+      // obtiene los posts padre
+      const posts = await mongoose.model('ForumPost').find({
+        _id: { $in: commentMessageIds }
+      }).select('title');
+
+      // mapa para guardar los posts recuperados
+      const postsMap = {};
+      posts.forEach(post => {
+        postsMap[post._id.toString()] = post;
+      });
+
+      // se emparejan mensajes con los títulos de sus posts padre
+      user.messages.forEach(msg => {
+        if (msg.model === 'ForumComment' && msg._id && msg._id.post) {
+          const postIdStr = msg._id.post.toString();
+          msg._id.post = postsMap[postIdStr] || null;
+        }
+      });
     }
 
     // envía la respuesta al front
@@ -82,6 +114,92 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Error del servidor'});
     console.log('Error en el servidor:', error);
   }
+});
+
+// ruta para tomar datos de otro usuario para ver su perfil por id
+router.post('/otheruser', async (req, res) => {
+  try {
+      const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'Falta el id del usuario' });
+    }
+
+    // toma los datos de usuario de la BD
+    const user = await User.findById(userId)
+                            .populate('recyclingActivities')
+                            .populate('level')
+                            .populate({
+                              path: 'messages._id',
+                              select: 'title content text post responseTo createdAt model',
+                            })
+                            .select('avatar fullname username score level recyclingActivities messages');
+
+    if (!user) { // si no se encuentra el usuario
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    
+    // para los mensajes que son replies (ForumComment), 
+    // se va a buscar y agregar el título del post padre
+    const commentMessageIds = user.messages
+      .filter(msg => msg.model === 'ForumComment' && msg._id && msg._id.post)
+      .map(msg => msg._id.post);
+
+    if (commentMessageIds.length > 0) {
+      // obtiene los posts padre
+      const posts = await mongoose.model('ForumPost').find({
+        _id: { $in: commentMessageIds }
+      }).select('title');
+
+      // mapa para guardar los posts recuperados
+      const postsMap = {};
+      posts.forEach(post => {
+        postsMap[post._id.toString()] = post;
+      });
+
+      // se emparejan mensajes con los títulos de sus posts padre
+      user.messages.forEach(msg => {
+        if (msg.model === 'ForumComment' && msg._id && msg._id.post) {
+          const postIdStr = msg._id.post.toString();
+          msg._id.post = postsMap[postIdStr] || null;
+        }
+      });
+    }
+
+    // envía la respuesta al front
+    res.json(user);
+  } catch (error) {    
+    res.status(500).json({ error: 'Error del servidor'});
+    console.log('Error en el servidor:', error);
+  }
+});
+
+// ruta para tomar datos de otro usuario para ver su perfil por username
+router.get('/otheruser/:username', async (req, res) => {
+    try {
+      const { username } = req.params;
+
+      if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) {
+        return res.status(400).json({ error: 'Formato de usuario no válido' });
+      }
+
+      // toma los datos de usuario de la BD
+      const user = await User.findOne({username})
+                              .populate('recyclingActivities')
+                              .populate('level')
+                              .select('avatar fullname username score level recyclingActivities messages');
+
+      if (!user) { // si no se encuentra el usuario
+        return res.status(404).json({ error: 'USER_NOT_FOUND' });
+      }
+
+      // envía la respuesta al front
+      res.json(user);
+    } catch (error) {    
+      res.status(500).json({ error: 'Error del servidor'});
+      console.log('Error en el servidor:', error);
+    }
 });
 
 // ruta para comprobar si username o email ya existen en otros usuarios

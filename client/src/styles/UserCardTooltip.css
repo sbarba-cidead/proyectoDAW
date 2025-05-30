@@ -1,0 +1,55 @@
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.user-card-tooltip {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background-color: #edf5ed;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 280px;
+  z-index: 9999;
+  transition: opacity 0.2s ease;
+}
+
+.user-card-tooltip .tooltip-user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #f0f0f0;
+}
+
+.user-card-tooltip .tooltip-user-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.user-card-tooltip .tooltip-fullname {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+}
+
+.user-card-tooltip .tooltip-username {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 2px;
+  text-align: left;
+}
+
+.user-card-tooltip .tooltip-level {
+  font-size: 0.85rem;
+  margin-top: 6px;
+  vertical-align: middle;
+  text-align: left;
+}

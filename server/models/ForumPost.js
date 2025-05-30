@@ -40,7 +40,7 @@ const forumPostSchema = new mongoose.Schema({
     ref: 'PostCategory' 
   } // array de categorías asociadas al post
 }, {
-  collection: "forum-posts"
+  collection: "forum_posts"
 });
 
 const Post = mongoose.model('ForumPost', forumPostSchema);

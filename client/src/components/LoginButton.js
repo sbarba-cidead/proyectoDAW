@@ -2,7 +2,7 @@ import '../styles/LoginButton.css';
 
 import { useState, useRef, useEffect } from 'react';
 import { useUserContext } from '../context/UserContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FaUserCircle } from 'react-icons/fa';
 import LoginModal from './LoginModal';
 
@@ -113,8 +113,8 @@ function LoginButton() {
             {/* menú de usuario si hay usuario con sesión iniciada */}
             {user && showMenu && (
                 <div className="menu">
-                    <a href="#" onClick={() => { setShowMenu(false); navigate('/perfil-usuario'); }} data-text="Perfil">Perfil usuario</a>
-                    <a href="#" onClick={handleLogout} data-text="Cerrar sesión">Cerrar sesión</a>
+                    <Link to="/perfil-usuario" onClick={() => setShowMenu(false)} data-text="Perfil">Perfil usuario</Link>
+                    <Link onClick={handleLogout} data-text="Cerrar sesión">Cerrar sesión</Link>
                 </div>
             )}
         </div>

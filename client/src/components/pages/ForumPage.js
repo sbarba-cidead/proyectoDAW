@@ -1,11 +1,12 @@
 import '../../styles/ForumPage.css';
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FaCalendar, FaComment, FaCommentDots, FaSquareFull } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import ForumPostModal from '../ForumPostModal';
 import ForumNewPostModal from '../ForumNewPostModal';
+import UserCardTooltip from '../UserCardTooltip';
 import { convertUTCDateTime } from '../../utils/functions';
 import { sendRecyclingActivity } from '../../utils/functions';
 
@@ -26,10 +27,14 @@ const ForumPage = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+  const [lastRepliedPost, setLastRepliedPost] = useState(null);
   const [isSmallWindow, setIsSmallWindow] = useState(window.innerWidth <= 1100);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
+  const postsRef = useRef(posts);
   const apiUrl = process.env.REACT_APP_API_URL;
+  const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
 
   // se obtienen posts
@@ -68,6 +73,28 @@ const ForumPage = () => {
     fetchCategories();
   }, []);
 
+  // actualiza la referencia a posts
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
+  // autofetch para comprobar si hay nuevos posts disponibles
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // consulta número de posts disponibles
+        const response = await fetch(`${apiUrl}/forum/posts/post-count`);
+        const data = await response.json();
+        
+        if (data.count > postsRef.current.length) { setNewPostsAvailable(true); }
+      } catch (error) {
+        console.error("Error comprobando nuevos posts:", error);
+      }
+    }, 60000); // cada 60 segundos
+
+    return () => clearInterval(interval);
+  }, []);
+
   // comprueba si había un post abierto al visitar la página
   // (útil si se recarga la página con un post abierto)
   useEffect(() => {
@@ -100,6 +127,19 @@ const ForumPage = () => {
       sessionStorage.removeItem(`forum_post_${selectedPost._id}_state`);
       // borra la posición de scroll de visualización del modal del post
       sessionStorage.removeItem(`forum_post_${selectedPost._id}_scrollTop`);
+    }
+
+    // si se respondió al post, actualización temporal en local
+    // de número de respuestas del post
+    if (lastRepliedPost === selectedPost._id) {
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p._id === selectedPost._id
+            ? { ...p, replies: [...p.replies, {}] }
+            : p
+        )
+      );
+      setLastRepliedPost(null);
     }
 
     setSelectedPost(null);
@@ -271,6 +311,23 @@ const ForumPage = () => {
           </div>
         )}
 
+        {newPostsAvailable && (
+          <div
+            className="forum-update-banner"
+            onClick={() => {
+              // recarga los posts
+              fetch(`${apiUrl}/forum/posts`)
+                .then(res => res.json())
+                .then(data => {
+                  setPosts(data);
+                  setNewPostsAvailable(false);
+                });
+            }}
+          >
+            - Nuevos mensajes disponibles. Haz clic para actualizar -
+          </div>
+        )}
+
         {filteredPosts.length > 0 && (
           <>
             {displayedPosts.map((post) => (
@@ -300,10 +357,38 @@ const ForumPage = () => {
                   </div>
                 </div>
                 <div className="post-footer">
-                  <p className="created-info">
+                  <div className="created-info">
                     <span className="created-by-label">Creado por:</span>
-                    <span className="created-by">{post.createdBy?.fullname || 'usuario eliminado'}</span>
-                  </p>
+                    {post.createdBy ? (
+                      <UserCardTooltip
+                        avatar={`${avatarsUrl}/${post.createdBy.avatar}`}
+                        fullname={post.createdBy.fullname}
+                        username={post.createdBy.username}
+                        levelIcon={post.createdBy.level.icon}
+                        levelText={post.createdBy.level.text}
+                        levelColor={post.createdBy.level.color}
+                      >
+                        <Link
+                          className="created-by"
+                          to={
+                            post.createdBy.username === user.username
+                              ? `/perfil-usuario`
+                              : `/perfil-usuario/${post.createdBy.username}`
+                          }
+                          state={ 
+                            post.createdBy.username === user.username
+                              ? undefined
+                              : { userId: post.createdBy._id }
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {post.createdBy?.fullname}
+                        </Link>
+                    </UserCardTooltip>
+                    ) : (
+                      <span className="created-by">usuario eliminado</span>
+                    )}                    
+                  </div>
                   <div className="spacer"></div>
                   <div className="replies">
                     <span className="icon"><FaComment /></span>
@@ -337,7 +422,11 @@ const ForumPage = () => {
 
       {/* modal para el post abierto */}
       {selectedPost && (
-        <ForumPostModal post={selectedPost} onClose={handleClosePostModal} />
+        <ForumPostModal 
+          post={selectedPost} 
+          onClose={handleClosePostModal}
+          setlastRepliedPost={setLastRepliedPost}
+        />
       )}
 
     </div>

@@ -20,20 +20,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
   const modalRef = useRef();
   const fileInputRef = useRef();
 
-  // cierra el modal si se hace clic fuera de él
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, []);
-
+ 
   // función para manejar click en el avatar
   const handleAvatarClick = () => {
     if (fileInputRef.current) {

@@ -27,7 +27,7 @@ const forumCommentSchema = new Schema({
     required: true
   } // contenido del mensaje
 }, {
-  collection: "forum-comments"
+  collection: "forum_comments"
 });
 
 module.exports = mongoose.model('ForumComment', forumCommentSchema);

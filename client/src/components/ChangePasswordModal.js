@@ -18,16 +18,7 @@ function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMe
 
   const modalRef = useRef();
 
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [onClose]);
-
+ 
   // mostrar mensaje temporal
   const showTempNotification = (msg, type, duration) => {
     setNotificationMessage(msg);

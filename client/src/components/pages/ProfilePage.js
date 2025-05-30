@@ -1,19 +1,25 @@
 import '../../styles/ProfilePage.css';
 
-import { useState, useEffect, useContext } from 'react';
-import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy } from 'react-icons/fa';
-import { FaTree, FaApple, FaCrown, FaStar } from 'react-icons/fa';
-import { FaTrashAlt, FaPen, FaAngleDown, FaAngleUp } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy, FaAddressCard,
+  FaTree, FaApple, FaCrown, FaStar, FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { useUserContext } from '../../context/UserContext';
 import UserEditModal from '../UserEditModal';
 import ChangePasswordModal from '../ChangePasswordModal';
 import { convertUTCDateTime } from '../../utils/functions';
+import NotFoundPage from '../error-pages/NotFoundPage';
+import { WEBSITE_NAME } from '../../config/constants';
 
 
-function ProfilePage() {
+function ProfilePage({setHeaderTitle}) {
+  const location = useLocation();
   const [user, setUserLocal] = useState(null);
+  const { username: otherUserUsername } = useParams();
+  const otherUserId = location.state?.userId;
   const { setUserGlobalContext } = useUserContext();
   const [loading, setLoading] = useState(true);
+  const [userNotFound, setUserNotFound] = useState(false);
   const [avatarTimestamp, setAvatarTimestamp] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -22,52 +28,52 @@ function ProfilePage() {
   const apiUrl = process.env.REACT_APP_API_URL;
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
-  // Datos de prueba del usuario
-  // const user = {
-  //   photoUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-  //   name: 'Juan José Dominguez Gutierrez',
-  //   email: 'juanperez@gmail.com',
-  //   password: '123456',
-  //   messages: [
-  //     { id: 1, type: 'sent', content: '¿Dónde puedo reciclar botellas de vidrio?' },
-  //     { id: 2, type: 'reply', content: 'Puedes encontrar puntos de reciclaje en la aplicación.' },
-  //   ],
-  //   score: 45,
-  //   level: 'beginner',
-  //   recyclingActivities: [
-  //     { id: 1, activity: 'Reciclaje de plástico', date: '10-03-2025' },
-  //     { id: 2, activity: 'Reciclaje de papel', date: '15-04-2025' },
-  //   ],
-  // };
-
-  // Petición al backend para obtener los datos del usuario
+  // petición al backend para obtener los datos del usuario
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem('usertoken');
 
-        // petición de datos del usuario
-        const resUser = await fetch(`${apiUrl}/user/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        let resUser;
+
+        if (otherUserId) {
+          resUser = await fetch(`${apiUrl}/user/otheruser/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId: otherUserId })
+          });
+        } else if (otherUserUsername) { // acceso directo por URL con username
+          resUser = await fetch(`${apiUrl}/user/otheruser/${otherUserUsername}`);
+        } else {
+          resUser = await fetch(`${apiUrl}/user/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
 
         const data = await resUser.json();
 
         if (!resUser.ok) {
+          if (data.error === 'USER_NOT_FOUND') {
+            setUserNotFound(true);
+          }
           console.error('Error al obtener usuario:', data.msg);
+          return;
         }
 
         setUserLocal({
           avatar: `${avatarsUrl}/${data.avatar}`,
           fullname: data.fullname,
-          email: data.email,
           username: data.username,
+          role: data.role,
           score: data.score,
           level: data.level, // objeto completo con los datos del nivel
           recyclingActivities: data.recyclingActivities,
           messages: data.messages,
+          ...(otherUserId ? {} : { email: data.email })
         });
       } catch (error) {
         console.error('Error de red:', error);
@@ -77,7 +83,18 @@ function ProfilePage() {
     };
 
     fetchUser();
-  }, []);
+  }, [otherUserId, otherUserUsername, apiUrl, avatarsUrl]);
+
+  // actualización de cabecera y pestaña
+  useEffect(() => {
+  if (userNotFound) {
+    document.title = `Página no encontrada - ${WEBSITE_NAME}`;
+    setHeaderTitle?.("Página no encontrada");
+  } else if (!userNotFound && otherUserUsername) {
+    document.title = `Datos de usuario de ${otherUserUsername} - ${WEBSITE_NAME}`;
+    setHeaderTitle?.(`Datos de usuario de ${otherUserUsername}`);
+  }
+}, [userNotFound, otherUserUsername, setHeaderTitle]);
 
   // maneja el click en el botón de editar perfil
   const handleEditProfileClick = () => {
@@ -332,7 +349,8 @@ function ProfilePage() {
   }
 
 
-  if (loading || !user) return <div className="loading"></div>;
+  if (userNotFound) return <NotFoundPage />; 
+  if (loading || !user) return <div className="loading"></div>; 
 
   return (
     <div className="profile-container">
@@ -342,66 +360,94 @@ function ProfilePage() {
             <img className="profile-photo" src={`${user.avatar}${avatarTimestamp ? `?t=${avatarTimestamp}` : ''}`} alt="Foto de usuario" />
             <div className="profile-info">
               <h2 className="user-name">{user.fullname}</h2>
-              <p className="user-email">{user.email}</p>
-              <div className="profile-edit">
-                <button onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</button>
-                <button onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</button>
-              </div>
+              {!otherUserId && !otherUserUsername ? (
+                <p className="user-email">{user.email}</p>
+              ) : (
+                <p className="user-email">{user.username}</p>
+              )}
+              {!otherUserId && !otherUserUsername && (
+                <div className="profile-edit">
+                  {user.role !== 'admin' && (
+                    <button onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</button>
+                  )}                
+                  <button onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="div-line" />
+          {user.role !== 'admin' && (<div className="div-line" />)}
 
           <div className="profile-score">            
             <div className="user-level">
-              <div className="level-info" style={{ color: user.level.color }}>
-                {getLevelIcon(user.level.icon)}
-                <span>{user.level.text}</span>
-                <div className="tooltip-container">
-                    <FaInfoCircle />
-                    <div className="tooltip">
-                        <p>Este es el rango de tu usuario.</p>
-                        <p>Cada vez que realices acciones de reciclaje conseguirás 
-                            puntos que te permitirán subir de rango.</p>
-                    </div>
+              {console.log(user.role)}
+              {console.log(user)}
+              {(user.role === 'admin') && (
+                <div className="level-info">
+                  <FaAddressCard />
+                  <span>Administrador</span>
                 </div>
-              </div>
-              <div className="user-points">
-                <FaTrophy />
-                <span>{user.score} puntos</span>
-                {/* Animación del icono con hover */}
-                <FaAngleDown className="angle-icon down" />
-                <FaAngleUp className="angle-icon up" />
-                    <div className="tooltip">
-                        <div className="score-number">{user.score}</div>
-                        <div className="progress-bar-container">
-                            <div
-                            className="progress-bar"
-                            style={{ width: `${(user.score / user.level.maxScore) * 100}%` }}
-                            ></div>
-                        </div>
-                        <div className="score-number">{user.level.maxScore}</div>
-                    </div>                
-              </div>
+              )}
+              {(user.role !== 'admin') && (
+                <div className="level-info" style={{ color: user.level.color }}>
+                  {getLevelIcon(user.level.icon)}
+                  <span>{user.level.text}</span>
+                  {!otherUserId && !otherUserUsername && (
+                    <div className="tooltip-container">
+                        <FaInfoCircle />                        
+                          <div className="tooltip">
+                            <p>Este es el rango de tu usuario.</p>
+                            <p>Cada vez que realices acciones de reciclaje conseguirás 
+                                puntos que te permitirán subir de rango.</p>
+                          </div>                        
+                    </div>
+                  )}
+                </div>
+              )}
+              {user.role !== 'admin' && (
+                <div className="user-points">
+                  <FaTrophy />
+                  <span>{user.score} puntos</span>
+                  {/* Animación del icono con hover */}
+                  <FaAngleDown className="angle-icon down" />
+                  <FaAngleUp className="angle-icon up" />
+                  <div className="tooltip">
+                      <div className="score-number">{user.score}</div>
+                      <div className="progress-bar-container">
+                          <div
+                          className="progress-bar"
+                          style={{ width: `${(user.score / user.level.maxScore) * 100}%` }}
+                          ></div>
+                      </div>
+                      <div className="score-number">{user.level.maxScore}</div>
+                  </div>                
+                </div>
+              )}              
             </div>
-            <h3>Actividades de Reciclaje</h3>
-            {user.recyclingActivities && user.recyclingActivities.length > 0 ? (
-              <div className="scrollable-list">
-                <ul>
-                  {user.recyclingActivities
-                    .sort((a, b) => new Date(b.date) - new Date(a.date)) // ordena de más nuevas a más viejas
-                    .map((activity) => (
-                      <li key={activity._id}>
-                        {activity.type} - {convertUTCDateTime(activity.date)}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="empty-message">
-                Aún no has realizado actividades de reciclaje. ¡Empieza hoy para ayudar al planeta!
-              </p>
-            )}            
+            {user.role !== 'admin' && (
+              <>
+                <h3>Actividades de Reciclaje</h3>
+                {user.recyclingActivities && user.recyclingActivities.length > 0 ? (
+                  <div className="scrollable-list">
+                    <ul>
+                      {user.recyclingActivities
+                        .sort((a, b) => new Date(b.date) - new Date(a.date)) // ordena de más nuevas a más viejas
+                        .map((activity) => (
+                          <li key={activity._id}>
+                            {activity.type} - {convertUTCDateTime(activity.date)}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="empty-message">
+                    {otherUserId || otherUserUsername
+                      ? 'Este usuario aún no ha realizado actividades de reciclaje.'
+                      : 'Aún no has realizado actividades de reciclaje. ¡Empieza hoy para ayudar al planeta!'}
+                  </p>
+                 )}    
+              </>
+            )}      
           </div>
         </div>
 
@@ -414,18 +460,29 @@ function ProfilePage() {
                 {user.messages && user.messages.filter(msg => msg.type === 'post').length > 0 ?(
                   user.messages
                     .filter(msg => msg.type === 'post')
-                    .map((msg) => (
-                      <div className="message" key={msg._id}>
-                        <p>{msg.content}</p>
-                        <div className="message-actions">
-                          <button className="edit-btn"><FaPen /></button>
-                          <button className="delete-btn"><FaTrashAlt /></button>
-                        </div>
-                      </div>
-                    ))
+                    .map((msg) => {
+                      const populated = msg._id && msg._id._id;
+                      return (
+                        (populated ? (
+                          <div className="message" key={msg._id}>
+                            <Link to={`/foro/post/${msg._id._id}`}>
+                                  {msg.type === 'post' && <h5>Publicado el {convertUTCDateTime(msg._id?.createdAt)}</h5>}                             
+                                  {msg.type === 'post' && <h4>{msg._id?.title}</h4>}
+                                  {msg.type === 'post' && <p>{msg._id?.content}</p>}
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="message" key={msg._id}>
+                            <p>Mensaje no disponible</p>
+                          </div>
+                        ))
+                      );                      
+                    })
                 ) : (
                   <p className="empty-message">
-                    Aún no has iniciado ningún tema. ¡Comparte tus ideas con la comunidad!
+                    {otherUserId || otherUserUsername
+                      ? 'Este usuario aún no ha iniciado ningún tema en la comunidad.'
+                      : 'Aún no has iniciado ningún tema. ¡Comparte tus ideas con la comunidad!'}
                   </p>
                 )}
               </div>
@@ -434,14 +491,29 @@ function ProfilePage() {
                 {user.messages && user.messages.filter(msg => msg.type === 'reply').length > 0 ? (
                   user.messages
                     .filter(msg => msg.type === 'reply')
-                    .map((msg) => (
-                      <div className="message" key={msg._id}>
-                        <p>{msg.content}</p>
-                      </div>
-                    ))
+                    .map((msg) => {
+                      const populated = msg._id && msg._id._id;
+                      return (
+                        (populated ? (
+                          <div className="reply" key={msg._id}>
+                            <Link to={`/foro/post/${msg._id?.post?._id}?replyId=${msg._id?._id}`}>                        
+                              {msg.type === 'reply' && <h5>Publicado el {convertUTCDateTime(msg._id?.createdAt)}</h5>} 
+                              {msg.type === 'reply' && <h6><span className="arrow">↪</span>Repuesta a <span>{msg._id?.post.title}</span></h6>} 
+                              {msg.type === 'reply' && <p>{msg._id?.text}</p>}                        
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="message" key={msg._id}>
+                            <p>Mensaje no disponible</p>
+                          </div>
+                        ))
+                      );
+                    })
                 ) : (
                   <p className="empty-message">
-                    No tienes mensajes de respuesta todavía. ¡Anímate a participar!
+                    {otherUserId || otherUserUsername
+                      ? 'Este usuario aún no ha respondido en la comunidad.'
+                      : 'No tienes mensajes de respuesta todavía. ¡Anímate a participar!'}
                   </p>
                 )}
               </div>

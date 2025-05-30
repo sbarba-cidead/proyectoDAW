@@ -371,12 +371,12 @@ const ForumPage = () => {
                         <Link
                           className="created-by"
                           to={
-                            post.createdBy.username === user.username
+                            user && post.createdBy.username === user.username
                               ? `/perfil-usuario`
                               : `/perfil-usuario/${post.createdBy.username}`
                           }
                           state={ 
-                            post.createdBy.username === user.username
+                            user && post.createdBy.username === user.username
                               ? undefined
                               : { userId: post.createdBy._id }
                           }

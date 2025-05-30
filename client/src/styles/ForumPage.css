@@ -310,7 +310,7 @@ body {
 }
 
 .no-posts-message,
-.forum .posts .load-more .no-more-posts {
+.forum .posts .no-more-posts {
   text-align: center;
   color: #888;
   margin-top: 20px;

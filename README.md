@@ -1,6 +1,6 @@
-Vídeo demo en PC (localhost): disponible 1/06/2025
-Vídeo demo en PC (despliegue): disponible 1/06/2025
-Vídeo demo modo móvil: disponible 1/06/2025
+Vídeo demo en PC (localhost): disponible 1/06/2025  
+Vídeo demo en PC (despliegue): disponible 1/06/2025  
+Vídeo demo modo móvil: disponible 1/06/2025  
 
 Páginas visitables:
 

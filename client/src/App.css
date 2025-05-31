@@ -5,11 +5,11 @@
   width: 100%; /* todo el ancho de la ventana */
 }
 
-body {
+/* body {
   background: url('./assets/background.jpg') no-repeat center center fixed;
   background-size: cover;
   background-position: center;
-}
+} */
 
 .content.home {
   height: 100vh; /* toda la altura de la ventana */

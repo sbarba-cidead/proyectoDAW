@@ -21,6 +21,7 @@ import EcoInfoPage from './components/pages/EcoInfoPage';
 import ResetPasswordPage from './components/pages/ResetPasswordPage';
 
 function AppContent() {
+  const [isHome, setIsHome] = useState(false);
   const [headerTitle, setHeaderTitle] = useState(WEBSITE_NAME);
   const location = useLocation(); // localización de ruta url en la web
 
@@ -34,18 +35,23 @@ function AppContent() {
     "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
     "/reset-password": "Recuperación de contraseña"
   };
-    
+  
+  
 
   // actualiza el título para la cabecera y la pestaña del navegador
   useEffect(() => {
+    // comprueba si la ruta actual es '/' (home)
+    const checkIsHome = location.pathname === '/';    
+    setIsHome(checkIsHome);
+
     // calcula el título basado en la ruta que se está visitando
     let currentPageName = Object.entries(pageTitles).find(([path]) =>
       location.pathname === path || location.pathname.startsWith(`${path}/`)
     )?.[1] || ""; // si el path no está en pageTitles, será ""
 
-    if (!currentPageName) {
-      currentPageName = "Página no encontrada";
-    }
+    // if (!currentPageName && !isHome) {
+    //   currentPageName = "Página no encontrada";
+    // }
 
     const tabTile = currentPageName ? `${currentPageName} - ${WEBSITE_NAME}` : WEBSITE_NAME;
 
@@ -53,8 +59,6 @@ function AppContent() {
     document.title = tabTile; // actualiza el nombre para la pestaña del navegador
   }, [location.pathname]);
 
-  // comprueba si la ruta actual es '/' (home)
-  const isHome = location.pathname === '/';
 
   return (
     <div className="App">
@@ -116,17 +120,11 @@ function AppContent() {
             <EcoInfoPage />
           </div>
         } />
-        {/* <Route path="/reset-password/:token" element={
+        <Route path="/reset-password" element={
           <div className={"content other"}>
             <ResetPasswordPage />
           </div>
-        } /> */}
-        <Route path="/reset-password" element={
-  <div className={"content other"}>
-    <ResetPasswordPage />
-  </div>
-} />
-
+        } />
         {/* Ruta para páginas no encontradas */}
         <Route path="*" element={
           <div className={"content other"}>

@@ -411,3 +411,56 @@
         margin: 10px;
     }
 }
+
+@media (max-width: 450px) { 
+    .profile-score .user-level {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 0;
+        margin-top: 10px;
+    }
+
+    .profile-score .user-level .level-info,
+    .profile-score .user-level .user-points {
+        align-self: center;
+        margin-bottom: 10px;
+    }
+
+    /* tooltip de nivel */
+    .profile-score .user-level .level-info .tooltip {
+        width: 80vw;
+        left: 50%;
+        transform: translateX(-70%);
+        top: 100%;
+        margin-top: 10px;
+        margin-left: 0;
+        padding: 15px;
+        z-index: 10;
+    }
+
+    /* tooltip de puntos */
+    .profile-score .user-level .user-points .tooltip {
+        width: 70vw;
+        right: auto;
+        left: 50%;
+        transform: translate(-50%, 80%); /* x, y */
+        margin-right: 0;
+        margin-top: 10px;
+        z-index: 10;
+    }
+
+    .scrollable-list li {
+        text-align: center;
+    }
+
+    .profile-messages .messages-list 
+        .scrollable-message-section .reply h6 {
+        margin-top: 10px;
+    }
+
+    .profile-messages .messages-list 
+        .scrollable-message-section .reply h6 > span:not(.arrow) {
+        display: block;
+        text-align: center;
+    }
+}

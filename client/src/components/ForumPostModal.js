@@ -411,10 +411,12 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
 
                     <div className="replies-header">
                         <h3>Respuestas ({replyCount})</h3>
-                        <select value={order} onChange={(e) => setOrder(e.target.value)}>
-                            <option value="asc">Más antiguas primero</option>
-                            <option value="desc">Más recientes primero</option>
-                        </select>
+                        {replyCount !== 0 && (
+                            <select value={order} onChange={(e) => setOrder(e.target.value)}>
+                                <option value="asc">Más antiguas primero</option>
+                                <option value="desc">Más recientes primero</option>
+                            </select>
+                        )}
                     </div>
 
                     {replyCount > 0 ? (

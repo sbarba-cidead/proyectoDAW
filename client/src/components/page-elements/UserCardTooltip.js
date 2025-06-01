@@ -1,7 +1,8 @@
-import '../styles/UserCardTooltip.css';
+import 'styles/page-elements/UserCardTooltip.css';
 
 import { useState } from 'react';
-import { FaSeedling, FaLeaf, FaTree, FaApple, FaCrown, FaStar, } from 'react-icons/fa';
+import { FaSeedling, FaLeaf, FaTree, 
+  FaApple, FaCrown, FaStar, } from 'react-icons/fa';
 
 
 const UserCardTooltip = ({ avatar, fullname, username, levelIcon, levelText, levelColor, children }) => {

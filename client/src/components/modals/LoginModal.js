@@ -1,9 +1,9 @@
-import '../styles/LoginModal.css';
+import 'styles/modals/LoginModal.css';
 
-import { useUserContext } from '../context/UserContext';
-import { useState, useRef } from 'react';
+import { useUserContext } from 'context/UserContext';
+import { useState, useRef, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaTimesCircle } from 'react-icons/fa'; 
-import NotificationMessage from './NotificationMessage';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 function LoginModal( { initialFormData, formData, setFormData, handleInputChange, onClose } ) {
   const { setUserGlobalContext } = useUserContext();
@@ -15,6 +15,27 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
   const modalRef = useRef(); // referencia para el modal
   const apiUrl = process.env.REACT_APP_API_URL;
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
+
+
+  // comprobación de conexión con el servidor
+  useEffect(() => {
+    const checkServerConnection = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/user/ping`);
+        if (!response.ok) {
+          throw new Error('No response OK');
+        }
+      } catch (error) {
+        showTempNotification(
+          'Actualmente no hay conexión con el servidor.\nInténtalo de nuevo.',
+          'error',
+          8000
+        );
+      }
+    };
+
+    checkServerConnection();
+  }, []);
 
   // toggle para mostrar u ocultar contraseña
   const handlePasswordToggle = () => {

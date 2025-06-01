@@ -1,12 +1,12 @@
-import '../styles/ForumPostModal.css';
+import 'styles/modals/ForumPostModal.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useUserContext } from '../context/UserContext';
-import { convertUTCDateTime } from '../utils/functions';
-import NotificationMessage from './NotificationMessage';
-import { sendRecyclingActivity } from '../utils/functions';
-import UserCardTooltip from './UserCardTooltip';
+import { useUserContext } from 'context/UserContext';
+import { convertUTCDateTime } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
+import { sendRecyclingActivity } from 'utils/functions';
+import UserCardTooltip from 'components/page-elements/UserCardTooltip';
 
 const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
     const { user, refreshUser } = useUserContext();

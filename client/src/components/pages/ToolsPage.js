@@ -1,9 +1,9 @@
-import '../../styles/ToolsPage.css';
+import 'styles/pages/ToolsPage.css';
 
 import { Link } from 'react-router-dom';
-import recyclingMapImg from '../../assets/recycling-map.png';
-import ecoCalcImg from '../../assets/ecocalc.png';
-import recyclingGuideImg from '../../assets/recycling-guide.png';
+import recyclingMapImg from 'assets/recycling-map.webp';
+import ecoCalcImg from 'assets/ecocalc.webp';
+import recyclingGuideImg from 'assets/recycling-guide.webp';
 
 // diseño flexible por si se quieren añadir más herramientas en un futuro
 const tools = [
@@ -33,7 +33,9 @@ const tools = [
   },
 ];
 
+
 function ToolsPage() {
+
   return (
     <div className="tools-container">
       {tools.map((tool, index) => (
@@ -43,7 +45,10 @@ function ToolsPage() {
           className="tool-card"
         >
           <div className="tool-img-container">
-            <img src={tool.imgSrc} alt={tool.imgAlt} />
+            <img 
+              src={tool.imgSrc} 
+              alt={tool.imgAlt}
+            />
           </div>
           <div className="tool-title"><h3>{tool.title}</h3></div>
           <div className="tool-text"><p>{tool.description}</p></div>

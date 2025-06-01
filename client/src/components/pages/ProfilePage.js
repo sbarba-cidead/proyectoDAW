@@ -1,15 +1,15 @@
-import '../../styles/ProfilePage.css';
+import 'styles/pages/ProfilePage.css';
 
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy, FaAddressCard,
   FaTree, FaApple, FaCrown, FaStar, FaAngleDown, FaAngleUp } from 'react-icons/fa';
-import { useUserContext } from '../../context/UserContext';
-import UserEditModal from '../UserEditModal';
-import ChangePasswordModal from '../ChangePasswordModal';
-import { convertUTCDateTime } from '../../utils/functions';
-import NotFoundPage from '../error-pages/NotFoundPage';
-import { WEBSITE_NAME } from '../../config/constants';
+import { useUserContext } from 'context/UserContext';
+import UserEditModal from 'components/modals/UserEditModal';
+import ChangePasswordModal from 'components/modals/ChangePasswordModal';
+import { convertUTCDateTime } from 'utils/functions';
+import NotFoundPage from 'components/error-pages/NotFoundPage';
+import { WEBSITE_NAME } from 'config/constants';
 
 
 function ProfilePage({setHeaderTitle}) {

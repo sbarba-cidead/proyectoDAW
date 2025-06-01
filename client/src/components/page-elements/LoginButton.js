@@ -1,10 +1,10 @@
-import '../styles/LoginButton.css';
+import 'styles/page-elements/LoginButton.css';
 
 import { useState, useRef, useEffect } from 'react';
-import { useUserContext } from '../context/UserContext';
+import { useUserContext } from 'context/UserContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { FaUserCircle } from 'react-icons/fa';
-import LoginModal from './LoginModal';
+import { FaCircle, FaUserCircle } from 'react-icons/fa';
+import LoginModal from 'components/modals/LoginModal';
 
 function LoginButton() {
     const { user, isLoadingUser, setUserGlobalContext } = useUserContext();
@@ -77,7 +77,18 @@ function LoginButton() {
     };
    
 
-    if (isLoadingUser) return null;
+    // if (isLoadingUser) return null;
+
+    if (isLoadingUser) {
+        return (
+            <div className="login-button-container">
+            <button className="login-button loading-placeholder" disabled>
+                {/* Icono o spinner pequeño */}
+                <FaCircle className="guest-avatar loading" />
+            </button>
+            </div>
+        );
+    }
    
     return (
         <div className="login-button-container" ref={menuRef}>
@@ -87,7 +98,7 @@ function LoginButton() {
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
-                {/* Si hay usuario, muestra su foto; si no, muestra avatar invitado */}            
+                {/* si hay usuario, muestra su foto; si no, muestra avatar invitado */}            
                 {user ? (
                     <img src={`${user.avatar}?${Date.now()}`} alt="Avatar" className="avatar logged-in" />
                 ) : (

@@ -1,4 +1,4 @@
-import '../styles/MenuButton.css';
+import 'styles/page-elements/MenuButton.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';

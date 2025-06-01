@@ -7,9 +7,9 @@ import { UserProvider } from './context/UserContext';
 import { WEBSITE_NAME } from './config/constants';
 
 import NotFoundPage from './components/error-pages/NotFoundPage';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/error-pages/ProtectedRoute';
 
-import Header from './components/Header';
+import Header from './components/page-elements/Header';
 import HomePage from './components/pages/HomePage';
 import ProfilePage from './components/pages/ProfilePage';
 import ToolsPage from './components/pages/ToolsPage';
@@ -20,10 +20,16 @@ import ForumPage from './components/pages/ForumPage';
 import EcoInfoPage from './components/pages/EcoInfoPage';
 import ResetPasswordPage from './components/pages/ResetPasswordPage';
 
+import recyclingMapImg from 'assets/recycling-map.webp';
+import ecoCalcImg from 'assets/ecocalc.webp';
+import recyclingGuideImg from 'assets/recycling-guide.webp';
+
 function AppContent() {
   const [isHome, setIsHome] = useState(false);
   const [headerTitle, setHeaderTitle] = useState(WEBSITE_NAME);
   const location = useLocation(); // localización de ruta url en la web
+
+  const presentImages = [recyclingMapImg, ecoCalcImg, recyclingGuideImg];
 
   const pageTitles = {
     "/perfil-usuario": "Datos de usuario",
@@ -36,6 +42,14 @@ function AppContent() {
     "/reset-password": "Recuperación de contraseña"
   };
   
+
+  // precarga de imágenes estáticas
+  useEffect(() => {
+    presentImages.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
   
 
   // actualiza el título para la cabecera y la pestaña del navegador

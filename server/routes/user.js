@@ -64,6 +64,11 @@ const updateUserSchema = Joi.object({
 
 // RUTAS //
 
+// para comprobar si hay conexión con el servidor
+router.get('/ping', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // ruta para comprobación de token usuario iniciado
 router.get('/me', authMiddleware, async (req, res) => {
   try {

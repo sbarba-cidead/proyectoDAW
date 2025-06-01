@@ -1,10 +1,10 @@
-import '../styles/Header.css';
+import 'styles/page-elements/Header.css';
 
 import { Link } from 'react-router-dom';
 
-import logo from '../assets/logo.png';
-import LoginButton from './LoginButton';
-import MenuButton from './MenuButton';
+import logo from 'assets/logo.png';
+import LoginButton from 'components/page-elements/LoginButton';
+import MenuButton from 'components/page-elements/MenuButton';
 
 
 function Header({currentTitle}) {

@@ -1,4 +1,4 @@
-import '../styles/NotificationMessage.css';
+import 'styles/page-elements/NotificationMessage.css';
 
 function NotificationMessage ({textMessage, notificationType }) {
     return (

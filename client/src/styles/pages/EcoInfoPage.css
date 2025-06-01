@@ -1,9 +1,22 @@
 .ecoinfo-main-container {
     padding: 20px;
     background-color: #f0f0f0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ecoinfo-main-container.loading {
+    display: flex;
+    justify-content: center; 
+    align-items: center;
+    height: 50vh;
+    text-align: center;
+}
+
+.ecoinfo-main-container > .notification-message.error {
+  z-index: 10;
 }
 
 .ecoinfo-main-container .ecoinfo-grid {

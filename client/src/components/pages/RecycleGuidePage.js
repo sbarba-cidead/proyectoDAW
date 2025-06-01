@@ -1,8 +1,9 @@
-import '../../styles/RecycleGuidePage.css';
+import 'styles/pages/RecycleGuidePage.css';
 
 import { useState, useEffect } from "react";
-import { useUserContext } from '../../context/UserContext';
-import { sendRecyclingActivity } from '../../utils/functions';
+import { useUserContext } from 'context/UserContext';
+import { sendRecyclingActivity } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 
 // función para eliminar tildes y normalizar texto
@@ -18,8 +19,29 @@ function RecycleGuidePage() {
     const [selectedProduct, setSelectedProduct] = useState("");
     const [result, setResult] = useState(null);
     const [searchData, setSearchData] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const apiUrl = process.env.REACT_APP_API_URL;
     const baseUrl = process.env.REACT_APP_BASE_URL;
+
+
+    // comprobación inicial de conexión con el servidor
+    useEffect(() => {
+        const checkConnection = async () => {
+            try {
+                const res = await fetch(`${apiUrl}/recycle/ping`);
+                if (!res.ok) {
+                    throw new Error('Sin conexión con el servidor.');
+                }
+            } catch(error) {
+                console.error('Error obteniendo datos:', error);
+                setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
+            } finally {
+                setLoading(false);
+            }
+        };
+        checkConnection();
+    }, [apiUrl]);
 
 
     // se solicitan productos al backend en base al texto escrito
@@ -77,7 +99,7 @@ function RecycleGuidePage() {
         handleRecyclingActivity();
     };
 
-    // Manejar la tecla "Enter"
+    // maneja la tecla "Enter"
     const handleKeyPress = (e) => {
         if (e.key === "Enter" && filteredProducts.length === 1) {
             const product = filteredProducts[0];
@@ -87,9 +109,17 @@ function RecycleGuidePage() {
         }
     };
 
+
+    if (loading) return <div className="recyclebins-container loading">Recuperando datos...</div>;
+    if (error) return <div className="recyclebins-container">
+        {<NotificationMessage
+            textMessage={error}
+            notificationType={"error"} />
+        }
+    </div>;
+
     return (
         <div className="recyclebins-container">
-            {/* <h1>¿Dónde desechar mi producto?</h1> */}
             <div className="search-products-container">
                 <label>Busca un producto:</label>
                 <input
@@ -121,7 +151,6 @@ function RecycleGuidePage() {
                     <div className="result">
                         <h2>Información del producto</h2>
 
-                        {/* Contenedor de columnas */}
                         <div className="columns">
                             <div className="column-left">
                                 <img src={`${baseUrl}${result.productImage}`} alt={result.name} />
@@ -148,7 +177,10 @@ function RecycleGuidePage() {
                         <p className="description">{result.description}</p>
                     </div>
                 ) : (
-                    <p className="notice">Selecciona un producto para ver la información.</p>
+                    <div className="default-text">
+                        <h3>¿Dónde desechar mi producto?</h3>
+                        <p>Selecciona un producto para ver la información.</p>
+                    </div>
                 )}
             </div>
         </div>

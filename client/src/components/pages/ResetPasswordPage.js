@@ -1,5 +1,7 @@
+import 'styles/pages/EcoCalcPage.css';
+
 import { useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function ResetPasswordPage() {
 const location = useLocation();

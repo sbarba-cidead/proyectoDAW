@@ -1,8 +1,8 @@
-import '../styles/ChangePasswordModal.css';
+import 'styles/modals/ChangePasswordModal.css';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import NotificationMessage from './NotificationMessage';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 function ChangePasswordModal({ onSave, setNotificationMessage, setNotificationMessageType, 
                               notificationMessage, notificationMessageType, onClose }) {

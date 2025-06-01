@@ -1,8 +1,9 @@
-import '../../styles/EcoCalcPage.css';
+import 'styles/pages/EcoCalcPage.css';
 
 import { useState, useEffect } from 'react';
-import { useUserContext } from '../../context/UserContext';
-import { sendRecyclingActivity } from '../../utils/functions';
+import { useUserContext } from 'context/UserContext';
+import { sendRecyclingActivity } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 const improvementIntro = 'Aquí tienes algunos consejos personalizados para mejorar tu impacto ecológico:';
 
@@ -18,7 +19,8 @@ function EcoCalcPage() {
     const [personalizedTips, setPersonalizedTips] = useState(null);
     const [carbonFootprint, setCarbonFootprint] = useState(null);
     const [waterFootprint, setWaterFootprint] = useState(null);
-    const [errors, setErrors] = useState({ carbon: false, water: false });
+    const [questionValidationErrors, setQuestionValidationErrors] = useState({ carbon: false, water: false });
+    const [error, setError] = useState(null);
     const apiUrl = process.env.REACT_APP_API_URL;
 
     // se obtienen los datos de las preguntas para crear los formularios
@@ -36,6 +38,7 @@ function EcoCalcPage() {
                 setLoading(false);
             } catch (error) {
                 console.error("Error obteniendo las preguntas: ", error);
+                setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
                 setLoading(false);
             }
         };
@@ -85,7 +88,7 @@ function EcoCalcPage() {
         setWaterAnswers({});
         setCarbonFootprint(null);
         setWaterFootprint(null);
-        setErrors({ carbon: false, water: false });
+        setQuestionValidationErrors({ carbon: false, water: false });
     };
 
     const handleChange = (setter) => (e) => {
@@ -100,11 +103,11 @@ function EcoCalcPage() {
     // cálculo parcial de huella hídrica o carbono
     const calculateFootprint = (answers, questions, setter, type) => {
         if (!allAnswered(answers, questions)) {
-            setErrors(prev => ({ ...prev, [type]: true }));
+            setQuestionValidationErrors(prev => ({ ...prev, [type]: true }));
             setter(null);
             return;
         }
-        setErrors(prev => ({ ...prev, [type]: false }));
+        setQuestionValidationErrors(prev => ({ ...prev, [type]: false }));
         const total = Object.values(answers).reduce((sum, val) => sum + val, 0);
         setter(total.toFixed(2));
     };
@@ -160,7 +163,13 @@ function EcoCalcPage() {
         ))
     );
 
-    if (loading) return <div className="loading"></div>;
+    if (loading) return <div className="eco-calc-container loading">Recuperando datos...</div>;
+    if (error) return <div className="eco-calc-container">
+        {<NotificationMessage
+            textMessage={error}
+            notificationType={"error"} />
+        }
+    </div>;
 
     return (
         <div className="eco-calc-container">
@@ -176,7 +185,7 @@ function EcoCalcPage() {
                 >
                     Calcular consumo
                 </button>
-                {errors.carbon && <p className="error">Completa todas las preguntas antes de calcular.</p>}
+                {questionValidationErrors.carbon && <p className="error">Completa todas las preguntas antes de calcular.</p>}
                 {carbonFootprint && [
                     <p className="result">Resultado: {carbonFootprint} t CO₂/año</p>,
                     <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 t CO₂/año como máximo por individuo.</p>,
@@ -205,7 +214,7 @@ function EcoCalcPage() {
                 >
                     Calcular consumo
                 </button>
-                {errors.water && <p className="error">Completa todas las preguntas antes de calcular.</p>}
+                {questionValidationErrors.water && <p className="error">Completa todas las preguntas antes de calcular.</p>}
                 {waterFootprint &&  [
                     <p className="result">Resultado: {waterFootprint} m³/año</p>,
                     <p className="result info">La cantidad acordada en la Agenda 2030 de la ONU es de 3 m³/año como máximo por individuo.</p>,

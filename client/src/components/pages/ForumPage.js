@@ -1,14 +1,14 @@
-import '../../styles/ForumPage.css';
+import 'styles/pages/ForumPage.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { FaCalendar, FaComment, FaCommentDots, FaSquareFull } from 'react-icons/fa';
-import { useUserContext } from '../../context/UserContext';
-import ForumPostModal from '../ForumPostModal';
-import ForumNewPostModal from '../ForumNewPostModal';
-import UserCardTooltip from '../UserCardTooltip';
-import { convertUTCDateTime } from '../../utils/functions';
-import { sendRecyclingActivity } from '../../utils/functions';
+import { FaCalendar, FaComment, FaCommentDots } from 'react-icons/fa';
+import { useUserContext } from 'context/UserContext';
+import ForumPostModal from 'components/modals/ForumPostModal';
+import ForumNewPostModal from 'components/modals/ForumNewPostModal';
+import UserCardTooltip from 'components/page-elements/UserCardTooltip';
+import { convertUTCDateTime, sendRecyclingActivity } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 const ForumPage = () => {
   const numberPostShown = 5
@@ -19,6 +19,7 @@ const ForumPage = () => {
   const { user, refreshUser } = useUserContext();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [visibleCount, setVisibleCount] = useState(numberPostShown);
   const [orderBy, setOrderBy] = useState('latest');
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -47,6 +48,7 @@ const ForumPage = () => {
         setLoading(false);
       } catch (error) {
         console.error('Error obteniendo los posts:', error);
+        setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
         setLoading(false);
       }
     };
@@ -247,7 +249,13 @@ const ForumPage = () => {
       }
   } 
 
-  if (loading) return <div className="loading"></div>;
+  if (loading) return <div className="forum loading">Recuperando datos...</div>;
+  if (error) return <div className="forum">
+      {<NotificationMessage
+          textMessage={error}
+          notificationType={"error"} />
+      }
+  </div>;
 
   return (
     <div className="forum">

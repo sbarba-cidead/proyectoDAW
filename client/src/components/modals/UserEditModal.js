@@ -1,8 +1,8 @@
-import '../styles/UserEditModal.css';
+import 'styles/modals/UserEditModal.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
-import NotificationMessage from './NotificationMessage';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 function UserEditModal({ userData, onSave, setNotificationMessage, setNotificationMessageType,
                           notificationMessage, notificationMessageType, onClose }) {

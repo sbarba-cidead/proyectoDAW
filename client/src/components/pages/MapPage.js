@@ -1,4 +1,4 @@
-import '../../styles/MapPage.css';
+import 'styles/pages/MapPage.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -6,9 +6,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
 import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
-import { useUserContext } from '../../context/UserContext';
-import { sendRecyclingActivity } from '../../utils/functions';
-import userIcon from '../../assets/marker-user-icon-red.png';
+import { useUserContext } from 'context/UserContext';
+import { sendRecyclingActivity } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
+import userIcon from 'assets/marker-user-icon-red.png';
 
 const mapMarkersUrl = process.env.REACT_APP_MAP_MARKERS_URL;
 
@@ -54,7 +55,9 @@ function MapPage() {
     const [orderedPoints, setOrderedPoints] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null); // punto seleccionado en el mapa
     const markersRef = useRef([]); // referencia de los marcadores del mapa
-    const [error, setError] = useState(''); // mensaje de error en búsqueda de dirección
+    const [searchDirectionError, setSearchDirectionError] = useState(''); // mensaje de error en búsqueda de dirección
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 368);
     const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -68,6 +71,8 @@ function MapPage() {
             })
             .catch(error => {
                 console.error('Error recuperando los puntos de reciclaje:', error);
+                setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
+                setLoading(false);
             });
     }, [apiUrl]);
 
@@ -96,7 +101,7 @@ function MapPage() {
     const searchDirection = async () => {
         if (!direction) return;
 
-        setError(''); // limpia errores anteriores
+        setSearchDirectionError(''); // limpia errores anteriores
 
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direction)}`);
@@ -122,11 +127,11 @@ function MapPage() {
                     await handleRecyclingActivity();
             } else {
                 setResult(null);
-                setError('No se ha encontrado ninguna dirección con esos datos.');
+                setSearchDirectionError('No se ha encontrado ninguna dirección con esos datos.');
             }
         } catch (err) {
             console.error(err);
-            setError('Error al buscar la dirección.');
+            setSearchDirectionError('Error al buscar la dirección.');
         }
     };
 
@@ -159,6 +164,15 @@ function MapPage() {
 
         document.head.appendChild(styleSheet);
     };    
+
+
+    if (loading) return <div className="recyclemap-container loading">Recuperando datos...</div>;
+    if (error) return <div className="recyclemap-container">
+        {<NotificationMessage
+            textMessage={error}
+            notificationType={"error"} />
+        }
+    </div>;
 
     return (
         <div className="recyclemap-container">
@@ -213,9 +227,9 @@ function MapPage() {
                     <button type="submit">Buscar</button>
                 </form>
 
-                {error && <div className="error-message">{error}</div>}
+                {searchDirectionError && <div className="error-message">{searchDirectionError}</div>}
                 
-                {(!error || !isSmallWidthScreen) && (
+                {(!searchDirectionError || !isSmallWidthScreen) && (
                     <>
                         <h3>Puntos cercanos</h3>
                         <ul className="recycle-list">

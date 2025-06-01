@@ -12,6 +12,11 @@ const User = require('../models/User')
 const RecyclingActivity = require('../models/RecyclingActivity');
 const ImprovementTip = require('../models/ImprovementTip');
 
+// para comprobar si hay conexión con el servidor
+router.get('/ping', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // almacenamiento de actividades de reciclaje
 router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
   try {

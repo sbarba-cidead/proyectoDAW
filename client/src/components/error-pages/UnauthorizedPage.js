@@ -1,4 +1,4 @@
-import '../../styles/ErrorPages.css';
+import 'styles/error-pages/ErrorPages.css';
 
 function UnauthorizedPage() {
   return (

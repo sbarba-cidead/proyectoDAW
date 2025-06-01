@@ -1,11 +1,11 @@
-import '../../styles/HomePage.css';
+import 'styles/pages/HomePage.css';
 
 import { useState } from 'react';
 
-import logo from '../../assets/logo.png';
-import LoginButton from '../LoginButton';
-import TutorialModal from '../TutorialModal';
-import MenuButton from '../MenuButton';
+import logo from 'assets/logo.png';
+import LoginButton from 'components/page-elements/LoginButton';
+import TutorialModal from 'components/modals/TutorialModal';
+import MenuButton from 'components/page-elements/MenuButton';
 
 function HomePage() {
     const [showTutorial, setShowTutorial] = useState(false);

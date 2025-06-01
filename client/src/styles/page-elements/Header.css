@@ -2,8 +2,7 @@
     width: 100%;
     background: rgba(0, 0, 0, 0.5); /* oscuro transparente */
     color: white;
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding: 20px 0px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -28,6 +27,7 @@
   justify-content: flex-start;
   align-items: center;
   padding-left: 30px;
+  padding-top: 7px;
 }
 
 .upper-container .center-container {

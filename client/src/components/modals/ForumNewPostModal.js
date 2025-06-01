@@ -1,9 +1,9 @@
-import '../styles/ForumNewPostModal.css';
+import 'styles/modals/ForumNewPostModal.css';
 
 import { useState, useCallback } from 'react';
 import AsyncCreatableSelect from 'react-select/async-creatable';
 import makeAnimated from 'react-select/animated';
-import NotificationMessage from './NotificationMessage';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 const animatedComponents = makeAnimated();
 

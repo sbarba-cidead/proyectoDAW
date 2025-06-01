@@ -1,8 +1,9 @@
-import '../../styles/EcoInfoPage.css';
+import 'styles/pages/EcoInfoPage.css';
 
 import { useEffect, useState } from 'react';
-import { useUserContext } from '../../context/UserContext';
-import { sendRecyclingActivity } from '../../utils/functions';
+import { useUserContext } from 'context/UserContext';
+import { sendRecyclingActivity } from 'utils/functions';
+import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 
 function EcoInfoPage() {
@@ -45,13 +46,19 @@ function EcoInfoPage() {
             })
             .catch((err) => {
                 console.error('Error cargando tarjetas:', err);
-                setError('No se pudieron cargar las tarjetas');
+                setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
                 setLoading(false);
             });
     }, [apiUrl]);
 
-    if (loading) return <div className="ecoinfo-main-container"></div>;
-    if (error) return <div className="ecoinfo-main-container">{error}</div>;
+
+    if (loading) return <div className="ecoinfo-main-container loading">Recuperando datos...</div>;
+    if (error) return <div className="ecoinfo-main-container">
+        {<NotificationMessage
+            textMessage={error}
+            notificationType={"error"} />
+        }
+    </div>;
 
     return (
         <div className="ecoinfo-main-container">

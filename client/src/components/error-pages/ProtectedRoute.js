@@ -1,5 +1,5 @@
-import { useUserContext } from '../context/UserContext';
-import UnauthorizedPage from './error-pages/UnauthorizedPage';
+import { useUserContext } from 'context/UserContext';
+import UnauthorizedPage from 'components/error-pages/UnauthorizedPage';
 
 // impide acceso a la página de perfil de usuario
 // si no hay usuario con sesión iniciada

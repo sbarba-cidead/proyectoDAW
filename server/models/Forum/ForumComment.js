@@ -5,29 +5,33 @@ const forumCommentSchema = new Schema({
   post: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ForumPost',
-    required: true
+    required: true,
   }, // referencia al post padre
   responseTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ForumComment',
     default: null,
-    required: false
   }, // string con el id del mensaje al que es respuesta, o null si no es respuesta
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   }, // referencia al usuario creador del mensaje
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   }, // fecha de creación del mensaje
   text: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
   } // contenido del mensaje
 }, {
   collection: "forum_comments"
 });
+
+forumCommentSchema.index({ post: 1 });
+forumCommentSchema.index({ responseTo: 1 });
+forumCommentSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model('ForumComment', forumCommentSchema);

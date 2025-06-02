@@ -4,7 +4,8 @@ const postCategorySchema = new mongoose.Schema({
     name: { 
         type: String, 
         required: true, 
-        unique: true 
+        unique: true,
+        trim: true,
     }, // nombre de la categoría
 }, {
     collection: "forum_post_categories"

@@ -58,17 +58,25 @@
     z-index: 999;
 }
 
-.login-button-container .menu a {
+.login-button-container .menu .login-menu-button {
     color: #ffffff;
     text-decoration: none;
     margin: 4px 0;
     font-weight: 500;
+    font-size: 16px;
     opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    display: block;
+    text-align: center;
+    width: 100%;
     transform: translateY(10px);
     animation: fadeInUp 0.4s forwards;
 }
 
-.login-button-container .menu a::after {
+.login-button-container .menu .login-menu-button::after {
     content: attr(data-text);
     font-weight: 700;
     visibility: hidden;
@@ -77,16 +85,16 @@
     overflow: hidden;
 }
 
-.login-button-container .menu a:hover {
+.login-button-container .menu .login-menu-button:hover {
     color: #f7a200;
     font-weight: 600;
 }
 
-.login-button-container .menu a:nth-child(1) {
+.login-button-container .menu .login-menu-button:nth-child(1) {
     animation-delay: 0s;
 }
 
-.login-button-container .menu a:nth-child(2) {
+.login-button-container .menu .login-menu-button:nth-child(2) {
     animation-delay: 0.2s;
 }
 
@@ -98,5 +106,12 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 1047px) {
+    .login-button-container .menu {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
 }

@@ -15,6 +15,7 @@ export function UserProvider({ children }) {
     const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
+       if (user){ console.log("usercontext recibido de login", user.avatar)}
         const checkUser = async () => {
             if (token) { // si se encuentra token
                 try {
@@ -35,6 +36,8 @@ export function UserProvider({ children }) {
                             username: data.username,
                             avatar: data.avatar, // url completa a la imagen del avatar
                         });
+
+                        console.log("usercontext fetch", user.avatar)
                     } else { // token incorrecto o expirado
                         // elimina el token del local
                         localStorage.removeItem('usertoken');
@@ -58,25 +61,25 @@ export function UserProvider({ children }) {
 
     // función de recarga del usuario
     const refreshUser = async () => {
-    if (!token) return;
+        if (!token) return;
 
-    try {
-        const response = await fetch(`${apiUrl}/user/me`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-        });
+        try {
+            const response = await fetch(`${apiUrl}/user/me`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+            });
 
-        if (response.ok) {
-        const data = await response.json();
-        setUser({
-            ...data,
-        });
+            if (response.ok) {
+            const data = await response.json();
+            setUser({
+                ...data,
+            });
+            }
+        } catch (error) {
+            console.error('Error refrescando usuario:', error);
         }
-    } catch (error) {
-        console.error('Error refrescando usuario:', error);
-    }
     };
 
     return (

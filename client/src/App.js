@@ -24,25 +24,27 @@ import recyclingMapImg from 'assets/recycling-map.webp';
 import ecoCalcImg from 'assets/ecocalc.webp';
 import recyclingGuideImg from 'assets/recycling-guide.webp';
 
+
+const pageTitles = {
+  "/perfil-usuario": "Datos de usuario",
+  "/herramientas": "Herramientas de Sostenibilidad",
+  "/calculadora-huella-ecologica": "Calculadora de Huella Ecológica",
+  "/mapa-reciclaje": "Mapa de Reciclaje",
+  "/contenedores-reciclaje": "Contenedores de Reciclaje",
+  "/foro": "Comunidad de Sostenibilidad",
+  "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
+  "/reset-password": "Recuperación de contraseña"
+};
+
+const presentImages = [recyclingMapImg, ecoCalcImg, recyclingGuideImg];
+
+
 function AppContent() {
   const [isHome, setIsHome] = useState(false);
   const [headerTitle, setHeaderTitle] = useState(WEBSITE_NAME);
   const location = useLocation(); // localización de ruta url en la web
 
-  const presentImages = [recyclingMapImg, ecoCalcImg, recyclingGuideImg];
-
-  const pageTitles = {
-    "/perfil-usuario": "Datos de usuario",
-    "/herramientas": "Herramientas de Sostenibilidad",
-    "/calculadora-huella-ecologica": "Calculadora de Huella Ecológica",
-    "/mapa-reciclaje": "Mapa de Reciclaje",
-    "/contenedores-reciclaje": "Contenedores de Reciclaje",
-    "/foro": "Comunidad de Sostenibilidad",
-    "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
-    "/reset-password": "Recuperación de contraseña"
-  };
   
-
   // precarga de imágenes estáticas
   useEffect(() => {
     presentImages.forEach(src => {
@@ -51,26 +53,31 @@ function AppContent() {
     });
   }, []);
   
-
   // actualiza el título para la cabecera y la pestaña del navegador
   useEffect(() => {
     // comprueba si la ruta actual es '/' (home)
-    const checkIsHome = location.pathname === '/';    
-    setIsHome(checkIsHome);
+    const isHomeRoute = location.pathname === '/';
+    setIsHome(isHomeRoute);
 
     // calcula el título basado en la ruta que se está visitando
-    let currentPageName = Object.entries(pageTitles).find(([path]) =>
+    const currentPageName = Object.entries(pageTitles).find(([path]) =>
       location.pathname === path || location.pathname.startsWith(`${path}/`)
-    )?.[1] || ""; // si el path no está en pageTitles, será ""
+    )?.[1] || "";
 
-    // if (!currentPageName && !isHome) {
-    //   currentPageName = "Página no encontrada";
-    // }
+    let tabTitle = WEBSITE_NAME;
 
-    const tabTile = currentPageName ? `${currentPageName} - ${WEBSITE_NAME}` : WEBSITE_NAME;
+    if (isHomeRoute) { // home
+      tabTitle = WEBSITE_NAME;
+    } else if (currentPageName) { // rutas definidas
+      tabTitle = `${currentPageName} - ${WEBSITE_NAME}`;
+      setHeaderTitle(currentPageName); // nombre para pasar al header
+    } else { // otras rutas
+      tabTitle = `Página no encontrada - ${WEBSITE_NAME}`;
+      setHeaderTitle(""); // nombre para pasar al header
+    }
 
-    setHeaderTitle(currentPageName); // nombre para pasar al header
-    document.title = tabTile; // actualiza el nombre para la pestaña del navegador
+    document.title = tabTitle; // actualiza el nombre para la pestaña del navegador
+
   }, [location.pathname]);
 
 

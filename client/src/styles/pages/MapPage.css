@@ -16,6 +16,31 @@
   z-index: 10;
 }
 
+.recyclemap-container .notification-message-wrapper .notification-message.error {
+    z-index: 3000;
+}
+
+.recyclemap-container .floating-search-button {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    background-color: #2e7d32;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 3000;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.recyclemap-container .floating-search-button:hover {
+    background-color: #1b5e20;
+}
+
 /* COLUMNA 1 */
 .recyclemap-container .recycle-map {
     flex: 2;
@@ -105,14 +130,6 @@
     background-color: #1b5e20;
 }
 
-.recycle-sidebar .error-message {
-    color: rgb(211, 3, 3);
-    font-size: 0.9rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-    text-align: center;
-}  
-
 .recycle-sidebar h3 {
     margin: 0px;
     padding: 1rem 0rem;
@@ -156,11 +173,24 @@
     
     .recyclemap-container .recycle-map {
         order: 2; /* mueve el mapa abajo */
+        flex: 1;
     }
     
     .recyclemap-container .recycle-sidebar {
         order: 1; /* pone el buscador arriba */
-        height: 40%;
+    }
+
+    /* altura cuando se muestra el input de búsqueda */
+    .recyclemap-container .recycle-sidebar.small-height {
+        flex: 0 0 auto;
+        height: auto;
+        max-height: 50px;
+    }
+
+    /* altura cuando se muestra la lista de puntos */
+    .recyclemap-container .recycle-sidebar.large-height {
+        flex: 0 0 35%;
+        overflow-y: scroll;
     }
 
     .recycle-sidebar h3 {
@@ -182,6 +212,11 @@
   
     .recycle-sidebar .recycle-form button {
       width: 100%;
+    }
+
+    /* altura cuando se muestra el input de búsqueda */
+    .recyclemap-container .recycle-sidebar.small-height {
+        max-height: 100px;
     }
 }
   

@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
-const UserLevel = require('../models/UserLevel')
-const ForumPost = require('../models/ForumPost');
-const PostCategory = require('../models/PostCategory');
-const ForumComment = require('../models/ForumComment');
-const authMiddleware = require('../middleware/authMiddleware');
+const User = require('@models/Global/User');
+const UserLevel = require('@models/Global/UserLevel')
+const ForumPost = require('@models/Forum/ForumPost');
+const PostCategory = require('@models/Forum/PostCategory');
+const ForumComment = require('@models/Forum/ForumComment');
+const authMiddleware = require('@middleware/authMiddleware');
 const mongoose = require('mongoose');
 
 // función para dar mismo formato a todos los nombres de categoría de post

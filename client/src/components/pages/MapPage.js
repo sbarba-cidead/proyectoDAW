@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getDistance } from 'geolib';
-import { FaSquareFull, FaTimesCircle } from 'react-icons/fa';
+import { FaSearch, FaSquareFull, FaTimesCircle } from 'react-icons/fa';
 import { useUserContext } from 'context/UserContext';
 import { sendRecyclingActivity } from 'utils/functions';
 import NotificationMessage from 'components/page-elements/NotificationMessage';
@@ -25,12 +25,12 @@ const createIcon = (iconFilename) => L.icon({
 
 // icono para el usuario
 const redUserIcon = L.icon({
-  iconUrl: userIcon,  // URL importada correcta
-  shadowUrl: `${mapMarkersUrl}/marker-shadow.png`,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+    iconUrl: userIcon,  // URL importada correcta
+    shadowUrl: `${mapMarkersUrl}/marker-shadow.png`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
 
 // manejo del movimiento de zoom del mapa 
@@ -47,6 +47,7 @@ function MoveMap({ coords }) {
     return null;
 }
 
+
 function MapPage() {
     const { user, refreshUser } = useUserContext();
     const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano (punto por defecto)
@@ -55,10 +56,13 @@ function MapPage() {
     const [orderedPoints, setOrderedPoints] = useState([]);
     const [selectedPoint, setSelectedPoint] = useState(null); // punto seleccionado en el mapa
     const markersRef = useRef([]); // referencia de los marcadores del mapa
-    const [searchDirectionError, setSearchDirectionError] = useState(''); // mensaje de error en búsqueda de dirección
     const [loading, setLoading] = useState(true);
+    const [notificationMessage, setNotificationMessage] = useState('');
+    const [notificationMessageType, setNotificationMessageType] = useState('');
     const [error, setError] = useState(null);
-    const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 368);
+    const [isSmallWidthScreen, setIsSmallWidthScreen] = useState(window.innerWidth < 380);
+    const [showSearchUI, setShowSearchUI] = useState(window.innerWidth < 380); // mostrar u ocultar input de búsqueda en móviles
+    const resultMarkerRef = useRef(null);
     const apiUrl = process.env.REACT_APP_API_URL;
 
     // solicita los puntos para el mapa al backend
@@ -68,6 +72,7 @@ function MapPage() {
             .then(data => {
                 setOrderedPoints(data);
                 injectContainerColors(data);
+                setLoading(false);
             })
             .catch(error => {
                 console.error('Error recuperando los puntos de reciclaje:', error);
@@ -79,12 +84,25 @@ function MapPage() {
     // escucha a los cambios de tamaño de pantalla
     useEffect(() => {
         const handleResize = () => {
-            setIsSmallWidthScreen(window.innerWidth < 368);
+            const isSmallScreen = window.innerWidth < 380;
+            setIsSmallWidthScreen(isSmallScreen);
+
+            // para pantallas móviles se oculta el formulario de búsqueda
+            // para mostrar un botón flotante en su lugar
+            setShowSearchUI(!isSmallScreen);
         };
       
         window.addEventListener('resize', handleResize);
+        handleResize();
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // para mostrar mensaje de notificicación
+    const showTempNotification = (msg, type, duration) => {
+        setNotificationMessage(msg);
+        setNotificationMessageType(type);
+        setTimeout(() => setNotificationMessage(''), duration);
+    };
 
     // función para guardar una nueva actividad de reciclaje
     const handleRecyclingActivity = async () =>{
@@ -96,12 +114,24 @@ function MapPage() {
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }
-    }  
+    }
+
+    // muestra el popup con el texto buscado
+    // sobre el marcador del mapa
+    useEffect(() => {
+    if (result) {
+        const timeout = setTimeout(() => {
+        if (resultMarkerRef.current) {
+            resultMarkerRef.current.openPopup();
+        }
+        }, 500); // puedes ajustar el tiempo si hace falta
+
+        return () => clearTimeout(timeout); // limpieza
+    }
+    }, [result]);
 
     const searchDirection = async () => {
         if (!direction) return;
-
-        setSearchDirectionError(''); // limpia errores anteriores
 
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direction)}`);
@@ -125,13 +155,17 @@ function MapPage() {
                     setOrderedPoints(ordered);
 
                     await handleRecyclingActivity();
+
+                    if (isSmallWidthScreen) { // en pantallas móviles
+                        setShowSearchUI(false); // oculta la barra de búsqueda tras buscar
+                    }
             } else {
                 setResult(null);
-                setSearchDirectionError('No se ha encontrado ninguna dirección con esos datos.');
+                showTempNotification('No se ha encontrado ninguna dirección con esos datos.', 'error', 3000);
             }
-        } catch (err) {
-            console.error(err);
-            setSearchDirectionError('Error al buscar la dirección.');
+        } catch (error) {
+            console.error(error);
+            showTempNotification('Error al buscar la dirección.\nInténtalo de nuevo.', 'error', 3000);
         }
     };
 
@@ -176,6 +210,13 @@ function MapPage() {
 
     return (
         <div className="recyclemap-container">
+            <div className="notification-message-wrapper">
+                {notificationMessage && 
+                    <NotificationMessage
+                    textMessage={notificationMessage}
+                    notificationType={notificationMessageType} />
+                }
+            </div>
             <div className="recycle-map">
                 <MapContainer center={focusPoint} zoom={15} className="map">
                     <TileLayer
@@ -204,32 +245,39 @@ function MapPage() {
 
 
                     {result && (
-                        <Marker position={result} icon={redUserIcon}>
+                        <Marker 
+                            position={result} 
+                            icon={redUserIcon}
+                            ref={resultMarkerRef}
+                        >
                             <Popup>Ubicación buscada</Popup>
                         </Marker>
                     )}
                 </MapContainer>
             </div>
-
-            <div className="recycle-sidebar">
-                <form onSubmit={handleSubmit} className="recycle-form">
-                    <div className="input-wrapper">
-                        <input
-                            type="text"
-                            value={direction}
-                            onChange={(e) => setDirection(e.target.value)}
-                            placeholder="Introduce una dirección"
-                        />
-                        { direction && (<FaTimesCircle  className="clear-icon"
-                            onClick={() => setDirection('')} />)
-                        }
-                    </div>
-                    <button type="submit">Buscar</button>
-                </form>
-
-                {searchDirectionError && <div className="error-message">{searchDirectionError}</div>}
+            
+            <div className={`recycle-sidebar ${isSmallWidthScreen ? (showSearchUI ? 'small-height' : 'large-height') : ''}`}>
+                {/* se oculta para pantallas pequeñas cuando showSearchUI es false */}
+                {(!isSmallWidthScreen || showSearchUI) && (
+                    <form onSubmit={handleSubmit} className="recycle-form">
+                        <div className="input-wrapper">
+                            <input
+                                type="text"
+                                value={direction}
+                                onChange={(e) => setDirection(e.target.value)}
+                                placeholder="Introduce una dirección"
+                            />
+                            { direction && (<FaTimesCircle  className="clear-icon"
+                                onClick={() => setDirection('')} />)
+                            }
+                        </div>
+                        <button type="submit">Buscar</button>
+                    </form>
+                )}
                 
-                {(!searchDirectionError || !isSmallWidthScreen) && (
+                {/* se muestra si es pantalla grande */}
+                {/* si es pantalla pequeña, sólo se muestra si showSearchUI es false */}
+                {(!isSmallWidthScreen || !showSearchUI) && (
                     <>
                         <h3>Puntos cercanos</h3>
                         <ul className="recycle-list">
@@ -243,6 +291,12 @@ function MapPage() {
                     </>
                 )}
             </div>
+
+            {isSmallWidthScreen && !showSearchUI && (
+                <button className="floating-search-button" onClick={() => setShowSearchUI(true)}>
+                    <FaSearch />
+                </button>
+            )}
         </div>
     );
 

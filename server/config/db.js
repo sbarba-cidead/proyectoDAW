@@ -9,10 +9,7 @@ const connectDB = async () => {
     const mongoURI = process.env.MONGO_URI;
 
     // se establece la conexión
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoURI);
 
     // confirmación en el log
     console.log('Conexión correcta a MongoDB');

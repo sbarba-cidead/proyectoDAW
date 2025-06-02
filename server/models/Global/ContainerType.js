@@ -1,41 +1,43 @@
 const mongoose = require('mongoose');
 
 // modelo para tipos de puntos de reciclaje
-const ContainerTypeSchema = new mongoose.Schema({
+const containerTypeSchema = new mongoose.Schema({
     _id: {
         type: String,
         required: true,
+        trim: true,
     },
     name: {
         type: String,
         required: true, 
-        unique: false,
+        trim: true,
     },
     color: {
         type: String,
         required: true, 
-        unique: false,
+        trim: true,
     },
     markerIcon: {
         type: String,
         required: true,
+        trim: true,
     },
     markerShadow: {
         type: String,
-        required: false,
-        default: "marker-shadow.png"
+        default: "marker-shadow.png",
+        trim: true,
     },
     image: {
         type: String,
         required: true,
+        trim: true,
     },
     materials: {
         type: [String],
-        required: false,
-        default: []
+        default: [],
     },
 }, {
     collection: 'recycle_container_types'
 });
 
-module.exports = mongoose.model('ContainerType', ContainerTypeSchema);
+module.exports = mongoose.model('ContainerType', containerTypeSchema);

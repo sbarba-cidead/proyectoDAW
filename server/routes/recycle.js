@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware');
-const MapRecyclePoint = require('../models/Map/MapRecyclePoint');
-const ContainerType = require('../models/ContainerType');
-const EcoQuestion = require('../models/EcoQuestion');
-const AdviceLevel = require('../models/AdviceLevel');
-const EcoInfoCard = require('../models/EcoInfo/EcoInfoCard');
-const RecycleGuideData = require('../models/RecycleGuide/RecycleGuideData');
-const UserLevel = require('../models/UserLevel');
-const User = require('../models/User')
-const RecyclingActivity = require('../models/RecyclingActivity');
-const ImprovementTip = require('../models/ImprovementTip');
+const authMiddleware = require('@middleware/authMiddleware');
+const MapRecyclePoint = require('@models/Map/MapRecyclePoint');
+const ContainerType = require('@models/Global/ContainerType');
+const EcoQuestion = require('@models/EcoCalc/EcoQuestion');
+const AdviceLevel = require('@models/EcoCalc/AdviceLevel');
+const ImprovementTip = require('@models/EcoCalc/ImprovementTip');
+const EcoInfoCard = require('@models/EcoInfo/EcoInfoCard');
+const RecycleGuideData = require('@models/RecycleGuide/RecycleGuideData');
+const UserLevel = require('@models/Global/UserLevel');
+const User = require('@models/Global/User')
+const RecyclingActivity = require('@models/Global/RecyclingActivity');
+
 
 // para comprobar si hay conexión con el servidor
 router.get('/ping', (req, res) => {
@@ -150,23 +151,16 @@ router.get('/eco-info-cards', async (req, res) => {
 router.get('/eco-guide-data', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     const search = req.query.search || '';
-    console.log('Search:', search)
     try {
-        const regex = new RegExp(search, 'i');
+        const regex = new RegExp(search, 'i'); // case insensitive
 
-                // DEPURACIÓN: imprime todo lo que hay en la colección
+        // DEPURACIÓN: imprime todo lo que hay en la colección
         const allData = await RecycleGuideData.find({}).lean();
-        console.log("Todos los productos en la colección:", allData.map(p => p.name));
 
         const products = await RecycleGuideData.find({
-           // busca por coincidencia parcial, case-insensitive
-            // name: { $regex: search, $options: 'i' }
-            name: regex
+          // busca por coincidencia parcial, case-insensitive
+          name: regex
         }).sort({ name: 1 }).lean();
-
-
-        console.log("Productos encontrados:", products.map(p => p.name));
-
 
         res.json(products);
     } catch (error) {

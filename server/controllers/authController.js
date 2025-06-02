@@ -1,7 +1,7 @@
 // controlador para autenticación de usuarios
 
-const User = require('../models/User');
-const UserLevel = require('../models/UserLevel');
+const User = require('@models/Global/User');
+const UserLevel = require('@models/Global/UserLevel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');

@@ -1,6 +1,6 @@
 import 'styles/pages/EcoCalcPage.css';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUserContext } from 'context/UserContext';
 import { sendRecyclingActivity } from 'utils/functions';
 import NotificationMessage from 'components/page-elements/NotificationMessage';
@@ -43,7 +43,7 @@ function EcoCalcPage() {
             }
         };
         fetchQuestions();
-    }, []);
+    }, [apiUrl]);
 
     // se obtienen los datos para cálculo de resultado y consejos
     useEffect(() => {
@@ -61,17 +61,11 @@ function EcoCalcPage() {
             }
         };
         fetchAdviceData();
-    }, []);
-
-    useEffect(() => {
-        if (carbonFootprint && waterFootprint) {
-            handleRecyclingActivity();
-        }
-    }, [carbonFootprint, waterFootprint]);
+    }, [apiUrl]);
 
     // función para guardar una nueva actividad de reciclaje
-    const handleRecyclingActivity = async () =>{
-        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+    const handleRecyclingActivity = useCallback(async () => {
+        if (!user) return; // si no hay usuario iniciado no guarda la actividad
 
         try {
             await sendRecyclingActivity('Calcular huella ecológica');
@@ -79,8 +73,13 @@ function EcoCalcPage() {
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }
-    }  
-    
+    }, [user, refreshUser]);
+
+    useEffect(() => {
+        if (carbonFootprint && waterFootprint) {
+            handleRecyclingActivity();
+        }
+    }, [carbonFootprint, waterFootprint, handleRecyclingActivity]);
 
     // reinicio de los formularios para nuevo cálculo
     const handleReset = () => {
@@ -135,6 +134,7 @@ function EcoCalcPage() {
 
                 switch (rule.operator) { // reglas de cálculo
                     case 'eq': return answer === rule.value; // igual
+                    case 'neq': return answer !== rule.value; // no igual
                     case 'gt': return answer > rule.value; // mayor
                     case 'gte': return answer >= rule.value; // mayor o igual
                     case 'lt': return answer < rule.value; // menor
@@ -194,7 +194,8 @@ function EcoCalcPage() {
                     <p className="result info sub">Más información:</p>,
                     <a 
                         href="https://www.esagua.es/calculo-de-la-huella-hidrica/" 
-                        target="_blank" 
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="result info link"
                     >
                         ¿Qué es la huella hídrica?
@@ -223,21 +224,24 @@ function EcoCalcPage() {
                     <p className="result info sub">Más información:</p>,
                     <a 
                         href="https://calculatuhuella.consumo.gob.es/" 
-                        target="_blank" 
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="result info link"
                     >
                         Huella de carbono ciudadana
                     </a>,
                     <a 
                         href="https://www.miteco.gob.es/es/cambio-climatico/temas/mitigacion-politicas-y-medidas/calculadoras.html" 
-                        target="_blank" 
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="result info link"
                     >
                         Huella de carbono empresarial
                     </a>,
                     <a 
                         href="https://serviciosempresariales.camaramadrid.es/sostenibilidad/calcula-huella-carbono/" 
-                        target="_blank" 
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="result info link"
                     >
                         Cámara de comercio

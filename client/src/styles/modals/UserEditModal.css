@@ -96,23 +96,39 @@
   outline: none;
 }
 
-.modal form .input-container .reset-icon {
+.modal form .input-container .reset-button {
   margin-left: 10px;
   align-content: center;
-  cursor: pointer;
+  background: none;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: none;
 }
 
-.modal form .input-container .reset-icon svg {
+.modal form .input-container .reset-icon {
   color: #666;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.modal form .input-container .reset-icon svg:hover {
-  color: #4CAF50;
-  transform: scale(1.1);
+/* efecto para ordenador */
+@media (hover: hover) and (pointer: fine) {
+    .modal form .input-container .reset-button:hover .reset-icon {
+        color: #4CAF50;
+        transform: scale(1.1);
+        cursor: pointer;
+    }
 }
 
-.modal-overlay .modal form button {
+/* efecto para móviles */
+@media (hover: none) and (pointer: coarse) {
+    .modal form .input-container .reset-button:active .reset-icon {
+        color: #4CAF50;
+        transform: scale(1.1);
+    }
+}
+
+.modal-overlay .modal form .submit-btn {
   width: 100%;
   padding: 10px;
   background-color: #4CAF50;
@@ -123,7 +139,7 @@
   cursor: pointer;
 }
 
-.modal-overlay .modal form button:hover {
+.modal-overlay .modal form .submit-btn:hover {
   background-color: #2c8d31;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease-in-out;

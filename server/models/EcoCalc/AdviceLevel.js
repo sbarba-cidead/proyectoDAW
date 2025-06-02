@@ -13,7 +13,7 @@ const adviceLevelSchema = new mongoose.Schema({
     text: { 
         type: String, 
         required: true,
-        unique: false,
+        trim: true,
     },
 }, {
     collection: 'ecocalc_advicelevels_data'

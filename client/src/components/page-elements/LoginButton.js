@@ -77,18 +77,17 @@ function LoginButton() {
     };
    
 
-    // if (isLoadingUser) return null;
-
     if (isLoadingUser) {
         return (
             <div className="login-button-container">
             <button className="login-button loading-placeholder" disabled>
-                {/* Icono o spinner pequeño */}
                 <FaCircle className="guest-avatar loading" />
             </button>
             </div>
         );
     }
+
+    if (user) {console.log("loginbutton", user.avatar)}
    
     return (
         <div className="login-button-container" ref={menuRef}>
@@ -98,7 +97,7 @@ function LoginButton() {
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
             >
-                {/* si hay usuario, muestra su foto; si no, muestra avatar invitado */}            
+                {/* si hay usuario, muestra su foto; si no, muestra avatar invitado */}                          
                 {user ? (
                     <img src={`${user.avatar}?${Date.now()}`} alt="Avatar" className="avatar logged-in" />
                 ) : (
@@ -124,8 +123,8 @@ function LoginButton() {
             {/* menú de usuario si hay usuario con sesión iniciada */}
             {user && showMenu && (
                 <div className="menu">
-                    <Link to="/perfil-usuario" onClick={() => setShowMenu(false)} data-text="Perfil">Perfil usuario</Link>
-                    <Link onClick={handleLogout} data-text="Cerrar sesión">Cerrar sesión</Link>
+                    <Link to="/perfil-usuario" className="login-menu-button" onClick={() => setShowMenu(false)} data-text="Perfil">Perfil usuario</Link>
+                    <button onClick={handleLogout} className="login-menu-button" data-text="Cerrar sesión">Cerrar sesión</button>
                 </div>
             )}
         </div>

@@ -1,34 +1,40 @@
 const mongoose = require('mongoose');
 
 // modelo para creación de un usuario
-const UserSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         required: false, 
         default: 'default-avatar.png',
+        trim: true,
     },
     fullname: {
         type: String,
         required: true,
+        trim: true,
     },
     username: {
         type: String,
         required: true,
         unique: true,
+        trim: true,
     },
     email: {
         type: String,
         required: true,
         unique: true,
+        trim: true,
     },
     password: {
         type: String,
         required: true,
+        trim: true,
     },
     role: {
         type: String,
         enum: ['user', 'admin'],
-        default: 'user'
+        default: 'user',
+        trim: true,
     },
     score: {
         type: Number,
@@ -73,10 +79,14 @@ const UserSchema = new mongoose.Schema({
     },
     resetPasswordToken: { 
         type: String,
+        trim: true,
     },
     resetPasswordExpires: { 
         type: Date,
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model('User', UserSchema);
+userSchema.index({ score: -1 });
+userSchema.index({ 'messages._id': 1 });
+
+module.exports = mongoose.model('User', userSchema);

@@ -1,6 +1,6 @@
 import 'styles/modals/UserEditModal.css';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
 import NotificationMessage from 'components/page-elements/NotificationMessage';
 
@@ -174,9 +174,9 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               value={editData.fullname.trim()}
               onChange={handleInputChange}
             />
-            <div className="reset-icon">
-              <FaUndo onClick={() => handleReset('fullname')} />
-            </div>
+            <button type="button" className="reset-button">
+              <FaUndo className="reset-icon" onClick={() => handleReset('fullname')} />
+            </button>
           </div>
 
           {/* Input Username */}
@@ -188,9 +188,9 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               value={editData.username.trim()}
               onChange={handleInputChange}
             />
-            <div className="reset-icon">
-              <FaUndo onClick={() => handleReset('username')} />
-            </div>
+            <button type="button" className="reset-button">
+              <FaUndo className="reset-icon" onClick={() => handleReset('username')} />
+            </button>
           </div>
 
           {/* Input Email */}
@@ -202,9 +202,9 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               value={editData.email.trim()}
               onChange={handleInputChange}
             />
-            <div className="reset-icon">
-              <FaUndo onClick={() => handleReset('email')} />
-            </div>
+            <button type="button" className="reset-button">
+              <FaUndo className="reset-icon" onClick={() => handleReset('email')} />
+            </button>
           </div>
 
           {/* Botón para guardar */}

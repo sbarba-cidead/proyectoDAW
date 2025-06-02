@@ -367,7 +367,7 @@ const ForumPage = () => {
                 <div className="post-footer">
                   <div className="created-info">
                     <span className="created-by-label">Creado por:</span>
-                    {post.createdBy ? (
+                    {user && post.createdBy ? (
                       <UserCardTooltip
                         avatar={`${avatarsUrl}/${post.createdBy.avatar}`}
                         fullname={post.createdBy.fullname}

@@ -10,24 +10,26 @@ const ecoQuestionSchema = new mongoose.Schema({
         type: String, 
         required: true, 
         unique: true,
+        trim: true,
     },
     question: { 
         type: String, 
         required: true,
-        unique: false,
+        trim: true,
     },
     category: { 
         type: String, 
         required: true,
-        unique: false,
+        trim: true,
     }, // "carbon-calc" o "water-calc"
     options: { 
         type: [optionSchema], 
         required: true,
-        unique: false,
     }
 }, {
     collection: 'ecocalc_questions_data'
 });
+
+ecoQuestionSchema.index({ category: 1 });
 
 module.exports = mongoose.model('EcoQuestion', ecoQuestionSchema);

@@ -64,6 +64,9 @@ function ProfilePage({setHeaderTitle}) {
           return;
         }
 
+        console.log("profile antes de setlocal", data.avatar)
+       
+
         setUserLocal({
           avatar: `${avatarsUrl}/${data.avatar}`,
           fullname: data.fullname,
@@ -75,6 +78,8 @@ function ProfilePage({setHeaderTitle}) {
           messages: data.messages,
           ...(otherUserId ? {} : { email: data.email })
         });
+
+         console.log("profile despues de setlocal", user.avatar)
       } catch (error) {
         console.error('Error de red:', error);
       } finally {

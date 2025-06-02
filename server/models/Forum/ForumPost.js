@@ -5,12 +5,12 @@ const forumPostSchema = new mongoose.Schema({
   title: { 
     type: String, 
     required: true,
-    unique: false,
+    trim: true,
   }, // título del post
   content: { 
     type: String, 
     required: true,
-    unique: false,
+    trim: true,
   }, // contenido del post
   createdAt: { 
     type: Date,
@@ -23,26 +23,27 @@ const forumPostSchema = new mongoose.Schema({
   replies: { 
     type: [mongoose.Schema.Types.ObjectId], 
     ref: 'ForumComment', 
-    default: [] 
+    default: [],
   }, // array de IDs de respuestas a este post
   createdBy: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User', 
-    required: true 
+    required: true,
   }, // ID del usuario que creó el post
   type: { 
     type: String, 
     enum: ['post', 'event'], 
-    required: true 
+    required: true,
   }, // tipo de post, puede ser post o event
   categories: { 
     type: [mongoose.Schema.Types.ObjectId], 
-    ref: 'PostCategory' 
+    ref: 'PostCategory',
   } // array de categorías asociadas al post
 }, {
   collection: "forum_posts"
 });
 
-const Post = mongoose.model('ForumPost', forumPostSchema);
+forumPostSchema.index({ createdAt: -1 });
+forumPostSchema.index({ categories: 1 });
 
-module.exports = Post;
+module.exports = mongoose.model('ForumPost', forumPostSchema);

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const RecyclingActivitySchema = new mongoose.Schema({
+const recyclingActivitySchema = new mongoose.Schema({
     type: { 
         type: String, 
         required: true 
@@ -14,9 +14,17 @@ const RecyclingActivitySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: true 
-    } // id del usuario que la ha realizado
+    }, // id del usuario que la ha realizado
+    scoreValue: {
+        type: Number,        
+        required: true,
+        validate: {
+            validator: Number.isInteger,
+            message: '{VALUE} no es un número entero'
+        }
+    } // puntos que otorga esta actividad
 }, {
     collection: "recycling_activities"
 });
 
-module.exports = mongoose.model('RecyclingActivity', RecyclingActivitySchema);
+module.exports = mongoose.model('RecyclingActivity', recyclingActivitySchema);

@@ -6,11 +6,11 @@ const userLevelSchema = new mongoose.Schema({
         type: String,
         required: true, 
         unique: true,
+        trim: true,
     },
     minScore: {
         type: Number,
         required: true,
-        unique: false,
         validate: {
             validator: Number.isInteger,
             message: '{VALUE} no es un número entero'
@@ -19,7 +19,6 @@ const userLevelSchema = new mongoose.Schema({
     maxScore: {
         type: Number,
         required: true,
-        unique: false,
         validate: {
             validator: Number.isInteger,
             message: '{VALUE} no es un número entero'
@@ -28,20 +27,22 @@ const userLevelSchema = new mongoose.Schema({
     color: {
         type: String,
         required: true,
-        unique: false,
+        trim: true,
     },
     text: {
         type: String,
         required: true,
-        unique: true,
+        trim: true,
     },
     icon: {
         type: String,
         required: true,
-        unique: false,
+        trim: true,
     },
 }, { 
     collection: 'userlevels'
 });
+
+userLevelSchema.index({ minScore: 1, maxScore: 1 });
 
 module.exports = mongoose.model('UserLevel', userLevelSchema);

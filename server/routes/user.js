@@ -13,8 +13,8 @@ const mongoose = require('mongoose');
 const AVATAR_UPLOAD_DIR = path.join(__dirname, '..', process.env.AVATAR_UPLOAD_DIR);
 const AVATAR_PUBLIC_URL = process.env.AVATAR_PUBLIC_URL;
 
-const User = require('../models/User');
-const authMiddleware = require('../middleware/authMiddleware');
+const User = require('@models/Global/User');
+const authMiddleware = require('@middleware/authMiddleware');
 
 
 // configuración necesaria para guardar archivos en public/images

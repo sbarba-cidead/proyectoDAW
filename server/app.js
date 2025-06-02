@@ -1,3 +1,4 @@
+require('module-alias/register'); // facilita referencias a paths para importación
 const dotenv = require('dotenv').config(); // importa variables de entorno
 const dotenvFlow = require('dotenv-flow').config(); // controla modos para variables de entorno
 const createError = require('http-errors');

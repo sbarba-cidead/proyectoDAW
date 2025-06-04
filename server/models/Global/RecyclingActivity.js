@@ -16,12 +16,12 @@ const recyclingActivitySchema = new mongoose.Schema({
         required: true 
     }, // id del usuario que la ha realizado
     scoreValue: {
-        type: Number,        
-        required: true,
+        type: Number,
         validate: {
             validator: Number.isInteger,
             message: '{VALUE} no es un número entero'
-        }
+        },
+        default: 5,
     } // puntos que otorga esta actividad
 }, {
     collection: "recycling_activities"

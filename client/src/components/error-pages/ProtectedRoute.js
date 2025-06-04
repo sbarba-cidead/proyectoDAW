@@ -5,9 +5,9 @@ import UnauthorizedPage from 'components/error-pages/UnauthorizedPage';
 // si no hay usuario con sesión iniciada
 
 function ProtectedRoute({ children }) {
-  const { user, isLoadingUser } = useUserContext();
+  const { user, isUserChangingState } = useUserContext();
 
-  if (isLoadingUser) return null;
+  if (isUserChangingState) return null;
 
   return user ? children : <UnauthorizedPage />;
 }

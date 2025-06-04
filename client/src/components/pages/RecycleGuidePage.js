@@ -14,7 +14,7 @@ const normalizarTexto = (texto) => {
 };
 
 function RecycleGuidePage() {
-    const { user, refreshUser } = useUserContext();
+    const { user } = useUserContext();
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState("");
     const [result, setResult] = useState(null);
@@ -70,7 +70,6 @@ function RecycleGuidePage() {
 
         try {
             await sendRecyclingActivity('Usar guía de reciclaje');
-            await refreshUser(); // recarga los datos del usuario en contexto global
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }

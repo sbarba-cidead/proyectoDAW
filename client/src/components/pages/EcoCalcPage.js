@@ -8,7 +8,7 @@ import NotificationMessage from 'components/page-elements/NotificationMessage';
 const improvementIntro = 'Aquí tienes algunos consejos personalizados para mejorar tu impacto ecológico:';
 
 function EcoCalcPage() {
-    const { user, refreshUser } = useUserContext();
+    const { user } = useUserContext();
     const [carbonQuestions, setCarbonQuestions] = useState([]);
     const [waterQuestions, setWaterQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -69,11 +69,10 @@ function EcoCalcPage() {
 
         try {
             await sendRecyclingActivity('Calcular huella ecológica');
-            await refreshUser(); // recarga los datos del usuario en contexto global
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }
-    }, [user, refreshUser]);
+    }, [user]);
 
     useEffect(() => {
         if (carbonFootprint && waterFootprint) {

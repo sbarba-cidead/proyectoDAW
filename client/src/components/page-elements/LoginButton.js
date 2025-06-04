@@ -7,7 +7,7 @@ import { FaCircle, FaUserCircle } from 'react-icons/fa';
 import LoginModal from 'components/modals/LoginModal';
 
 function LoginButton() {
-    const { user, isLoadingUser, setUserGlobalContext } = useUserContext();
+    const { user, isUserChangingState, logoutUser } = useUserContext();
     const [showLogin, setShowLogin] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -42,13 +42,11 @@ function LoginButton() {
 
     // logout del usuario en el menú
     const handleLogout = () => {
-        localStorage.removeItem('usertoken');
-        setUserGlobalContext(null);
+        // cierra el menú
         setShowMenu(false);
 
-        if (location.pathname === '/perfil-usuario') {
-            navigate('/');
-        }        
+        // llama a la función de logout del usercontext
+        logoutUser(location.pathname)      
     };
 
     // cierra el menú de usuario al pulsar fuera
@@ -77,7 +75,7 @@ function LoginButton() {
     };
    
 
-    if (isLoadingUser) {
+    if (isUserChangingState) {
         return (
             <div className="login-button-container">
             <button className="login-button loading-placeholder" disabled>
@@ -87,8 +85,7 @@ function LoginButton() {
         );
     }
 
-    if (user) {console.log("loginbutton", user.avatar)}
-   
+    
     return (
         <div className="login-button-container" ref={menuRef}>
             <button

@@ -1,7 +1,7 @@
 import 'styles/pages/ProfilePage.css';
 
 import { useState, useEffect } from 'react';
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { FaSeedling, FaLeaf, FaInfoCircle, FaTrophy, FaAddressCard,
   FaTree, FaApple, FaCrown, FaStar, FaAngleDown, FaAngleUp } from 'react-icons/fa';
 import { useUserContext } from 'context/UserContext';
@@ -14,10 +14,8 @@ import { WEBSITE_NAME } from 'config/constants';
 
 function ProfilePage({setHeaderTitle}) {
   const location = useLocation();
-  const [user, setUserLocal] = useState(null);
-  const { username: otherUserUsername } = useParams();
-  const otherUserId = location.state?.userId;
   const { setUserGlobalContext } = useUserContext();
+  const [userLocal, setUserLocal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userNotFound, setUserNotFound] = useState(false);
   const [avatarTimestamp, setAvatarTimestamp] = useState(null);
@@ -28,58 +26,109 @@ function ProfilePage({setHeaderTitle}) {
   const apiUrl = process.env.REACT_APP_API_URL;
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
+  // cuando se accede desde hipervículo a la página de usuario 
+  // para ver el perfil de otro usuario, se recibe su ID mandado por estado
+  const otherUserId = location.state?.userId;
+  // también se recibe su username por parámetros de la url
+  const { username: otherUserUsername } = useParams();
+
   // petición al backend para obtener los datos del usuario
   useEffect(() => {
     const fetchUser = async () => {
+      setLoading(true);
+
+      const token = localStorage.getItem('usertoken');
+
       try {
-        const token = localStorage.getItem('usertoken');
+        // - Opción 1: si se accede al perfil del usuario con sesión iniciada - //
+        if (!otherUserId && !otherUserUsername) {
+          const res = await fetch(`${apiUrl}/user/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
 
-        let resUser;
+          const data = await res.json();
 
+          if (!res.ok) {
+            console.error('Error al obtener el usuario actual:', data.error);
+            return;
+          }
+
+          setUserLocal({
+            avatar: `${avatarsUrl}/${data.avatar}`,
+            fullname: data.fullname,
+            username: data.username,
+            role: data.role,
+            score: data.score,
+            level: data.level, // objeto completo con los datos del nivel
+            recyclingActivities: data.recyclingActivities,
+            messages: data.messages,
+            email: data.email
+          });
+
+          return;
+        }
+
+        // - Opción 2: si se accede al perfil de otro usuario con su ID (desde link) - //
         if (otherUserId) {
-          resUser = await fetch(`${apiUrl}/user/otheruser/`, {
+          const res = await fetch(`${apiUrl}/user/otheruser/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ userId: otherUserId })
           });
-        } else if (otherUserUsername) { // acceso directo por URL con username
-          resUser = await fetch(`${apiUrl}/user/otheruser/${otherUserUsername}`);
-        } else {
-          resUser = await fetch(`${apiUrl}/user/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            if (data.error === 'USER_NOT_FOUND') {
+              setUserNotFound(true);
             }
+            console.error('Error al obtener usuario:', data.error);
+            return;
+          }
+
+          setUserLocal({
+            avatar: `${avatarsUrl}/${data.avatar}`,
+            fullname: data.fullname,
+            username: data.username,
+            role: data.role,
+            score: data.score,
+            level: data.level, // objeto completo con los datos del nivel
+            recyclingActivities: data.recyclingActivities,
+            messages: data.messages
+          });
+
+        return;
+        }
+
+        // - Opción 3: si se accede al perfil de otro usuario con su username (desde url) - //
+        if (otherUserUsername) { // 
+          const res = await fetch(`${apiUrl}/user/otheruser/${otherUserUsername}`);
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            if (data.error === 'USER_NOT_FOUND') {
+              setUserNotFound(true);
+            }
+            console.error('Error al obtener usuario:', data.error);
+            return;
+          }
+
+          setUserLocal({
+            avatar: `${avatarsUrl}/${data.avatar}`,
+            fullname: data.fullname,
+            username: data.username,
+            role: data.role,
+            score: data.score,
+            level: data.level, // objeto completo con los datos del nivel
+            recyclingActivities: data.recyclingActivities,
+            messages: data.messages
           });
         }
-
-        const data = await resUser.json();
-
-        if (!resUser.ok) {
-          if (data.error === 'USER_NOT_FOUND') {
-            setUserNotFound(true);
-          }
-          console.error('Error al obtener usuario:', data.msg);
-          return;
-        }
-
-        console.log("profile antes de setlocal", data.avatar)
-       
-
-        setUserLocal({
-          avatar: `${avatarsUrl}/${data.avatar}`,
-          fullname: data.fullname,
-          username: data.username,
-          role: data.role,
-          score: data.score,
-          level: data.level, // objeto completo con los datos del nivel
-          recyclingActivities: data.recyclingActivities,
-          messages: data.messages,
-          ...(otherUserId ? {} : { email: data.email })
-        });
-
-         console.log("profile despues de setlocal", user.avatar)
       } catch (error) {
         console.error('Error de red:', error);
       } finally {
@@ -92,14 +141,14 @@ function ProfilePage({setHeaderTitle}) {
 
   // actualización de cabecera y pestaña
   useEffect(() => {
-  if (userNotFound) {
-    document.title = `Página no encontrada - ${WEBSITE_NAME}`;
-    setHeaderTitle?.("Página no encontrada");
-  } else if (!userNotFound && otherUserUsername) {
-    document.title = `Datos de usuario de ${otherUserUsername} - ${WEBSITE_NAME}`;
-    setHeaderTitle?.(`Datos de usuario de ${otherUserUsername}`);
-  }
-}, [userNotFound, otherUserUsername, setHeaderTitle]);
+    if (userNotFound) {
+      document.title = `Página no encontrada - ${WEBSITE_NAME}`;
+      setHeaderTitle?.("Página no encontrada");
+    } else if (!userNotFound && otherUserUsername) {
+      document.title = `Datos de usuario de ${otherUserUsername} - ${WEBSITE_NAME}`;
+      setHeaderTitle?.(`Datos de usuario de ${otherUserUsername}`);
+    }
+  }, [userNotFound, otherUserUsername, setHeaderTitle]);
 
   // maneja el click en el botón de editar perfil
   const handleEditProfileClick = () => {
@@ -123,14 +172,15 @@ function ProfilePage({setHeaderTitle}) {
   // guardado de los datos de edición de perfil,
   // actualiza los datos del usuario en la base de datos
   const handleEditProfileSave = async (updatedData, selectedImageFile) => {
-    let avatarUpdated = false;
     // solicitud a la API para actualizar los datos en la base de datos
     try {
       const token = localStorage.getItem('usertoken');  // token del usuario      
 
+      // -- comprobaciones previas -- //
+      
       // si se ha actualizado username o email, se comprueba si ya están en uso
-      const isUsernameChanged = updatedData.username !== user.username;
-      const isEmailChanged = updatedData.email !== user.email;
+      const isUsernameChanged = updatedData.username !== userLocal.username;
+      const isEmailChanged = updatedData.email !== userLocal.email;
       if (isUsernameChanged || isEmailChanged) {
         try {
           const checkRes = await fetch(`${apiUrl}/user/check-updated-data`, {
@@ -165,7 +215,9 @@ function ProfilePage({setHeaderTitle}) {
           return;
         }
       }
-      
+
+      // -- envío de los datos actualizados del usuario-- //
+
       // se mandan los datos actualizados del usuario
       const updateRes = await fetch(`${apiUrl}/user/update`, {
         method: 'PUT',
@@ -176,36 +228,22 @@ function ProfilePage({setHeaderTitle}) {
         body: JSON.stringify(updatedData),  // envía los nuevos datos del usuario
       });
 
-      // // si no se va a actualizar el avatar
-      // if (!selectedImageFile && user.avatar.startsWith(avatarsUrl)) {
-      //   updatedData.avatar = user.avatar.replace(`${avatarsUrl}/`, ''); // extrae solo el nombre del archivo
-      // }
-
-      // // se mandan los datos actualizados del usuario
-      // const updateRes = await fetch(`${apiUrl}/user/update`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`,  // envía el token del usuario
-      //   },
-      //   body: JSON.stringify(updatedData),  // envía los nuevos datos del usuario
-      // });
-
       // se espera confirmación de actualización en base de datos
       const data = await updateRes.json();
 
       if (!updateRes.ok) { // si responde con error
         showTempNotification('Los datos no se han podido actualizar.\nInténtalo más tarde.', 'error', 3000);
-        console.error('Error al actualizar:', data.msg);
+        console.error('Error al actualizar:', data.error);
         return;
       }
 
+       // -- subida de fichero de imagen del avatar -- //
+
       // si se ha actualizado el avatar, se sube el fichero al servidor
-      let newAvatarFilename = user.avatar;
       if (selectedImageFile) {
         const formData = new FormData();
-        formData.append('filename', `${"avatar-"}${updatedData.username}`); // se nombra el fichero con el nombre de usuario
-        formData.append('avatar', selectedImageFile);
+        formData.append('filename', updatedData.avatar); // nombre para el fichero
+        formData.append('avatar', selectedImageFile); // el fichero de la imagen
 
         const uploadRes = await fetch(`${apiUrl}/user/upload-avatar`, {
           method: 'POST',
@@ -215,85 +253,46 @@ function ProfilePage({setHeaderTitle}) {
           body: formData,
         });
 
-        const uploadedImageData = await uploadRes.json(); // datos de la imagen subida, incluye uploadDir y fullFilename
+        const data = await uploadRes.json(); // datos de la imagen subida, incluye dir y fullFilename
+        // nota: dir es algo como /images/avatars/avatar-username.jpg (no incluye el dominio del servidor)
+        // nota 2: fullFilename incluye la extensión       
 
         if (!uploadRes.ok) { // si hay error en la subida
           showTempNotification('El avatar no se han podido actualizar.\nInténtalo más tarde.', 'error', 3000);
-          console.error('Error al actualizar:', data.msg);
+          console.error('Error al actualizar:', data.error);
 
           return;
         }
 
-        // // se actualiza la ruta del avatar en los datos del usuario
-        // updatedData.avatar = uploadedImageData.fullFilename; //ej: miavatar.jpg
-        // avatarUpdated = true;
-
-        newAvatarFilename = uploadedImageData.fullname;
-
-        // 🔹 Paso 3: Actualizar solo el avatar
-      const avatarRes = await fetch(`${apiUrl}/user/update`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ avatar: newAvatarFilename }),
-      });
-
-      if (!avatarRes.ok) {
-        showTempNotification('Error al actualizar el avatar.', 'error', 3000);
-        return;
-      }
-
-        // recarga del avatar en la imagen
+        // recarga del avatar en la imagen de perfil
         setAvatarTimestamp(Date.now());
       }
-
-      // se va a cambiar el nombre de la imagen por la ruta completa
-      // para almacenarlo en los datos de usuario locales y del contexto global        
-      // if (selectedImageFile){ // si se editó el avatar
-      //   // se actualiza la ruta relativa de la imagen del avatar
-      //   updatedData.avatar = `${avatarsUrl}/${updatedData.avatar}`;
-      // } 
-
-      // updatedData.avatar = `${avatarsUrl}/${data.avatar}`;
-
+      
+      // se añade ruta completa al avatar para uso en contexto global y local
       const updatedUser = {
-        ...user,
-        ...updatedData,
-        avatar: `${avatarsUrl}/${newAvatarFilename}`
+        ...userLocal,
+        ...data,
+        avatar: `${avatarsUrl}/${data.avatar}`
       }
       
+      // actualización de contexto local
       setUserLocal(updatedUser);
 
+      // actualización de contexto global
       setUserGlobalContext({
         username: updatedUser.username,
         avatar: updatedUser.avatar,
       });
 
-      // // se actualizan los datos de usuario en el contexto local:
-      // // copia todos los campos de user y los actualiza con los de updatedData
-      // setUserLocal({
-      //   ...user,
-      //   ...updatedData,
-      // });
-
-      // // se actualizan los datos de usuario en el contexto global
-      // setUserGlobalContext({
-      //   username: updatedData.username,
-      //   avatar: updatedData.avatar,
-      // });
-
       // se muestra mensaje de confirmación
       showTempNotification('Datos actualizados correctamente.', 'success', 2000);
 
       // pasado un tiempo cierra el modal
-      setTimeout(() => { setShowEditProfile(false); }, 2000);        
+      setTimeout(() => { setShowEditProfile(false); }, 2000);
     } catch (error) {     
       showTempNotification('No se ha podido conectar con el servidor.\nInténtalo de nuevo más tarde.', 'error', 3000); 
       console.error('Error de red:', error);
     }
-    return avatarUpdated;
   };
 
   // guardado de la nueva contraseña,
@@ -355,24 +354,24 @@ function ProfilePage({setHeaderTitle}) {
 
 
   if (userNotFound) return <NotFoundPage />; 
-  if (loading || !user) return <div className="loading"></div>; 
+  if (loading || !userLocal) return <div className="loading"></div>; 
 
   return (
     <div className="profile-container">
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">
-            <img className="profile-photo" src={`${user.avatar}${avatarTimestamp ? `?t=${avatarTimestamp}` : ''}`} alt="Foto de usuario" />
+            <img className="profile-photo" src={`${userLocal.avatar}${avatarTimestamp ? `?t=${avatarTimestamp}` : ''}`} alt="Foto de usuario" />
             <div className="profile-info">
-              <h2 className="user-name">{user.fullname}</h2>
+              <h2 className="user-name">{userLocal.fullname}</h2>
               {!otherUserId && !otherUserUsername ? (
-                <p className="user-email">{user.email}</p>
+                <p className="user-email">{userLocal.email}</p>
               ) : (
-                <p className="user-email">{user.username}</p>
+                <p className="user-email">{userLocal.username}</p>
               )}
               {!otherUserId && !otherUserUsername && (
                 <div className="profile-edit">
-                  {user.role !== 'admin' && (
+                  {userLocal.role !== 'admin' && (
                     <button onClick={handleEditProfileClick} className="profile-edit-link">Editar perfil</button>
                   )}                
                   <button onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</button>
@@ -381,22 +380,20 @@ function ProfilePage({setHeaderTitle}) {
             </div>
           </div>
 
-          {user.role !== 'admin' && (<div className="div-line" />)}
+          {userLocal.role !== 'admin' && (<div className="div-line" />)}
 
           <div className="profile-score">            
             <div className="user-level">
-              {console.log(user.role)}
-              {console.log(user)}
-              {(user.role === 'admin') && (
+              {(userLocal.role === 'admin') && (
                 <div className="level-info">
                   <FaAddressCard />
                   <span>Administrador</span>
                 </div>
               )}
-              {(user.role !== 'admin') && (
-                <div className="level-info" style={{ color: user.level.color }}>
-                  {getLevelIcon(user.level.icon)}
-                  <span>{user.level.text}</span>
+              {(userLocal.role !== 'admin') && (
+                <div className="level-info" style={{ color: userLocal.level.color }}>
+                  {getLevelIcon(userLocal.level.icon)}
+                  <span>{userLocal.level.text}</span>
                   {!otherUserId && !otherUserUsername && (
                     <div className="tooltip-container">
                         <FaInfoCircle />                        
@@ -409,33 +406,33 @@ function ProfilePage({setHeaderTitle}) {
                   )}
                 </div>
               )}
-              {user.role !== 'admin' && (
+              {userLocal.role !== 'admin' && (
                 <div className="user-points">
                   <FaTrophy />
-                  <span>{user.score} puntos</span>
+                  <span>{userLocal.score} puntos</span>
                   {/* Animación del icono con hover */}
                   <FaAngleDown className="angle-icon down" />
                   <FaAngleUp className="angle-icon up" />
                   <div className="tooltip">
-                      <div className="score-number">{user.score}</div>
+                      <div className="score-number">{userLocal.score}</div>
                       <div className="progress-bar-container">
                           <div
                           className="progress-bar"
-                          style={{ width: `${(user.score / user.level.maxScore) * 100}%` }}
+                          style={{ width: `${(userLocal.score / userLocal.level.maxScore) * 100}%` }}
                           ></div>
                       </div>
-                      <div className="score-number">{user.level.maxScore}</div>
+                      <div className="score-number">{userLocal.level.maxScore}</div>
                   </div>                
                 </div>
               )}              
             </div>
-            {user.role !== 'admin' && (
+            {userLocal.role !== 'admin' && (
               <>
                 <h3>Actividades de Reciclaje</h3>
-                {user.recyclingActivities && user.recyclingActivities.length > 0 ? (
+                {userLocal.recyclingActivities && userLocal.recyclingActivities.length > 0 ? (
                   <div className="scrollable-list">
                     <ul>
-                      {user.recyclingActivities
+                      {userLocal.recyclingActivities
                         .sort((a, b) => new Date(b.date) - new Date(a.date)) // ordena de más nuevas a más viejas
                         .map((activity) => (
                           <li key={activity._id}>
@@ -462,14 +459,15 @@ function ProfilePage({setHeaderTitle}) {
             <div className="messages-list">
               <h4>Temas iniciados:</h4>
               <div className="scrollable-message-section">
-                {user.messages && user.messages.filter(msg => msg.type === 'post').length > 0 ?(
-                  user.messages
+                {userLocal.messages && userLocal.messages.filter(msg => msg.type === 'post').length > 0 ?(
+                  userLocal.messages
                     .filter(msg => msg.type === 'post')
-                    .map((msg) => {
+                    .sort((a, b) => new Date(b._id?.createdAt) - new Date(a._id?.createdAt)) // más recientes primero
+                    .map((msg, index) => {
                       const populated = msg._id && msg._id._id;
                       return (
                         (populated ? (
-                          <div className="message" key={msg._id}>
+                          <div className="message" key={index}>
                             <Link to={`/foro/post/${msg._id._id}`}>
                                   {msg.type === 'post' && <h5>Publicado el {convertUTCDateTime(msg._id?.createdAt)}</h5>}                             
                                   {msg.type === 'post' && <h4>{msg._id?.title}</h4>}
@@ -477,7 +475,7 @@ function ProfilePage({setHeaderTitle}) {
                             </Link>
                           </div>
                         ) : (
-                          <div className="message" key={msg._id}>
+                          <div className="message" key={index}>
                             <p>Mensaje no disponible</p>
                           </div>
                         ))
@@ -493,14 +491,15 @@ function ProfilePage({setHeaderTitle}) {
               </div>
               <h4>Mensajes de respuesta:</h4>
               <div className="scrollable-message-section">
-                {user.messages && user.messages.filter(msg => msg.type === 'reply').length > 0 ? (
-                  user.messages
+                {userLocal.messages && userLocal.messages.filter(msg => msg.type === 'reply').length > 0 ? (
+                  userLocal.messages
                     .filter(msg => msg.type === 'reply')
-                    .map((msg) => {
+                    .sort((a, b) => new Date(b._id?.createdAt) - new Date(a._id?.createdAt)) // más recientes primero
+                    .map((msg, index) => {
                       const populated = msg._id && msg._id._id;
                       return (
                         (populated ? (
-                          <div className="reply" key={msg._id}>
+                          <div className="reply" key={index}>
                             <Link to={`/foro/post/${msg._id?.post?._id}?replyId=${msg._id?._id}`}>                        
                               {msg.type === 'reply' && <h5>Publicado el {convertUTCDateTime(msg._id?.createdAt)}</h5>} 
                               {msg.type === 'reply' && <h6><span className="arrow">↪</span>Repuesta a <span>{msg._id?.post.title}</span></h6>} 
@@ -508,7 +507,7 @@ function ProfilePage({setHeaderTitle}) {
                             </Link>
                           </div>
                         ) : (
-                          <div className="message" key={msg._id}>
+                          <div className="message" key={index}>
                             <p>Mensaje no disponible</p>
                           </div>
                         ))
@@ -530,7 +529,7 @@ function ProfilePage({setHeaderTitle}) {
       {/* modal para editar el perfil de usuario */}
       {showEditProfile && 
         <UserEditModal
-          userData={user}
+          userData={userLocal}
           onSave={handleEditProfileSave}
           setNotificationMessage={setNotificationMessage}
           setNotificationMessageType={setNotificationMessageType}
@@ -541,7 +540,7 @@ function ProfilePage({setHeaderTitle}) {
       {/* modal para editar la contraseña */}
       {showChangePassword && 
         <ChangePasswordModal
-          userData={user}
+          userData={userLocal}
           onSave={handleChangePasswordSave}
           setNotificationMessage={setNotificationMessage}
           setNotificationMessageType={setNotificationMessageType}

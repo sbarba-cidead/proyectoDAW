@@ -9,7 +9,7 @@ import { sendRecyclingActivity } from 'utils/functions';
 import UserCardTooltip from 'components/page-elements/UserCardTooltip';
 
 const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
-    const { user, refreshUser } = useUserContext();
+    const { user } = useUserContext();
     const [repliesVisible, setRepliesVisible] = useState(false);
     const [replies, setReplies] = useState([]);
     const [page, setPage] = useState(1);
@@ -172,7 +172,6 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
 
         try {
             await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
-            await refreshUser(); // recarga los datos del usuario en contexto global
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }

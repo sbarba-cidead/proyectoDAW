@@ -16,7 +16,7 @@ const ForumPage = () => {
 
   const { postId } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useUserContext();
+  const { user } = useUserContext();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -243,7 +243,6 @@ const ForumPage = () => {
 
       try {
           await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
-          await refreshUser(); // recarga los datos del usuario en contexto global
       } catch (error) {
           console.error('Error registrando actividad de reciclaje:', error.message);
       }
@@ -367,14 +366,14 @@ const ForumPage = () => {
                 <div className="post-footer">
                   <div className="created-info">
                     <span className="created-by-label">Creado por:</span>
-                    {user && post.createdBy ? (
+                    {post.createdBy ? (
                       <UserCardTooltip
                         avatar={`${avatarsUrl}/${post.createdBy.avatar}`}
                         fullname={post.createdBy.fullname}
                         username={post.createdBy.username}
-                        levelIcon={post.createdBy.level.icon}
-                        levelText={post.createdBy.level.text}
-                        levelColor={post.createdBy.level.color}
+                        levelIcon={post.createdBy.level?.icon}
+                        levelText={post.createdBy.level?.text}
+                        levelColor={post.createdBy.level?.color}
                       >
                         <Link
                           className="created-by"

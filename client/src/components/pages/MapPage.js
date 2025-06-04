@@ -49,7 +49,7 @@ function MoveMap({ coords }) {
 
 
 function MapPage() {
-    const { user, refreshUser } = useUserContext();
+    const { user } = useUserContext();
     const focusPoint = [38.6865475, -4.1108533] // coordenadas de Puertollano (punto por defecto)
     const [direction, setDirection] = useState('');
     const [result, setResult] = useState(null); // coordenadas de la dirección del usuario
@@ -110,7 +110,6 @@ function MapPage() {
 
         try {
             await sendRecyclingActivity('Buscar puntos de reciclaje');
-            await refreshUser(); // recarga los datos del usuario en contexto global
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }

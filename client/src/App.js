@@ -44,7 +44,7 @@ function AppContent() {
   const [headerTitle, setHeaderTitle] = useState(WEBSITE_NAME);
   const location = useLocation(); // localización de ruta url en la web
 
-  
+
   // precarga de imágenes estáticas
   useEffect(() => {
     presentImages.forEach(src => {

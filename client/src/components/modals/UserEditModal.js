@@ -1,28 +1,38 @@
 import 'styles/modals/UserEditModal.css';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FaUndo } from 'react-icons/fa'; 
 import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 function UserEditModal({ userData, onSave, setNotificationMessage, setNotificationMessageType,
                           notificationMessage, notificationMessageType, onClose }) {
-  const { avatar, fullname, username, email } = userData;
-  const [editData, setEditData] = useState({
-    avatar: avatar, // imagen de avatar con url completa
-    fullname: fullname,
-    username: username,
-    email: email,
+  
+  // datos iniciales del usuario, sin editar
+  const [initialData, setInitialData] = useState(userData);
+
+  // datos editados del usuario
+  // (se inicializan con los datos iniciales)
+  const [newEditedData, setNewEditedData] = useState({
+    avatar: initialData.avatar, // imagen de avatar con url completa
+    fullname: initialData.fullname,
+    username: initialData.username,
+    email: initialData.email,
   });
-  const [initialData, setInitialData] = useState({ avatar, fullname, username, email });
+
   const [selectedImageFile, setSelectedImageFile] = useState(null);
-  const [reloadImage, setReloadImage] = useState(false);
+  const [previewAvatarURL, setPreviewAvatarURL] = useState(null);
+  const [fallbackAvatar, setFallbackAvatar] = useState(initialData.avatar);
+
   
   const modalRef = useRef();
   const fileInputRef = useRef();
 
+
  
   // función para manejar click en el avatar
   const handleAvatarClick = () => {
+    // al hacer click en el avatar muestra 
+    // el selector de archivos (file input)
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -30,47 +40,46 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
 
   // función para manejar selección de nuevo avatar
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; // se toma el primer (y único) fichero del file input
+    if (!file) return; // si no hay fichero de imagen, finaliza la función
 
-    const allowedTypes = ['image/jpeg', 'image/png'];    
+    // validación de formatos válidos de imagen
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];    
     if (!allowedTypes.includes(file.type)) {
-      setNotificationMessage('Formato de imagen no válido.\nFormatos soportados: jpg, png')
-      setNotificationMessageType('error');
+      showTempNotification('Formato de imagen no válido.\nFormatos soportados: jpg, png', 'error', 3000)
 
-      // pasado un tiempo
-      setTimeout(() => {
-        // oculta la notificación
-        setNotificationMessage('');
-      }, 3000);
-
-      //reinicia valor del input file
+      //reinicia valor del file input
       e.target.value = null;
 
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditData({ ...editData, avatar: reader.result }); // dataURL para vista previa
-      setSelectedImageFile(file); // guarda el archivo para posterior subida
-    };
-    reader.readAsDataURL(file);
+    // limpieza de objectURL antiguo
+    if (previewAvatarURL) {
+      URL.revokeObjectURL(previewAvatarURL);
+    }
+
+    // para la vista previa de la imagen en el modal de edición
+    const objectURL = URL.createObjectURL(file);
+    setPreviewAvatarURL(objectURL);
+
+    // se guarda el fichero de imagen en la variable
+    setSelectedImageFile(file);
   };
 
   // función para manejar cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditData({
-      ...editData,
+    setNewEditedData({
+      ...newEditedData,
       [name]: value,
     });
   };
 
   // función para resetear un campo al valor inicial
   const handleReset = (field) => {
-    setEditData({
-      ...editData,
+    setNewEditedData({
+      ...newEditedData,
       [field]: initialData[field],
     });
   };
@@ -84,25 +93,25 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
 
   // validaciones básicas en front para el formulario
   const validateForm = () => {
-    if (!editData.fullname || !editData.username || !editData.email) {
+    if (!newEditedData.fullname.trim() || !newEditedData.username.trim() || !newEditedData.email.trim()) {
       showTempNotification('Por favor, rellena todos los campos.', 'error', 2000);
       return false;
     }
 
     const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{3,50}$/;
-    if (!nameRegex.test(editData.fullname)) {
+    if (!nameRegex.test(newEditedData.fullname)) {
       showTempNotification('El nombre completo solo puede contener letras y debe tener entre 3 y 50 caracteres.', 'error', 4000);
       return false;
     }
 
     const usernameRegex = /^[A-Za-z0-9._-]{3,30}$/;
-    if (!usernameRegex.test(editData.username)) {
+    if (!usernameRegex.test(newEditedData.username)) {
       showTempNotification('El nombre de usuario solo puede contener letras, números, ".", "-" y "_" y debe tener entre 3 y 30 caracteres.', 'error', 4000);
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editData.email)) {
+    if (!emailRegex.test(newEditedData.email)) {
       showTempNotification('Introduce un correo electrónico válido.', 'error', 3000);
       return false;
     }
@@ -110,15 +119,24 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
     return true;
   };
 
+  // limpieza de objectURL antiguo
+  useEffect(() => {
+    return () => {
+      if (previewAvatarURL) {
+        URL.revokeObjectURL(previewAvatarURL);
+      }
+    };
+  }, [previewAvatarURL]);
+
   // función para manejar la confirmación al guardar
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // verificación si no se ha cambiado nada
     const isSameData =
-      editData.fullname === initialData.fullname &&
-      editData.username === initialData.username &&
-      editData.email === initialData.email &&
+      newEditedData.fullname.trim() === initialData.fullname &&
+      newEditedData.username.trim() === initialData.username &&
+      newEditedData.email.trim() === initialData.email &&
       !selectedImageFile;
 
     if (isSameData) {
@@ -128,14 +146,28 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
 
     // validaciones básicas de formato en front
     if (!validateForm()) return;
-    
-    // llama a la función de guardado en BD
-    // y le pasa los nuevos datos del usuario
-    const wasAvatarEdited = await onSave(editData, selectedImageFile);
 
-    if (wasAvatarEdited) {
-      setReloadImage(true); // fuerza actualización del avatar en el modal
+    // se calcula el nombre para la imagen de avatar
+    let generatedAvatarName = "";
+    const currentUsername = newEditedData.username.trim();
+    if (selectedImageFile) {      
+      const extension = selectedImageFile.name.split('.').pop().toLowerCase(); // extensión del fichero de imagen
+      generatedAvatarName = `avatar-${currentUsername}.${extension}`;
+    } else {
+      const currentAvatar = userData.avatar;
+      const currentExtension = currentAvatar.split('.').pop().toLowerCase();
+      generatedAvatarName = `avatar-${currentUsername}.${currentExtension}`;
     }
+
+    const trimmedData = {
+      fullname: newEditedData.fullname.trim(),
+      username: newEditedData.username.trim(),
+      email: newEditedData.email.trim(),
+      avatar: generatedAvatarName
+    };
+    
+    // pasa los datos a la página de perfil (ProfilePage.js) para la subida/actualización de datos
+    await onSave(trimmedData, selectedImageFile);
   };
 
   return (
@@ -154,11 +186,11 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
           <div className="profile-photo-container" onClick={handleAvatarClick}>
             <img 
               className="profile-photo" 
-              src={selectedImageFile && !reloadImage ? editData.avatar : `${editData.avatar}?${Date.now()}`}
+              src={previewAvatarURL || fallbackAvatar}
               alt="Foto de usuario" />
             <input
               type="file"
-              ref={fileInputRef}
+              ref={fileInputRef} // para abrir el selector de archivo
               style={{ display: 'none' }}
               accept="image/jpeg, image/png"
               onChange={handleImageChange}
@@ -171,7 +203,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               type="text"
               name="fullname"
               placeholder="Nombre completo"
-              value={editData.fullname.trim()}
+              value={newEditedData.fullname.trim()}
               onChange={handleInputChange}
             />
             <button type="button" className="reset-button">
@@ -185,7 +217,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               type="text"
               name="username"
               placeholder="Nombre de usuario"
-              value={editData.username.trim()}
+              value={newEditedData.username.trim()}
               onChange={handleInputChange}
             />
             <button type="button" className="reset-button">
@@ -199,7 +231,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               type="text"
               name="email"
               placeholder="Correo electrónico"
-              value={editData.email.trim()}
+              value={newEditedData.email.trim()}
               onChange={handleInputChange}
             />
             <button type="button" className="reset-button">

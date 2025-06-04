@@ -188,8 +188,6 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             avatar: `${avatarsUrl}/${data.user.avatar}`, // guarda con la url completa
           });
 
-          console.log("loginmodal", `${avatarsUrl}/${data.user.avatar}`)
-
           // muestra mensaje de confirmación
           showTempNotification('Se ha iniciado sesión correctamente.', 'success', 2000);
 

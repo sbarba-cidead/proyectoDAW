@@ -1,22 +1,27 @@
 import { createContext, useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // contexto global para el inicio de sesión de usuario //
 
 // creación del contexto
 const UserContext = createContext();
 
-// acceso al token del usuario almacenado en local
-const token = localStorage.getItem('usertoken');
-
 // provider para el contexto
 export function UserProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [isLoadingUser, setIsLoadingUser] = useState(true);
+    const [isUserChangingState, setIsUserChangingState] = useState(true);
+    const navigate = useNavigate();
     const apiUrl = process.env.REACT_APP_API_URL;
+    const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
     useEffect(() => {
-       if (user){ console.log("usercontext recibido de login", user.avatar)}
+        // comprobación de usuario iniciado cuando se reinicia cualquier página
         const checkUser = async () => {
+            setIsUserChangingState(true);
+
+            // acceso al token del usuario almacenado en local
+            const token = localStorage.getItem('usertoken');
+
             if (token) { // si se encuentra token
                 try {
                     // solicitud al backend para comprobar el token
@@ -34,10 +39,8 @@ export function UserProvider({ children }) {
                         // datos de usuario recibidos se almacenan en contexto
                         setUser({
                             username: data.username,
-                            avatar: data.avatar, // url completa a la imagen del avatar
+                            avatar: `${avatarsUrl}/${data.avatar}`,
                         });
-
-                        console.log("usercontext fetch", user.avatar)
                     } else { // token incorrecto o expirado
                         // elimina el token del local
                         localStorage.removeItem('usertoken');
@@ -53,37 +56,27 @@ export function UserProvider({ children }) {
                 }
             }
 
-            setIsLoadingUser(false);
+            setIsUserChangingState(false);
         };
 
         checkUser();
     }, []);
 
-    // función de recarga del usuario
-    const refreshUser = async () => {
-        if (!token) return;
+    const logoutUser = (location) => {
+        setIsUserChangingState(true);
+        
+        localStorage.removeItem('usertoken');
+        setUser(null);
 
-        try {
-            const response = await fetch(`${apiUrl}/user/me`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-            });
-
-            if (response.ok) {
-            const data = await response.json();
-            setUser({
-                ...data,
-            });
-            }
-        } catch (error) {
-            console.error('Error refrescando usuario:', error);
+        if (location === '/perfil-usuario') {
+            navigate('/');
         }
+        
+        setTimeout(() => { setIsUserChangingState(false); }, 100);
     };
 
     return (
-        <UserContext.Provider value={{ user, setUserGlobalContext: setUser, isLoadingUser, refreshUser }}>
+        <UserContext.Provider value={{ user, setUserGlobalContext: setUser, isUserChangingState, logoutUser }}>
             {children}
         </UserContext.Provider>
     );

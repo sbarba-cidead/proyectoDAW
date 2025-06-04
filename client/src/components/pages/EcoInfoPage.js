@@ -7,7 +7,7 @@ import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 
 function EcoInfoPage() {
-    const { user, refreshUser } = useUserContext();
+    const { user } = useUserContext();
     const [cards, setCards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -24,7 +24,6 @@ function EcoInfoPage() {
 
         try {
             await sendRecyclingActivity('Informarse sobre Sostenibilidad');
-            await refreshUser(); // recarga los datos del usuario en contexto global
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         } finally {

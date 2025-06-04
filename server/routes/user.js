@@ -23,9 +23,15 @@ const storage = multer.diskStorage({
     cb(null, AVATAR_UPLOAD_DIR); // dirección a la que se sube la imagen
   },
   filename: function (req, file, cb) {
-    const filename = req.body.filename;
-    const ext = path.extname(file.originalname);
-    cb(null, `${filename}${ext}`);
+    let filename = req.body.filename;
+
+    // si no tiene extensión, se añade
+    if (!path.extname(filename)) {
+      const ext = path.extname(file.originalname); // .jpg, .png
+      filename += ext;
+    }
+
+    cb(null, filename);
   }
 });
 
@@ -242,9 +248,9 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
   try {
     const filename = sanitizeFilename(req.body.filename); // nombre sin extensión
     const fullFilename = req.file.filename; // nombre con extensión
-    const currentExt = path.extname(fullFilename); // extensión
-    const avatarUrl = `${AVATAR_PUBLIC_URL}/${fullFilename}`;
-    const uploadDir = AVATAR_UPLOAD_DIR;   
+    const currentExt = path.extname(fullFilename); // extensión    
+    const uploadDir = AVATAR_UPLOAD_DIR; // directorio para subir imagen
+    const uploadedPublicDir = AVATAR_PUBLIC_URL; // directorio donde se ha subido imagen
     const extensionsToCheck = ['.jpg', '.jpeg', '.png'];
 
     for (const ext of extensionsToCheck) {
@@ -257,7 +263,7 @@ router.post('/upload-avatar', authMiddleware, upload.single('avatar'), async (re
     }
 
     // si son correctas las operaciones se manda el url de subida de la imagen
-    res.status(200).json({ avatarUrl, fullFilename });
+    res.status(200).json({ dir: uploadedPublicDir, fullFilename });
   } catch (error) {
     console.error('Error subiendo avatar:', error);
     res.status(500).json({ error: 'Error al procesar el avatar en el servidor' });
@@ -281,9 +287,10 @@ router.put('/update', authMiddleware, async (req, res) => {
 
     const oldUsername = user.username;
     const newUsername = value.username;
+    const DEFAULT_AVATAR_FILENAME = 'default-avatar.png';
 
     // Si el username ha cambiado y tiene avatar con nombre username
-    if (newUsername && oldUsername !== newUsername && user.avatar) {
+    if (newUsername && oldUsername !== newUsername && user.avatar !== DEFAULT_AVATAR_FILENAME) {
       const avatarFilename = path.basename(user.avatar); // nombre imagen + extensión
       const ext = path.extname(avatarFilename);          // extensión sólo
       const newFilename = `avatar-${newUsername}${ext}`;

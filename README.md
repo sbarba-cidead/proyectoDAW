@@ -1,11 +1,16 @@
 Vídeo demo en PC (localhost): https://youtu.be/ylKWodDQIp8  
-Vídeo demo en PC (despliegue): disponible 2/06/2025  
+Vídeo demo en PC (despliegue): https://youtu.be/8TJwTu9YCPU   
 Vídeo demo modo móvil: https://youtu.be/cE-ZY-vywhQ  
+
+URL despliegue producción:  
+back: https://puertollano-sostenible-backend.onrender.com/  
+front: https://puertollano-sostenible-frontend.vercel.app/  
 
 Páginas visitables:
 
 http://localhost:3000/  
 http://localhost:3000/perfil-usuario (sólo visitable con usuario iniciado)  
+http://localhost:3000/perfil-usuario/xxxx (para visitar perfiles de otros usuarios)  
 http://localhost:3000/herramientas  
 http://localhost:3000/mapa-reciclaje  
 http://localhost:3000/calculadora-huella-ecologica  

@@ -6,12 +6,13 @@
 const express = require('express');
 const router = express.Router();
 
-const { register, login, forgotPassword, resetPassword } = require('../controllers/authController');
+const { register, login, forgotPassword, validatePasswordToken, resetPassword } = require('../controllers/authController');
 
 // rutas para autenticación
 router.post('/register', register);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
+router.get('/validate-password-token/:token', validatePasswordToken);
 router.post('/reset-password/:token', resetPassword);
 
 module.exports = router;

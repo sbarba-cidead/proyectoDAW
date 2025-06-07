@@ -1,3 +1,4 @@
+const { boolean } = require('joi');
 const mongoose = require('mongoose');
 
 // modelo para un post del foro
@@ -38,7 +39,11 @@ const forumPostSchema = new mongoose.Schema({
   categories: { 
     type: [mongoose.Schema.Types.ObjectId], 
     ref: 'PostCategory',
-  } // array de categorías asociadas al post
+  }, // array de categorías asociadas al post
+  banned: {
+    type: Boolean,
+    default: false,
+  } // si el post ha sido baneado por un admin
 }, {
   collection: "forum_posts"
 });

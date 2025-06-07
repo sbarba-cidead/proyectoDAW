@@ -22,7 +22,11 @@ const recyclingActivitySchema = new mongoose.Schema({
             message: '{VALUE} no es un número entero'
         },
         default: 5,
-    } // puntos que otorga esta actividad
+    }, // puntos que otorga esta actividad
+    postRef: {
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'ForumPost',
+    }
 }, {
     collection: "recycling_activities"
 });

@@ -6,19 +6,19 @@ import { sendRecyclingActivity } from 'utils/functions';
 import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 
-// función para eliminar tildes y normalizar texto
-const normalizarTexto = (texto) => {
-    return texto
+// función para normalizar texto eliminando tildes y poniendo en minúscula
+const normalizeText = (text) => {
+    return text
+            .toLowerCase()
             .normalize("NFD") // descompone los caracteres acentuados
             .replace(/[\u0300-\u036f]/g, ""); // elimina los diacríticos (tildes, acentos, etc.)
 };
 
 function RecycleGuidePage() {
     const { user } = useUserContext();
-    const [products, setProducts] = useState([]);
-    const [selectedProduct, setSelectedProduct] = useState("");
-    const [result, setResult] = useState(null);
     const [searchData, setSearchData] = useState("");
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [productsQueryResult, setProductsQueryResult] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const apiUrl = process.env.REACT_APP_API_URL;
@@ -46,22 +46,25 @@ function RecycleGuidePage() {
 
     // se solicitan productos al backend en base al texto escrito
     useEffect(() => {
-        const fetchFilteredProducts = async () => {
+        const fetchProducts = async () => {
             if (!searchData) {
-                setProducts([]); // si no hay búsqueda, no muestra nada
+                setProductsQueryResult([]); // si no hay búsqueda, no muestra nada
                 return;
             }
+
+            // normaliza el texto escrito por el usuario para eliminar tildes y poner en minúscula
+            const normalizedSearchData = normalizeText(searchData);
 
             try {
                 const res = await fetch(`${apiUrl}/recycle/eco-guide-data?search=${encodeURIComponent(searchData)}`);
                 const data = await res.json();
-                setProducts(data);
+                setProductsQueryResult(data); // productos que se han encontrado en coincidencia
             } catch (error) {
                 console.error("Error al buscar productos:", error);
             }
         };
 
-        fetchFilteredProducts();
+        fetchProducts();
     }, [searchData, apiUrl]);
 
     // función para guardar una nueva actividad de reciclaje
@@ -75,36 +78,19 @@ function RecycleGuidePage() {
         }
     }  
 
-    // filtra productos por nombre según lo que el usuario escribe, ignorando tildes
-    const filteredProducts = products.filter((product) => {
-        const normalizedName = normalizarTexto(product.name.toLowerCase());
-        const normalizedSearch = normalizarTexto(searchData.toLowerCase());
-
-        // si la búsqueda es una sola letra, busca productos que empiecen con esa letra
-        if (normalizedSearch.length === 1) {
-            const words = normalizedName.split(" ");
-            return words.some((word) => word.startsWith(normalizedSearch));
-        }
-
-        // si no es una sola letra, compara de manera más general
-        return normalizedName.includes(normalizedSearch);
-    });
-
     // maneja el clic en una opción de la lista
-    const handleProductClick = (product) => {
-        setSelectedProduct(product.name);
+    const handleSelectProductClick = (product) => {
+        setSelectedProduct(product); // producto seleccionado de la lista
         setSearchData(""); // limpia el campo de búsqueda
-        setResult(product); // muestra la información del producto seleccionado
         handleRecyclingActivity();
     };
 
-    // maneja la tecla "Enter"
-    const handleKeyPress = (e) => {
-        if (e.key === "Enter" && filteredProducts.length === 1) {
-            const product = filteredProducts[0];
-            setSelectedProduct(product.name);
-            setResult(product);
-            setSearchData(""); // limpia el campo de búsqueda
+    // maneja la tecla "Enter" para elegir el producto de la lista
+    // sólo en caso de que sólo haya un producto como resultado
+    const handleSelectProductKeyPress = (e) => {
+        if (e.key === "Enter" && productsQueryResult.length === 1) {
+            const product = productsQueryResult[0];
+            handleSelectProductClick(product);
         }
     };
 
@@ -125,17 +111,17 @@ function RecycleGuidePage() {
                     type="text"
                     value={searchData}
                     onChange={(e) => setSearchData(e.target.value)}
-                    onKeyDown={handleKeyPress} // detección de la tecla enter
+                    onKeyDown={handleSelectProductKeyPress} // detección de la tecla enter
                     placeholder="Escribe el nombre del producto..."
                 />            
 
-                {searchData && filteredProducts.length > 0 && (
+                {searchData && productsQueryResult.length > 0 && (
                     <div className="search-suggestions">
                         <ul>
-                            {filteredProducts.map((product) => (
+                            {productsQueryResult.map((product) => (
                             <li
                                 key={product.name}
-                                onClick={() => handleProductClick(product)}
+                                onClick={() => handleSelectProductClick(product)}
                             >
                                 {product.name}
                             </li>
@@ -152,28 +138,28 @@ function RecycleGuidePage() {
 
                         <div className="columns">
                             <div className="column-left">
-                                <img src={`${baseUrl}${result.productImage}`} alt={result.name} />
+                                <img src={`${baseUrl}${selectedProduct.productImage}`} alt={selectedProduct.name} />
                             </div>
                             <div className="column-right">
                                 <p>
                                     <strong>Producto:</strong> 
-                                    <span className="field-value">{result.name}</span>
+                                    <span className="field-value">{selectedProduct.name}</span>
                                 </p>
                                 <p>
                                     <strong>Materiales:</strong> 
-                                    <span>{result.materials.join(", ")}</span>
+                                    <span>{selectedProduct.materials.join(", ")}</span>
                                 </p>
                                 <div className="recyclepoint-container">
                                     <strong>Contenedor:</strong> 
                                     <div className="recyclepoint-image-container">
-                                        <img src={`${baseUrl}${result.containerImage}`} alt={result.container} />
-                                        <span>{result.container}</span>                                        
+                                        <img src={`${baseUrl}${selectedProduct.containerImage}`} alt={selectedProduct.container} />
+                                        <span>{selectedProduct.container}</span>                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <p className="description">{result.description}</p>
+                        <p className="description">{selectedProduct.description}</p>
                     </div>
                 ) : (
                     <div className="default-text">

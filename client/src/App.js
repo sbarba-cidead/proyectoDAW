@@ -33,7 +33,7 @@ const pageTitles = {
   "/contenedores-reciclaje": "Contenedores de Reciclaje",
   "/foro": "Comunidad de Sostenibilidad",
   "/informacion-sostenibilidad": "Información sobre Sostenibilidad",
-  "/reset-password": "Recuperación de contraseña"
+  "/recuperar-contrasena": "Recuperación de contraseña"
 };
 
 const presentImages = [recyclingMapImg, ecoCalcImg, recyclingGuideImg];
@@ -101,9 +101,7 @@ function AppContent() {
         } />
         <Route path="/perfil-usuario/:username" element={
           <div className={"content other"}>
-            <ProtectedRoute>
-              <ProfilePage setHeaderTitle={setHeaderTitle} />
-            </ProtectedRoute>
+            <ProfilePage setHeaderTitle={setHeaderTitle} />
           </div>
         } />
         <Route path="/herramientas" element={
@@ -141,7 +139,7 @@ function AppContent() {
             <EcoInfoPage />
           </div>
         } />
-        <Route path="/reset-password" element={
+        <Route path="/recuperar-contrasena" element={
           <div className={"content other"}>
             <ResetPasswordPage />
           </div>

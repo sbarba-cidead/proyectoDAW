@@ -2,29 +2,36 @@ import 'styles/pages/ForumPage.css';
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { FaCalendar, FaComment, FaCommentDots } from 'react-icons/fa';
+import { FaBan, FaCalendar, FaComment, FaCommentDots, FaSearch, FaTrashAlt } from 'react-icons/fa';
 import { useUserContext } from 'context/UserContext';
 import ForumPostModal from 'components/modals/ForumPostModal';
 import ForumNewPostModal from 'components/modals/ForumNewPostModal';
+import ForumSearchModal from 'components/modals/ForumSearchModal';
 import UserCardTooltip from 'components/page-elements/UserCardTooltip';
 import { convertUTCDateTime, sendRecyclingActivity } from 'utils/functions';
 import NotificationMessage from 'components/page-elements/NotificationMessage';
+import ConfirmDialog, { confirm } from 'components/page-elements/ConfirmDialog';
 
 const ForumPage = () => {
-  const numberPostShown = 5
-  const numberPostLoad = 3
+  const numberPostShown = 5; // número de posts que se muestran por paginación
+  const numberPostLoad = 10; // número de posts que se cargan por paginación
 
   const { postId } = useParams();
   const navigate = useNavigate();
   const { user } = useUserContext();
-  const [posts, setPosts] = useState([]);
+  const [initialTotalPostCount, setInitialTotalPostCount] = useState(null); // número total de posts disponibles en BD
+  const [posts, setPosts] = useState([]); // posts cargados, se actualiza con paginación
+  const [displayedPosts, setDisplayedPosts] = useState([]); // post mostrados en UI 
+  const [nextPageToLoad, setNextPageToLoad] = useState(1); // paginación de posts (número de página)
+  const [canLoadMorePosts, setCanLoadMorePosts] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(numberPostShown);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationMessageType, setNotificationMessageType] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [orderBy, setOrderBy] = useState('latest');
   const [availableCategories, setAvailableCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [filteredPosts, setFilteredPosts] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showNewPostModal, setShowNewPostModal] = useState(false);
@@ -38,47 +45,123 @@ const ForumPage = () => {
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
 
-  // se obtienen posts
+  // carga inicial y para cambio de filtros y ordenacion
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch(`${apiUrl}/forum/posts`);
-        const data = await response.json();
-        setPosts(data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error obteniendo los posts:', error);
-        setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
-        setLoading(false);
+    loadData();
+  }, [selectedCategories, orderBy]);
+
+  // función principal que carga todo al inicio y al aplicar cambios
+  const loadData = async () => {
+    setError(null);
+    setLoading(true);
+
+    let firstPosts;
+
+    try {
+      firstPosts = await fetchPosts(1);
+      setDisplayedPosts(firstPosts.slice(0, numberPostShown));
+      await fetchCategories();
+    } catch (error) {
+      console.error('Error obteniendo los posts:', error);
+      setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // para mostrar mensaje de notificicación
+  const showTempNotification = (msg, type, duration) => {
+      setNotificationMessage(msg);
+      setNotificationMessageType(type);
+      setTimeout(() => setNotificationMessage(''), duration);
+  };
+
+  // reseteo de variables para aplicar order y filtros
+  const resetValues = () => {
+    setPosts([]);
+    setDisplayedPosts([]);
+    setNextPageToLoad(1);
+  }
+
+  // función para carga paginada de posts
+  const fetchPosts = async (pageToLoad) => {
+    const queryParams = new URLSearchParams({
+      page: pageToLoad,
+      limit: numberPostLoad, // número de posts que se cargarán
+      orderBy,
+    });
+
+    // si se han seleccionado categorías para filtrar
+    if (selectedCategories.length > 0) {
+      // los añade a la query
+      queryParams.append('categories', selectedCategories.join(','));
+    }
+
+    try {
+      // hace la consulta de posts con los parámetros definidos
+      const postsRes = await fetch(`${apiUrl}/forum/posts/filter?${queryParams}`);
+      const postsData = await postsRes.json();
+      const newPosts = postsData.posts; 
+
+      // variable para autofetch //
+      // si es la primera carga, guarda el total de posts disponibles en BD
+      if (pageToLoad === 1 && initialTotalPostCount === null) {
+        setInitialTotalPostCount(postsData.total);
+        console.log("postsData.total", postsData.total)
+        console.log("initialTotalPostCount desde cambio de valor", initialTotalPostCount);
       }
-    };
 
-    fetchPosts();
-  }, []);
+      // variable para load more //
+      // si hay más posts en BD, se actualiza a true la variable para cargar más
+      // si no hay más, se actualiza a false
+      setCanLoadMorePosts(postsData.total  > (posts.length + newPosts.length));
 
-  // se obtiene las categorías disponibles de los posts
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/forum/posts/post-categories`);
-        const data = await res.json();
+      // añade nuevos posts a la lista de posts cargados (sólo si no estaban ya)
+      setPosts(prev => {
+        const combined = [...prev, ...newPosts];
+        return Array.from(new Map(combined.map(p => [p._id, p])).values());
+      });
 
-        // orden de las categorías por orden alfabético
-        const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+      // devuelve los posts que se han recuperado
+      return newPosts;
+    } catch (error) {
+      console.error('Error al cargar posts:', error);
+      return [];
+    }
+  };
 
-        setAvailableCategories(sorted);
-      } catch (err) {
-        console.error('Error cargando categorías:', err);
-      }
-    };
+  // función para obtener las categorías disponibles de los posts
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(`${apiUrl}/forum/posts/post-categories`);
+      const data = await res.json();
 
-    fetchCategories();
-  }, []);
+      // orden de las categorías por orden alfabético
+      const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
 
-  // actualiza la referencia a posts
-  useEffect(() => {
-    postsRef.current = posts;
-  }, [posts]);
+      setAvailableCategories(sorted);
+    } catch (err) {
+      console.error('Error cargando categorías:', err);
+    }
+  };
+
+  // controla la carga de más posts por paginación
+  const handleLoadMore = async () => {
+    const currenttlyShownPosts = displayedPosts.length;
+
+    // si hay posts sin mostrar dentro de los ya cargados, muestra más
+    if (currenttlyShownPosts < posts.length) {
+      const newSlice = posts.slice(0, currenttlyShownPosts + numberPostShown);
+      setDisplayedPosts(newSlice);
+    }
+
+    // precarga más del backend si hay disponibles
+    if (canLoadMorePosts) { // si hay más disponibles
+      const nextPage = nextPageToLoad + 1;
+      await fetchPosts(nextPage);
+      setNextPageToLoad(nextPage);
+    }
+  };
 
   // autofetch para comprobar si hay nuevos posts disponibles
   useEffect(() => {
@@ -88,7 +171,9 @@ const ForumPage = () => {
         const response = await fetch(`${apiUrl}/forum/posts/post-count`);
         const data = await response.json();
         
-        if (data.count > postsRef.current.length) { setNewPostsAvailable(true); }
+        console.log("initialTotalPostCount desde autofetch", initialTotalPostCount);
+
+        if (data.count > initialTotalPostCount) { setNewPostsAvailable(true); }
       } catch (error) {
         console.error("Error comprobando nuevos posts:", error);
       }
@@ -96,6 +181,11 @@ const ForumPage = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // actualiza la referencia a posts
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
 
   // comprueba si había un post abierto al visitar la página
   // (útil si se recarga la página con un post abierto)
@@ -148,46 +238,12 @@ const ForumPage = () => {
     navigate('/foro'); // vuelve a la vista sin modal de post
   };
 
-  // para ordenar y filtrar los posts cuando cambian los filtros o el orden
-  useEffect(() => {
-    let postsFiltered = [...posts];
-
-    if (selectedCategories.length > 0) {
-      postsFiltered = postsFiltered.filter(post =>
-        Array.isArray(post.categories) &&
-        post.categories.some(cat => selectedCategories.includes(cat.name))
-      );
-
-    }
-
-    if (orderBy === 'latest') {
-      postsFiltered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (orderBy === 'oldest') {
-      postsFiltered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    } else if (orderBy === 'lastReply') {
-      postsFiltered.sort((a, b) => new Date(b.lastReplyAt) - new Date(a.lastReplyAt));
-    } else if (orderBy === 'replies') {
-      postsFiltered.sort((a, b) => b.replies.length - a.replies.length);
-    }
-
-    setFilteredPosts(postsFiltered);
-  }, [selectedCategories, orderBy, posts]);
-
-  // tamaño de pantalla
+  // detecta tamaño de pantalla
   useEffect(() => {
     const handleResize = () => setIsSmallWindow(window.innerWidth <= 1100);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // actualización de las categorías seleccionadas para filtro
-  const handleCategorySelect = (category) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
 
   // mostrar filtros aplicados en el desplegable
   const getFiltersAppliedText = () => {
@@ -212,10 +268,16 @@ const ForumPage = () => {
     }
   };
 
-  // se muestran sólo los primeros posts
-  const displayedPosts = filteredPosts.slice(0, visibleCount);
-  // determina si hay más posts disponibles para mostrar
-  const hasMore = visibleCount < filteredPosts.length;
+  // actualización de las categorías seleccionadas para filtro
+  const handleCategorySelect = (category) => {
+    resetValues();
+
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
 
   // refresca la lista de posts para mostrar el nuevo
   function handleCreateNewPost(newPost) {
@@ -234,15 +296,72 @@ const ForumPage = () => {
     });
 
     // se añade actividad de reciclaje
-    handleRecyclingActivity();
+    handleRecyclingActivity(newPost._id);
   }
 
+  // (sólo admin) borra un post
+  const handleDeletePost = async (postId) => {
+    const confirmAnswer = await confirm("Esta acción borrará por completo el post y no puede deshacerse. ¿Continuar?");
+    if (!confirmAnswer) return;
+
+    try {
+      const res = await fetch(`${apiUrl}/forum/posts/${postId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Error borrando el post');
+      }
+
+      showTempNotification('El post se ha eliminado.', 'success', 2000);
+
+      // actualiza el estado local de posts eliminando el post
+      setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
+    } catch (error) {      
+      showTempNotification('No se pudo borrar el post.\nInténtalo de nuevo.', 'error', 2000);
+      console.error('Error al borrar el post:', error);
+    }
+  };
+
+  // (sólo admin) banea el post, ocultando su texto
+  const handleBanPost = async (postId, currentStatus) => {
+    const action = currentStatus ? 'desbanear' : 'banear';
+    const confirmAnswer = await confirm(`Se va a ${action} este post. ¿Continuar?`);
+    if (!confirmAnswer) return;
+
+    try {
+      const res = await fetch(`${apiUrl}/forum/posts/${postId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banned: !currentStatus }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Error actualizando la visibilidad');
+      }
+
+      showTempNotification(`Se ha completado el cambio de estado del post.`, 'success', 3000);
+
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p._id === postId ? { ...p, banned: !currentStatus } : p
+        )
+      );
+    } catch (error) {      
+      showTempNotification(`No se pudo ${action} el post.\nInténtalo de nuevo.`, 'error', 3000);
+
+      console.error('Error al actualizar visibilidad del post:', error);
+    }
+  };
+
   // función para guardar una nueva actividad de reciclaje
-  const handleRecyclingActivity = async () =>{
+  const handleRecyclingActivity = async (postID) =>{
       if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
 
       try {
-          await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
+          await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad', postID);
       } catch (error) {
           console.error('Error registrando actividad de reciclaje:', error.message);
       }
@@ -258,7 +377,14 @@ const ForumPage = () => {
 
   return (
     <div className="forum">
+      {notificationMessage && 
+          <NotificationMessage
+            textMessage={notificationMessage}
+            notificationType={notificationMessageType} />
+      }
+      <ConfirmDialog />
       <div className="header-container">
+        {/* botón de crear post */}
         {user && (<div className="new-post-button-wrapper">
           <button
             className={`new-post-button ${isSmallWindow ? 'floating' : ''}`}
@@ -267,6 +393,18 @@ const ForumPage = () => {
             {isSmallWindow ? '+' : '+ Nuevo post'}
           </button>
         </div>)}
+        
+        {/* buscador */}
+        <div className="search-wrapper">
+          <button
+            className="open-search-modal-button"
+            onClick={() => setShowSearchModal(true)}
+          >
+            <FaSearch />
+          </button>
+        </div>
+
+        {/* selector de categoría */}
         <div className="category-select">
           <label>Categorías:</label>
           <div className="custom-select">
@@ -300,9 +438,10 @@ const ForumPage = () => {
           </div>
         </div>
 
+        {/* selector de orden de los posts */}
         <div className="order-select">
           <label>Ordenar:</label>
-          <select onChange={(e) => setOrderBy(e.target.value)} value={orderBy}>
+          <select onChange={(e) => {setOrderBy(e.target.value); resetValues();}} value={orderBy}>
             <option value="latest">Últimas creadas</option>
             <option value="oldest">Más antiguas</option>
             <option value="lastReply">Últimas actualizadas</option>
@@ -321,25 +460,47 @@ const ForumPage = () => {
         {newPostsAvailable && (
           <div
             className="forum-update-banner"
-            onClick={() => {
-              // recarga los posts
-              fetch(`${apiUrl}/forum/posts`)
-                .then(res => res.json())
-                .then(data => {
-                  setPosts(data);
-                  setNewPostsAvailable(false);
-                });
-            }}
+            onClick={loadData}
           >
-            - Nuevos mensajes disponibles. Haz clic para actualizar -
+            - Nuevos mensajes disponibles. Haz clic para actualizar la página -
           </div>
         )}
 
-        {filteredPosts.length > 0 && (
-          <>
+        {posts.length > 0 && (
+          <>            
             {displayedPosts.map((post) => (
-              <div key={post._id} className="post" onClick={() => handleOpenPostModal(post)}>
+              <div 
+                key={post._id} 
+                className={`post ${post.banned ? 'banned' : ''}`} 
+                onClick={() => handleOpenPostModal(post)}
+              >
                 <div className="post-header">
+
+                  <div className="admin-actions-container">
+                    <div className="admin-actions-bg">
+                      <button 
+                        title="Banear post" 
+                        className="icon-button ban-btn" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBanPost(post._id, post.banned);
+                        }}
+                      >
+                        <FaBan />
+                      </button>
+                      <button 
+                        title="Eliminar post"
+                        className="icon-button delete-btn" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePost(post._id);
+                        }}
+                      >
+                        <FaTrashAlt />
+                      </button>
+                    </div>
+                  </div>
+
                   <p className="dates">
                     <span className="created-container">
                       <span className="date-label">Creado:</span>
@@ -354,7 +515,7 @@ const ForumPage = () => {
                   <div className="post-title">
                     {post.type === 'event' ? <FaCalendar color="#FF6F00" /> : <FaCommentDots color="#89c26e" />}
                     <span className="text-container">
-                      <h3>{post.title}</h3>
+                      <h3>{post.banned ? 'Publicación baneada por un administrador' : post.title}</h3>
                       <span className="category">Categorías: {
                         Array.isArray(post.categories)
                           ? post.categories.map(c => c.name).join(', ')
@@ -406,9 +567,9 @@ const ForumPage = () => {
             ))}
 
             {/* para mostrar si hay más posts y cargarlos si los hay */}
-            {hasMore ? (
+            {displayedPosts.length < posts.length ? (
               <div className="load-more">
-                <button className="load-more-btn" onClick={() => setVisibleCount(visibleCount + numberPostLoad)}>
+                <button className="load-more-btn" onClick={handleLoadMore}>
                   Cargar más
                 </button>
               </div>
@@ -418,6 +579,14 @@ const ForumPage = () => {
           </>
         )}
       </div>
+
+      {/* modal para el buscador */}
+      {showSearchModal && (
+        <ForumSearchModal
+          onClose={() => setShowSearchModal(false)}
+          apiUrl={apiUrl}
+        />
+      )}
 
       {/* modal para crear nuevo post */}
       {showNewPostModal && (

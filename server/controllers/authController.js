@@ -48,7 +48,7 @@ const register = async (req, res) => {
         res.status(201).json({ message: 'Nuevo usuario registrado correctamente' });
     } catch (error) {        
         res.status(500).json({ error: 'Error al registrar el nuevo usuario' });
-        console.log('Error en registro:', error);
+        console.error('Error en registro:', error);
     }
 };
 
@@ -89,7 +89,7 @@ const login = async (req, res) => {
                                     username: user.username, email: user.email, role: user.role } });
     } catch (error) {
         res.status(500).json({ error: 'Error al iniciar sesión' });
-        console.log('Error en inicio de sesión:', error);
+        console.error('Error en inicio de sesión:', error);
     }
 };
 
@@ -102,6 +102,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// recuperación de contraseña (genera token y lo manda por email)
 const forgotPassword = async (req,res) => {
     const { email } = req.body;
 
@@ -131,7 +132,7 @@ const forgotPassword = async (req,res) => {
             await user.save();
 
             // url para recuperación de contraseña
-            const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+            const resetUrl = `${process.env.FRONTEND_URL}/recuperar-contrasena?token=${resetToken}`;
 
             // email que se recibirá
             const mailOptions = {
@@ -158,6 +159,30 @@ const forgotPassword = async (req,res) => {
     }
 };
 
+// comprueba el token de recuperación de contraseña
+const validatePasswordToken = async (req,res) => {
+  const { token } = req.params;
+
+  try {
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ valid: false, error: 'Token inválido o expirado.' });
+    }
+
+    return res.status(200).json({ valid: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ valid: false, error: 'Error en la validación del token.' });
+  }
+};
+
+// crea una nueva contraseña tras recuperación
 const resetPassword = async (req,res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -165,12 +190,14 @@ const resetPassword = async (req,res) => {
   if (!password) return res.status(400).json({ error: 'La nueva contraseña es obligatoria.' });
 
   try {
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
     const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // fecha no expirada, más modernar que ahora
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: Date.now() }, // fecha no expirada, más moderna que ahora
     });
 
-    if (!user) return res.status(400).json({ error: 'Token inválido o expirado.' });
+    if (!user) return res.status(400).json({ error: 'INVALID_OR_EXPIRED_TOKEN' });
 
     // encripta la nueva contraseña y la guarda en el usuario
     const salt = await bcrypt.genSalt(10);
@@ -190,4 +217,4 @@ const resetPassword = async (req,res) => {
   }
 };
 
-module.exports = { register, login, forgotPassword, resetPassword };
+module.exports = { register, login, forgotPassword, validatePasswordToken, resetPassword };

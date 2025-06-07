@@ -12,7 +12,8 @@ Páginas visitables:
 
 http://localhost:3000/  
 http://localhost:3000/perfil-usuario (sólo visitable con usuario iniciado)  
-http://localhost:3000/perfil-usuario/xxxx (para visitar perfiles de otros usuarios)  
+http://localhost:3000/perfil-usuario/xxxx (para visitar perfiles de otros usuarios) 
+http://localhost:3000/recuperar-contrasena (sólo con email de recuperación de contraseña)  
 http://localhost:3000/herramientas  
 http://localhost:3000/mapa-reciclaje  
 http://localhost:3000/calculadora-huella-ecologica  

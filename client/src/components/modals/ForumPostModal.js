@@ -177,7 +177,32 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
         }
     }  
 
-    // enviar nueva respuesta a post
+    // recupera y devuelve una lista con las respuestas al post
+    const fetchRepliesList = async (pageToLoad = 1) => {
+        try {
+            const response = await fetch(`${apiUrl}/forum/posts/${post._id}/replies?page=${pageToLoad}`);
+            const data = await response.json();
+
+            return data.replies; // devolver directamente la lista
+        } catch (error) {
+            console.error('Error obteniendo respuestas:', error);
+            return [];
+        }
+    };
+
+    const fetchRepliesPageInfo = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/forum/posts/${post._id}/replies?page=1`);
+            const data = await response.json();
+            return data.totalPages || 1;
+        } catch (err) {
+            console.error('Error obteniendo información de páginas:', err);
+            return 1;
+        }
+    };
+
+
+    // envío de respuestas al post
     const handlePostReplySubmit = async (postReplyText) => {
         try {
             if (!postReplyText.trim()) {
@@ -185,7 +210,6 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                 return;
             }
 
-            // acceso al token del usuario almacenado en local
             const token = localStorage.getItem('usertoken');
             if (!token) {
                 console.error("Token de autenticación no válido.");
@@ -208,31 +232,58 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
             if (!response.ok) {
                 showTempNotification('Error al enviar el comentario.\nInténtalo de nuevo.', 'error', 3000);
                 console.error(data.error);
+                return;
             }
 
-            // añade la nueva respuesta a la lista para que se 
-            // recargen las respuestas al post
-            setReplies(prev => [...prev, data.comment]);
-            // aumenta número de respuestas
+            // Asegura que las respuestas están visibles
+            if (!repliesVisible) {
+                setRepliesVisible(true);
+            }
+
+            // Limpia el formulario
+            setNewPostReplayText('');
+            setShowPostReplyForm(false);
+
+            // Actualiza el contador
             setReplyCount(prev => prev + 1);
 
-            // limpia el formulario
-            setNewPostReplayText(''); // limpia el formulario
-            setShowPostReplyForm(false); // oculta el forumario          
-
-            // se añade actividad de reciclaje
+            // Guarda actividad
             handleRecyclingActivity();
-
-            // si no estaba activada la visualización de respuestas, la activa
-            if (!repliesVisible) { setRepliesVisible(true); }
-
             setlastRepliedPost && setlastRepliedPost(post._id);
-            
-            setTimeout(() => { // pasado un tiempo
-                // scroll hacia el nuevo comentario
-                const el = scrollRefs.current[data.comment._id];
-                if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-            }, 100);    
+
+            // Espera un poco antes de iniciar la búsqueda y scroll
+            setTimeout(async () => {
+                let found = false;
+                let allReplies = [];
+
+                // 1. Obtener el total de páginas actualizado (con la nueva respuesta incluida)
+                const updatedTotalPages = await fetchRepliesPageInfo();
+
+                for (let p = 1; p <= updatedTotalPages; p++) {
+                    const pageReplies = await fetchRepliesList(p);
+                    allReplies.push(...pageReplies);
+                    setReplies([...allReplies]); // actualiza el estado progresivamente
+                    setPage(p);
+
+                    // Espera al render
+                    await new Promise(r => setTimeout(r, 100));
+
+                    const el = scrollRefs.current[data.comment._id];
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    setTimeout(() => {
+                        const el = scrollRefs.current[data.comment._id];
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
+            }, 150);
+
         } catch (error) {
             console.error('Error creando el comentario:', error);
             showTempNotification('Error al enviar el comentario.\nInténtalo de nuevo.', 'error', 2000);
@@ -241,70 +292,160 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
         }
     };
 
-    // enviar nueva respuesta a otra respuesta
+    // envío de respuestas a otras respuestas
     const handleCommentReplySubmit = async (commentContent, postId, responseToId) => {
-        try {
-            if (!commentContent.trim()) {
-                showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
-                return;
-            }
-
-            const token = localStorage.getItem('usertoken');
-            if (!token) {
-                console.error("Token de autenticación no válido.");
-                return;
-            }
-
-            setIsSubmitting(true);
-
-            const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    text: commentContent.trim(), 
-                    postId: postId 
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
-                console.error(data.error);
-                return;
-            }
-
-            // añade la nueva respuesta a la lista para que se 
-            // recargen las respuestas al post
-            setReplies(prev => [...prev, data.reply]);
-            // aumenta número de respuestas
-            setReplyCount(prev => prev + 1);
-
-            // limpia el formulario
-            setNewCommentReplyText(''); // limpia el formulario
-            setShowCommentReplyForm(false); // oculta el forumario
-            setReplyFormVisibleForComment(null);
-
-            // si no estaba activada la visualización de respuestas, la activa
-            if (!repliesVisible) setRepliesVisible(true);
-
-            setTimeout(() => { // pasado un tiempo
-                // scroll hacia la nueva respuesta
-                const el = scrollRefs.current[data.reply._id];
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-
-            // se añade actividad de reciclaje
-            handleRecyclingActivity();
-        } catch (error) {
-            console.error('Error creando la respuesta:', error);
-        } finally {
-            setIsSubmitting(false);
+    try {
+        if (!commentContent.trim()) {
+            showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
+            return;
         }
-    };
+
+        const token = localStorage.getItem('usertoken');
+        if (!token) {
+            console.error("Token de autenticación no válido.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+                text: commentContent.trim(), 
+                postId: postId 
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
+            console.error(data.error);
+            return;
+        }
+
+        // Limpia el formulario
+        setNewCommentReplyText('');
+        setShowCommentReplyForm(false);
+        setReplyFormVisibleForComment(null);
+
+        // Asegura visibilidad de respuestas
+        if (!repliesVisible) setRepliesVisible(true);
+
+        // Guarda actividad
+        handleRecyclingActivity();
+        setReplyCount(prev => prev + 1);
+
+        // Espera antes de cargar y hacer scroll
+        setTimeout(async () => {
+            let found = false;
+            let allReplies = [];
+
+            const updatedTotalPages = await fetchRepliesPageInfo();
+
+            for (let p = 1; p <= updatedTotalPages; p++) {
+                const pageReplies = await fetchRepliesList(p);
+                allReplies.push(...pageReplies);
+                setReplies([...allReplies]); // Actualiza progresivamente
+                setPage(p);
+
+                await new Promise(r => setTimeout(r, 100));
+
+                const el = scrollRefs.current[data.reply._id];
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                setTimeout(() => {
+                    const el = scrollRefs.current[data.reply._id];
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+
+        }, 150);
+
+    } catch (error) {
+        console.error('Error creando la respuesta:', error);
+        showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 2000);
+    } finally {
+        setIsSubmitting(false);
+    }
+};
+
+
+
+    // // enviar nueva respuesta a otra respuesta
+    // const handleCommentReplySubmit = async (commentContent, postId, responseToId) => {
+    //     try {
+    //         if (!commentContent.trim()) {
+    //             showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
+    //             return;
+    //         }
+
+    //         const token = localStorage.getItem('usertoken');
+    //         if (!token) {
+    //             console.error("Token de autenticación no válido.");
+    //             return;
+    //         }
+
+    //         setIsSubmitting(true);
+
+    //         const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 Authorization: `Bearer ${token}`
+    //             },
+    //             body: JSON.stringify({ 
+    //                 text: commentContent.trim(), 
+    //                 postId: postId 
+    //             }),
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (!response.ok) {
+    //             showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
+    //             console.error(data.error);
+    //             return;
+    //         }
+
+    //         // añade la nueva respuesta a la lista para que se 
+    //         // recargen las respuestas al post
+    //         setReplies(prev => [...prev, data.reply]);
+    //         // aumenta número de respuestas
+    //         setReplyCount(prev => prev + 1);
+
+    //         // limpia el formulario
+    //         setNewCommentReplyText(''); // limpia el formulario
+    //         setShowCommentReplyForm(false); // oculta el forumario
+    //         setReplyFormVisibleForComment(null);
+
+    //         // si no estaba activada la visualización de respuestas, la activa
+    //         if (!repliesVisible) setRepliesVisible(true);
+
+    //         setTimeout(() => { // pasado un tiempo
+    //             // scroll hacia la nueva respuesta
+    //             const el = scrollRefs.current[data.reply._id];
+    //             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //         }, 100);
+
+    //         // se añade actividad de reciclaje
+    //         handleRecyclingActivity();
+    //     } catch (error) {
+    //         console.error('Error creando la respuesta:', error);
+    //     } finally {
+    //         setIsSubmitting(false);
+    //     }
+    // };
 
     // creación de id temporal para las respuestas (usado para referencias en front)
     const tempIdMap = {};
@@ -345,9 +486,9 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                     avatar={`${avatarsUrl}/${post.createdBy.avatar}`}
                                     fullname={post.createdBy.fullname}
                                     username={post.createdBy.username}
-                                    levelIcon={post.createdBy.level.icon}
-                                    levelText={post.createdBy.level.text}
-                                    levelColor={post.createdBy.level.color}
+                                    levelIcon={post.createdBy.level?.icon}
+                                    levelText={post.createdBy.level?.text}
+                                    levelColor={post.createdBy.level?.color}
                                 >
                                     <Link
                                         className="created-by"
@@ -441,9 +582,9 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                                                 avatar={`${avatarsUrl}/${reply.user?.avatar}`}
                                                                 fullname={reply.user?.fullname}
                                                                 username={reply.user?.username}
-                                                                levelIcon={reply.user?.level.icon}
-                                                                levelText={reply.user?.level.text}
-                                                                levelColor={reply.user?.level.color}
+                                                                levelIcon={reply.user?.level?.icon}
+                                                                levelText={reply.user?.level?.text}
+                                                                levelColor={reply.user?.level?.color}
                                                             >
                                                                 <Link
                                                                     className="created-by"

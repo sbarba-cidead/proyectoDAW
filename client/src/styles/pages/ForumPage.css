@@ -163,8 +163,6 @@
   background-color: #45a049;
 }
 
-/* -------- */
-
 .forum .posts {
   margin-top: 20px;
 }
@@ -184,11 +182,61 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
+.forum .posts .post.banned {
+  opacity: 0.6;
+}
+
 .forum .posts .post .post-header {
   margin-bottom: 10px;
   display: flex;
   flex-wrap: wrap;
 }
+
+.post-header .admin-actions-container {
+  display: flex;
+  margin-right: 10px;
+  align-items: center;  
+}
+
+.admin-actions-container .admin-actions-bg {
+  display: flex;
+  height: 60%;
+  align-items: center;
+  gap: 10px;
+  background-color: #0000000e;
+  border-radius: 12px;
+}
+
+.admin-actions-bg .icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.admin-actions-bg .icon-button.ban-btn {
+  color: #ff0000;
+}
+
+.admin-actions-bg .icon-button.ban-btn:hover {
+  color: #c40202;
+}
+
+.admin-actions-bg .icon-button.delete-btn {
+  color: #f46c36;
+}
+
+.admin-actions-bg .icon-button.delete-btn:hover {
+  color: #b74d1c;
+}
+
+
+
 
 .post-header .post-title {
   display: flex;

@@ -11,6 +11,7 @@ const RecycleGuideData = require('@models/RecycleGuide/RecycleGuideData');
 const UserLevel = require('@models/Global/UserLevel');
 const User = require('@models/Global/User')
 const RecyclingActivity = require('@models/Global/RecyclingActivity');
+const { recalculateUserScore } = require('@utils/functions');
 
 
 // para comprobar si hay conexión con el servidor
@@ -27,7 +28,7 @@ router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
 
-    // Crear la actividad
+    // crea la actividad
     const newRecyclingActivity = new RecyclingActivity({
       type,
       date: new Date(),
@@ -36,15 +37,15 @@ router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
 
     const savedRecyclingActivity = await newRecyclingActivity.save();
 
-    // Actualizar el usuario añadiendo la referencia a la actividad
+    // actualiza el usuario añadiendo la referencia a la actividad
     const user = await User.findByIdAndUpdate(
       userId,
       { $push: { recyclingActivities: savedRecyclingActivity._id } },
       { new: true }
     ).populate('recyclingActivities');
 
-    // recalcula score del usuario (5 puntos por actividad)
-    const newScore = parseInt(user.recyclingActivities.length * 5, 10);
+    // recalcula score del usuario
+    const newScore = await recalculateUserScore(user._id);
 
     // actualiza score del usuario
     user.score = newScore;    
@@ -150,19 +151,33 @@ router.get('/eco-info-cards', async (req, res) => {
 // datos para la guía de reciclaje en contenedores
 router.get('/eco-guide-data', async (req, res) => {
     res.set('Cache-Control', 'no-store');
+
     const search = req.query.search || '';
+    const normalizedSearch = search.toLowerCase()
+                                    .normalize("NFD") // descompone los caracteres acentuados
+                                    .replace(/[\u0300-\u036f]/g, ""); // elimina los diacríticos (tildes, acentos, etc.)
+
     try {
-        const regex = new RegExp(search, 'i'); // case insensitive
+        // trae todos los productos que podrían coincidir
+        const possibleMatches = await RecycleGuideData.find({
+            name: { $regex: normalizedSearch[0], $options: 'i' } // case insensitive
+        }).lean();
 
-        // DEPURACIÓN: imprime todo lo que hay en la colección
-        const allData = await RecycleGuideData.find({}).lean();
+        // compara el texto buscado con datos de la BD
+        const filtered = possibleMatches.filter(product => {
+            const normalizedName = product.name.toLowerCase()
+                                                .normalize("NFD") // descompone los caracteres acentuados
+                                                .replace(/[\u0300-\u036f]/g, ""); // elimina los diacríticos (tildes, acentos, etc.)
 
-        const products = await RecycleGuideData.find({
-          // busca por coincidencia parcial, case-insensitive
-          name: regex
-        }).sort({ name: 1 }).lean();
+            if (normalizedSearch.length === 1) {
+                const words = normalizedName.split(" ");
+                return words.some(word => word.startsWith(normalizedSearch));
+            }
 
-        res.json(products);
+            return normalizedName.includes(normalizedSearch);
+        });
+
+        res.json(filtered); // resultados de la coincidencia, no normalizados
     } catch (error) {
         console.error('Error al obtener datos de reciclaje:', error);
         res.status(500).json({ error: 'Error al obtener datos de reciclaje' });

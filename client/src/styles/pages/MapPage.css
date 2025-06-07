@@ -35,6 +35,9 @@
     z-index: 3000;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .recyclemap-container .floating-search-button:hover {

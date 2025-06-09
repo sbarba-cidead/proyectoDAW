@@ -22,7 +22,7 @@ function normalizeCategoryName(name) {
 router.get('/posts', async (req, res) => {
     try {
       let posts = await ForumPost.find()
-          .populate('createdBy', 'username fullname avatar score level')
+          .populate('createdBy', 'username fullname avatar score level role')
           .populate('categories', 'name')
           .sort({ createdAt: -1 })  // ordena por fecha de creación más reciente
           .lean();
@@ -56,6 +56,28 @@ router.get('/posts', async (req, res) => {
         console.error('Error al recuperar los posts del foro:', error); 
         res.status(500).json({ error: "Error al recuperar los posts del foro" });
     }
+});
+
+// búqueda de posts en tiempo real
+router.get('/posts/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q || q.trim() === '') {
+    return res.json({ posts: [] });
+  }
+
+  try {
+    // Búsqueda case insensitive y parcial en el título
+    const regex = new RegExp(q, 'i'); // i para insensible a mayúsculas
+    const posts = await ForumPost.find({ title: regex })
+      .populate('createdBy', 'username fullname')
+      .populate('categories', 'name')
+      .sort({ createdAt: -1 }); // los más recientes primero
+
+    return res.json({ posts });
+  } catch (err) {
+    console.error('Error en búsqueda:', err);
+    res.status(500).json({ error: 'Error buscando posts' });
+  }
 });
 
 // obtener posts por filtrado
@@ -110,7 +132,7 @@ router.get('/posts/filter', async (req, res) => {
 
       // populate manual de createdBy (autor del post)
       const createdByIds = posts.map(p => p.createdBy).filter(Boolean);
-      const users = await User.find({ _id: { $in: createdByIds } }, 'username fullname avatar score level').lean();
+      const users = await User.find({ _id: { $in: createdByIds } }, 'username fullname avatar score level role').lean();
       const userMap = {};
       users.forEach(u => { userMap[u._id.toString()] = u; });
 
@@ -134,21 +156,13 @@ router.get('/posts/filter', async (req, res) => {
 
       total = await ForumPost.countDocuments(match);
       posts = await ForumPost.find(match)
-        .populate('createdBy', 'username fullname avatar score level')
+        .populate('createdBy', 'username fullname avatar score level role')
         .populate('categories', 'name')
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
     }
-
-    // let posts = await ForumPost.find(match)
-    //   .populate('createdBy', 'username fullname avatar score level')
-    //   .populate('categories', 'name')
-    //   .sort(sort)
-    //   .skip((page - 1) * limit)
-    //   .limit(limit)
-    //   .lean();
 
     // niveles duplicados (para insertar datos completos)
     const levelIds = [...new Set(posts.map(p => p.createdBy?.level).filter(Boolean).map(id => id.toString()))];
@@ -171,7 +185,7 @@ router.get('/posts/filter', async (req, res) => {
 
     res.json({
       posts,
-      total,
+      total, // número total de posts que aplican a los criterios (antes de paginación)
       totalPages: Math.ceil(total / limit),
       currentPage: page,
     });
@@ -209,7 +223,7 @@ router.get('/posts/post-categories', async (req, res) => {
 router.get('/posts/:id', async (req, res) => {
     try {
         const post = await ForumPost.findById(req.params.id)
-            .populate('createdBy', 'username fullname avatar score level')
+            .populate('createdBy', 'username fullname avatar score level role')
             .populate('categories', 'name')
             .lean();
 
@@ -231,7 +245,7 @@ router.get('/posts/:id/replies', async (req, res) => {
     let replies = await ForumComment.find({ post: req.params.id })
       .skip((pageNumber - 1) * limitNumber)
       .limit(limitNumber)
-      .populate('user', 'username fullname avatar score level')
+      .populate('user', 'username fullname avatar score level role')
       .sort({ createdAt: 1 })
       .lean();
 
@@ -298,7 +312,7 @@ router.get('/post-categories-search', async (req, res) => {
 // crear un nuevo post
 router.post('/posts/create-post', authMiddleware, async (req, res) => {
   try {
-    const { title, content, categories } = req.body;
+    const { title, content, categories, userRole } = req.body;
     const userId = req.userId; // obtenido del token a través del authMiddleware por seguridad
 
     if (!title || !content) {
@@ -342,14 +356,15 @@ router.post('/posts/create-post', authMiddleware, async (req, res) => {
     // elimina posibles duplicados en la lista de categorías
     const uniqueCategoryIds = [...new Set(categoryIds)];
 
+    const type = (userRole === 'admin' ? 'event' : 'post');
+
     const newPost = new ForumPost({
         title,
         content,
         createdBy: userId,
-        type: 'post',
-        categories: uniqueCategoryIds,
-        // createdAt, lastReplyAt y replies toman sus valores por defecto
-    });
+        type: type,
+        categories: uniqueCategoryIds,        
+    }); // createdAt, lastReplyAt y replies toman sus valores por defecto
 
     await newPost.save(); // se guarda el nuevo post
 
@@ -503,42 +518,78 @@ router.post('/comments/:id/create-comment', authMiddleware, async (req, res) => 
   }
 });
 
+// función para borrar mensajes de post (se usa en endpoint para borrar post)
+async function deleteCommentById(commentId, session) {
+  const comment = await ForumComment.findById(commentId).session(session);
+  if (!comment) return;
+
+  const { post: postId, user: userId } = comment;
+
+  // 1. Quitar del post
+  await ForumPost.updateOne(
+    { _id: postId },
+    { $pull: { replies: commentId } },
+    { session }
+  );
+
+  // 2. Borrar actividades asociadas
+  const activities = await RecyclingActivity.find({ commentRef: commentId }).session(session);
+  const activityIds = activities.map(activity => activity._id);
+  await RecyclingActivity.deleteMany({ commentRef: commentId }).session(session);
+
+  // 3. Quitar del usuario
+  await User.updateOne(
+    { _id: userId },
+    { $pull: { recyclingActivities: { $in: activityIds }, messages: { _id: commentId } } },
+    { session }
+  );
+
+  // 4. Eliminar el comentario
+  await ForumComment.deleteOne({ _id: commentId }).session(session);
+}
+
 // borrar post completamente
 router.delete('/posts/:postId', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const postId = req.params.postId;
 
     // 1. se busca el post por id en la colección de posts del foro
-    const post = await ForumPost.findById(postId);
+    const post = await ForumPost.findById(postId).session(session);
     if (!post) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ error: 'Post no encontrado' });
     }
 
     // se extraen los datos necesarios del post
-    const creatorId = post.createdBy; // _id del usuario creador del post
-    const categoriesIds = post.categories; // array de ObjectId de categorías
+    const { createdBy: userId, categories: categoriesIds, replies } = post;
 
-    // 2. busca y borrar recycling activities relacionadas con el post
+    // 2. busca y borra recycling activities relacionadas con el post
     // buscando el _id del post en postRef de las recycling activities
-    const recyclingActivities = await RecyclingActivity.find({ postRef: postId });
-    const recyclingActivityIds = recyclingActivities.map(ra => ra._id);
+    const activities = await RecyclingActivity.find({ postRef: postId }).session(session);
+    const activityIds = activities.map(ra => ra._id);    
 
     // se borran esas recycling activities
-    await RecyclingActivity.deleteMany({ _id: { $in: recyclingActivityIds } });
+    await RecyclingActivity.deleteMany({ _id: { $in: activityIds } }).session(session);
 
     // 3. se busca al usuario creador del post en la colección users
-    const user = await User.findById(creatorId);
+    const user = await User.findById(userId).session(session);
     if (!user) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ error: 'No se ha encontrado al usuario creador del post' });
     }
 
     // 4. borra recycling activities del usuario que coincidan con las borradas antes
     user.recyclingActivities = user.recyclingActivities.filter(
-      raId => !recyclingActivityIds.some(id => id.equals(raId))
+      raId => !activityIds.some(id => id.equals(raId))
     );
 
     // 5. recalcula el score del usuario
-    user.score = await recalculateUserScore(user._id);
+    user.score = await recalculateUserScore(userId);
 
     // 6. borra referencias al post en messages del usuario
     // (messages es un array de objetos, cada uno con un _id que es el id del post)
@@ -547,31 +598,41 @@ router.delete('/posts/:postId', async (req, res) => {
     );
 
     // guarda los cambios hechos en el usuario
-    await user.save();
+    await user.save({ session });
 
     // 7. se actualizan las categorías de post
     if (categoriesIds && categoriesIds.length > 0) { // si el post tenía categorías
       for (const categoryId of categoriesIds) {
-        const category = await PostCategory.findById(categoryId);
+        const category = await PostCategory.findById(categoryId).session(session);
         if (!category) continue;
 
         if (category.postsCount === 1) {
           // si solo tiene ese post, elimina la categoría
-          await PostCategory.deleteOne({ _id: categoryId });
+          await PostCategory.deleteOne({ _id: categoryId }).session(session);
         } else if (category.postsCount > 1) {
           // si tiene más posts, restar 1 al contador
           category.postsCount -= 1;
-          await category.save();
+          await category.save({ session });
         }
       }
     }
 
-    // 8. finalmente, se borra el post
-    await ForumPost.deleteOne({ _id: postId });
+    // 8. elimina los mensajes de respuesta al post
+    for (const replyId of post.replies) {
+      await deleteCommentById(replyId, session)
+    }
+
+    // 9. finalmente, se borra el post
+    await ForumPost.deleteOne({ _id: postId }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
 
     return res.status(200).json({ message: 'Post borrado correctamente' });
   } catch (error) {
     console.error('Error borrando post:', error);
+    await session.abortTransaction();
+    session.endSession();
     return res.status(500).json({ error: 'Error el servidor borrando el post' });
   }
 });
@@ -590,13 +651,92 @@ router.patch('/posts/:postId/visibility', async (req, res) => {
     post.banned = banned;
     await post.save();
 
-    return res.status(200).json({ message: banned ? 'Post ocultado' : 'Post restaurado' });
-  } catch (err) {
-    console.error('Error actualizando visibilidad del post:', err);
-    return res.status(500).json({ error: 'Error del servidor actualizando visibilidad del post' });
+    return res.status(200).json({ message: banned ? 'Post baneado' : 'Post desbaneado' });
+  } catch (error) {
+    console.error('Error actualizando el estado de baneo del post:', error);
+    return res.status(500).json({ error: 'Error del servidor actualizando el estado de baneo del post' });
   }
 });
 
 // borrar comentario
+router.delete('/comments/:commentId', async (req, res) => {
+  const { commentId } = req.params;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    // 1. busca el comentario por su _id
+    const comment = await ForumComment.findById(commentId).session(session);
+    if (!comment) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Comentario no encontrado' });
+    }
+
+    // 2. obtiene el postId y userId del comentario
+    const { post: postId, user: userId } = comment;
+
+    // 3. elimina el comentario del array 'replies' del post
+    await ForumPost.updateOne(
+      { _id: postId },
+      { $pull: { replies: commentId } },
+      { session }
+    );
+
+    //4. busca y elimina actividades de reciclaje asociadas al comentario
+    const activities = await RecyclingActivity.find({ commentRef: commentId }).session(session);
+    const activityIds = activities.map(activity => activity._id);
+    await RecyclingActivity.deleteMany({ commentRef: commentId }).session(session);
+
+    // 5. elimina del usuario las actividades de reciclaje borradas antes 
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { recyclingActivities: { $in: activityIds } } },
+      { session }
+    );
+
+    // 6. elimina el comentario del array messages del usuario
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { messages: { _id: commentId } } },
+      { session }
+    );
+
+    // 7. finalmente, elimina el comentario de la colección forum_comments
+    await ForumComment.deleteOne({ _id: commentId }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: 'Comentario eliminado correctamente' });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error al eliminar el comentario:', error);
+    res.status(500).json({ error: 'Error del servidor al eliminar el comentario' });
+  }
+});
+
+// baneo de comentario por admin (sólo oculta el contenido del comentario, pero el comentario se queda en BD)
+router.patch('/comments/:commentId/visibility', async (req, res) => {
+  try {
+    const commentId = req.params.commentId;
+    const { banned } = req.body; // true para baneo, false para restaurar
+
+    const post = await ForumComment.findById(commentId);
+    if (!post) {
+      return res.status(404).json({ error: 'Comentario no encontrado' });
+    }
+
+    post.banned = banned;
+    await post.save();
+
+    return res.status(200).json({ message: banned ? 'Comentario baneado' : 'Comentario desbaneado' });
+  } catch (error) {
+    console.error('Error actualizando el estado de baneo del comentario:', error);
+    return res.status(500).json({ error: 'Error del servidor actualizando el estado de baneo del comentario' });
+  }
+});
 
 module.exports = router;

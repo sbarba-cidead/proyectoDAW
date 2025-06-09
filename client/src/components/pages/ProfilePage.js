@@ -10,6 +10,7 @@ import ChangePasswordModal from 'components/modals/ChangePasswordModal';
 import { convertUTCDateTime } from 'utils/functions';
 import NotFoundPage from 'components/error-pages/NotFoundPage';
 import { WEBSITE_NAME } from 'config/constants';
+import ConfirmDialog, { confirm } from 'components/page-elements/ConfirmDialog';
 
 
 function ProfilePage({setHeaderTitle}) {
@@ -25,6 +26,9 @@ function ProfilePage({setHeaderTitle}) {
   const [notificationMessageType, setNotificationMessageType] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL;
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
+
+  // role del usuario iniciado (si no hay usuario iniciado es null)
+  const loginUserRole = useUserContext()?.user?.role || null;
 
   // cuando se accede desde hipervículo a la página de usuario 
   // para ver el perfil de otro usuario, se recibe su ID mandado por estado
@@ -54,6 +58,10 @@ function ProfilePage({setHeaderTitle}) {
             console.error('Error al obtener el usuario actual:', data.error);
             return;
           }
+          
+          if (data.banned) {
+            const confirmAnswer = await confirm("Tu usuario ha sido baneado, no podrás publicar en los foros ni se registrará tu progreso.", {singleButton: true});
+          }
 
           setUserLocal({
             avatar: `${avatarsUrl}/${data.avatar}`,
@@ -64,7 +72,8 @@ function ProfilePage({setHeaderTitle}) {
             level: data.level, // objeto completo con los datos del nivel
             recyclingActivities: data.recyclingActivities,
             messages: data.messages,
-            email: data.email
+            email: data.email,
+            banned: data.banned
           });
 
           return;
@@ -98,7 +107,8 @@ function ProfilePage({setHeaderTitle}) {
             score: data.score,
             level: data.level, // objeto completo con los datos del nivel
             recyclingActivities: data.recyclingActivities,
-            messages: data.messages
+            messages: data.messages,
+            banned: data.banned
           });
 
         return;
@@ -126,13 +136,14 @@ function ProfilePage({setHeaderTitle}) {
             score: data.score,
             level: data.level, // objeto completo con los datos del nivel
             recyclingActivities: data.recyclingActivities,
-            messages: data.messages
+            messages: data.messages,
+            banned: data.banned
           });
         }
       } catch (error) {
         console.error('Error de red:', error);
       } finally {
-        setLoading(false);
+        setLoading(false);        
       }
     };
 
@@ -339,6 +350,37 @@ function ProfilePage({setHeaderTitle}) {
     }
   }
 
+  // (sólo admin) banea al usuario
+  const handleBanUser = async (username, currentStatus) => {
+    const action = currentStatus ? 'desbanear' : 'banear';
+    const confirmAnswer = await confirm(`Se va a ${action} este usuario. ¿Continuar?`);
+    if (!confirmAnswer) return;
+
+    try {
+      const res = await fetch(`${apiUrl}/user/${username}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banned: !currentStatus }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Error actualizando la visibilidad');
+      }
+
+      showTempNotification(`Se ha completado el cambio de estado del usuario.`, 'success', 3000);
+
+      setUserLocal(prevData => ({
+        ...prevData,
+        banned: !currentStatus
+      }));
+    } catch (error) {      
+      showTempNotification(`No se pudo ${action} el usuario.\nInténtalo de nuevo.`, 'error', 3000);
+
+      console.error('Error al actualizar visibilidad del post:', error);
+    }
+  }
+
   function getLevelIcon(iconName) {
     const icons = {
       FaSeedling: <FaSeedling />,
@@ -354,10 +396,11 @@ function ProfilePage({setHeaderTitle}) {
 
 
   if (userNotFound) return <NotFoundPage />; 
-  if (loading || !userLocal) return <div className="loading"></div>; 
+  if (loading || !userLocal) return <div className="loading"><ConfirmDialog /></div>; 
 
   return (
     <div className="profile-container">
+      <ConfirmDialog />
       <div className="body-section">
         <div className='box-content-1'>
           <div className="profile-data">
@@ -377,6 +420,24 @@ function ProfilePage({setHeaderTitle}) {
                   <button onClick={handleChangePassswordClick} className="change-password-link">Cambiar contraseña</button>
                 </div>
               )}
+              {(otherUserId || otherUserUsername) && userLocal.banned && (
+                <div className="banned-user-container">
+                  <p className="banned-user-text">Usuario baneado</p>
+                </div>
+              )}
+              {loginUserRole && loginUserRole === 'admin' && (otherUserId || otherUserUsername) && (
+                <div className="admin-actions-container">
+                  <button 
+                    className="ban-user-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBanUser(userLocal.username, userLocal.banned);
+                    }}
+                  >
+                    {userLocal.banned ? "Desbanear" : "Banear"} usuario
+                  </button>
+                </div>
+              )}              
             </div>
           </div>
 

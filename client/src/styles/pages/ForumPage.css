@@ -29,13 +29,15 @@
 
 /* -------- */
 
-.forum .header-container .new-post-button-wrapper {
+.forum .header-container .forum-page-action-buttons {
   flex: 1;
   display: flex;
+  gap: 10px;
   align-items: flex-start;
 }
 
-.new-post-button-wrapper .new-post-button {
+.forum-page-action-buttons .new-post-button,
+.forum-page-action-buttons .search-button {
   background-color: #4CAF50;
   color: white;
   padding: 10px 16px;
@@ -47,7 +49,20 @@
   transition: background-color 0.3s ease;
 }
 
-.new-post-button-wrapper .new-post-button:hover {
+.forum-page-action-buttons .new-post-button.banned {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.forum-page-action-buttons .search-button svg {
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.forum-page-action-buttons .new-post-button:not(.banned):hover,
+.forum-page-action-buttons .search-button:hover {
   background-color: #388E3C;
 }
 
@@ -198,16 +213,19 @@
   align-items: center;  
 }
 
-.admin-actions-container .admin-actions-bg {
+.post-header .admin-actions-container .admin-actions-bg {
   display: flex;
-  height: 60%;
   align-items: center;
   gap: 10px;
-  background-color: #0000000e;
+  height: 80%;
+  background: rgba(30, 30, 30, 0.2);
   border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 5px;
 }
 
-.admin-actions-bg .icon-button {
+.post-header .admin-actions-container .admin-actions-bg .icon-button {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -219,24 +237,21 @@
   transition: color 0.3s ease;
 }
 
-.admin-actions-bg .icon-button.ban-btn {
+.post-header .admin-actions-container .admin-actions-bg .icon-button.ban-btn {
   color: #ff0000;
 }
 
-.admin-actions-bg .icon-button.ban-btn:hover {
+.post-header .admin-actions-container .admin-actions-bg .icon-button.ban-btn:hover {
   color: #c40202;
 }
 
-.admin-actions-bg .icon-button.delete-btn {
+.post-header .admin-actions-container .admin-actions-bg .icon-button.delete-btn {
   color: #f46c36;
 }
 
-.admin-actions-bg .icon-button.delete-btn:hover {
+.post-header .admin-actions-container .admin-actions-bg .icon-button.delete-btn:hover {
   color: #b74d1c;
 }
-
-
-
 
 .post-header .post-title {
   display: flex;
@@ -408,16 +423,22 @@
     flex-wrap: wrap;
   }
 
-  .forum .header-container .new-post-button-wrapper {
+  .forum .header-container .forum-page-action-buttons {
     position: fixed;
-    bottom: 60px;
-    right: 30px;
-    z-index: 1000;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    bottom: 50px;
+    width: 100%;
+    right: 0px;
+    z-index: 1000;    
     border-radius: 50%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0px 30px;
+    box-sizing: border-box;
+    flex-direction: row-reverse;
   }
 
-  .new-post-button-wrapper .new-post-button {
+  .forum-page-action-buttons .new-post-button,
+  .forum-page-action-buttons .search-button {
     border-radius: 50%;
     width: 56px;
     height: 56px;
@@ -427,6 +448,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -453,7 +475,11 @@
   }
 }
 
-@media (max-width: 370px) {
+@media (max-width: 380px) {
+  .forum .header-container .forum-page-action-buttons {
+    padding: 0px 10px;
+  }
+
   .forum .posts .post {
     padding: 15px 20px;
   }

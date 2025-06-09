@@ -3,7 +3,7 @@ import { format, toZonedTime } from 'date-fns-tz';
 const API_URL = process.env.REACT_APP_API_URL;
 
 // mandar una actividad de reciclaje a la api para guardar en BD
-export const sendRecyclingActivity = async (type, postRef) => {
+export const sendRecyclingActivity = async (type, postRef, commentRef) => {
   try {
     const token = localStorage.getItem('usertoken');
 
@@ -11,6 +11,9 @@ export const sendRecyclingActivity = async (type, postRef) => {
     const body = { type };
     if (postRef !== undefined) {
       body.postRef = postRef;
+    }
+    if (commentRef !== undefined) {
+      body.commentRef = commentRef;
     }
 
     const response = await fetch(`${API_URL}/recycle/save-recycling-activity`, {

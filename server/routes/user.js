@@ -86,7 +86,7 @@ router.get('/me', authMiddleware, async (req, res) => {
                               path: 'messages._id',
                               select: 'title content text post responseTo createdAt model',
                             })
-                            .select('avatar fullname username email score level role recyclingActivities messages');
+                            .select('avatar fullname username email score level role recyclingActivities messages banned');
     
     if (!user) { // si no se encuentra el usuario
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -144,7 +144,7 @@ router.post('/otheruser', async (req, res) => {
                               path: 'messages._id',
                               select: 'title content text post responseTo createdAt model',
                             })
-                            .select('avatar fullname username score level recyclingActivities messages');
+                            .select('avatar fullname username score level recyclingActivities messages banned');
 
     if (!user) { // si no se encuentra el usuario
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -199,7 +199,7 @@ router.get('/otheruser/:username', async (req, res) => {
       const user = await User.findOne({username})
                               .populate('recyclingActivities')
                               .populate('level')
-                              .select('avatar fullname username score level recyclingActivities messages');
+                              .select('avatar fullname username score level recyclingActivities messages banned');
 
       if (!user) { // si no se encuentra el usuario
         return res.status(404).json({ error: 'USER_NOT_FOUND' });
@@ -360,6 +360,27 @@ router.post('/change-password', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error en /change-password:', error);
     res.status(500).json({ error: 'Error del servidor.' });
+  }
+});
+
+// baneo de usuario por admin
+router.patch('/:username/visibility', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const { banned } = req.body; // true para baneo, false para restaurar
+
+    const user = await User.findOne({username});
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    user.banned = banned;
+    await user.save();
+
+    return res.status(200).json({ message: banned ? 'Usuario baneado' : 'Usuario desbaneado' });
+  } catch (error) {
+    console.error('Error actualizando el estado de baneo del usuario:', error);
+    return res.status(500).json({ error: 'Error del servidor actualizando el estado de baneo del usuario' });
   }
 });
 

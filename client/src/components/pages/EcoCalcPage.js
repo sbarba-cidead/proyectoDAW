@@ -65,7 +65,7 @@ function EcoCalcPage() {
 
     // función para guardar una nueva actividad de reciclaje
     const handleRecyclingActivity = useCallback(async () => {
-        if (!user) return; // si no hay usuario iniciado no guarda la actividad
+        if (!user || user.banned) return; // si no hay usuario iniciado o está baneado no guarda la actividad
 
         try {
             await sendRecyclingActivity('Calcular huella ecológica');

@@ -186,6 +186,8 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
           setUserGlobalContext({
             username: data.user.username,
             avatar: `${avatarsUrl}/${data.user.avatar}`, // guarda con la url completa
+            role: data.user.role,
+            banned: data.user.banned,
           });
 
           // muestra mensaje de confirmación

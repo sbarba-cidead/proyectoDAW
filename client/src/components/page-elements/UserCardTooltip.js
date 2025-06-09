@@ -5,7 +5,7 @@ import { FaSeedling, FaLeaf, FaTree,
   FaApple, FaCrown, FaStar, } from 'react-icons/fa';
 
 
-const UserCardTooltip = ({ avatar, fullname, username, levelIcon, levelText, levelColor, children }) => {
+const UserCardTooltip = ({ avatar, fullname, username, levelIcon, levelText, levelColor, userRole, children }) => {
   const [visible, setVisible] = useState(false);
 
     function getLevelIcon(iconName) {
@@ -34,7 +34,9 @@ const UserCardTooltip = ({ avatar, fullname, username, levelIcon, levelText, lev
           <div className="tooltip-user-info">
             <div className="tooltip-fullname">{fullname}</div>
             <div className="tooltip-username">{username}</div>
-            <div className="tooltip-level" style={{ color: levelColor }}>{getLevelIcon(levelIcon)} {levelText}</div>            
+            {userRole !=="admin" && (
+              <div className="tooltip-level" style={{ color: levelColor }}>{getLevelIcon(levelIcon)} {levelText}</div>
+            )}          
           </div>
         </div>
       )}

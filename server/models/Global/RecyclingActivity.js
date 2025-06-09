@@ -26,7 +26,11 @@ const recyclingActivitySchema = new mongoose.Schema({
     postRef: {
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'ForumPost',
-    }
+    },
+    commentRef: {
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'ForumComment',
+    },
 }, {
     collection: "recycling_activities"
 });

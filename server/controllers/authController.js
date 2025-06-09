@@ -39,7 +39,7 @@ const register = async (req, res) => {
             email,
             level: beginnerLevel._id,
             password: hashedPassword,
-        }); // avatar, role, recycleActivities, messages, score toman datos default
+        }); // avatar, role, banned, recycleActivities, messages, score toman datos default
 
         // se guarda el nuevo usuario
         await newUser.save();
@@ -86,7 +86,7 @@ const login = async (req, res) => {
 
         // respuesta con el token y los datos del usuario
         res.json({ token, user: { id: user._id, avatar: user.avatar, fullname: user.fullname, 
-                                    username: user.username, email: user.email, role: user.role } });
+                                    username: user.username, email: user.email, role: user.role, banned: user.banned } });
     } catch (error) {
         res.status(500).json({ error: 'Error al iniciar sesión' });
         console.error('Error en inicio de sesión:', error);

@@ -63,7 +63,7 @@
 
 /* COLUMNA 2 */
 /* Columna lateral (buscador + lista) */
-.recyclemap-container .recycle-sidebar {
+.recyclemap-container .recyclemap-sidebar {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -76,34 +76,34 @@
 }
   
 /* Formulario de búsqueda */
-.recycle-sidebar .recycle-form {
+.recyclemap-sidebar .recyclemap-form {
     display: flex;
     padding: 0.5rem 0rem;
     align-items: center;
     gap: 0.5rem;
 }
 
-.recycle-sidebar .recycle-form .input-wrapper {
+.recyclemap-sidebar .recyclemap-form .input-wrapper {
     position: relative;
     flex: 1;
     display: flex;
 }
   
-.recycle-form .input-wrapper input {
+.recyclemap-form .input-wrapper input {
     flex: 1;
     padding: 0.5rem 2rem 0.5rem 0.5rem;
     font-size: 1rem;
-    border: 1px solid #ccc;
+    border: 2px solid #ccc;
     border-radius: 12px;
     box-sizing: border-box;
 }
 
-.recycle-form .input-wrapper input:focus {
+.recyclemap-form .input-wrapper input:focus {
     border-color: #4CAF50;
     outline: none;
 }
   
-.recycle-form .input-wrapper .clear-icon {
+.recyclemap-form .input-wrapper .clear-icon {
     position: absolute;
     right: 0.75rem;
     top: 50%;
@@ -115,11 +115,11 @@
     z-index: 1;
 }
   
-.recycle-form .input-wrapper .clear-icon:hover {
+.recyclemap-form .input-wrapper .clear-icon:hover {
     color: #555;
 }
  
-.recycle-sidebar .recycle-form button {
+.recyclemap-sidebar .recyclemap-form button {
     padding: 0.5rem 1rem;
     font-size: 1rem;
     background-color: #2e7d32;
@@ -129,17 +129,17 @@
     cursor: pointer;
 }
   
-.recycle-sidebar .recycle-form button:hover {
+.recyclemap-sidebar .recyclemap-form button:hover {
     background-color: #1b5e20;
 }
 
-.recycle-sidebar h3 {
+.recyclemap-sidebar h3 {
     margin: 0px;
     padding: 1rem 0rem;
 }
   
 /* Lista de puntos */
-.recycle-sidebar .recycle-list {
+.recyclemap-sidebar .recyclemap-list {
     flex: 1;
     overflow-y: auto;
     scrollbar-gutter: stable; /* para mostrar el scroll en móviles */
@@ -149,14 +149,14 @@
     padding-bottom: 0.5rem;
 }
   
-.recycle-sidebar .recycle-list li {
+.recyclemap-sidebar .recyclemap-list li {
     padding: 0.5rem 0;
     border-bottom: 1px solid #ddd;
     font-size: 0.95rem;
     cursor: pointer;
 }
 
-.recycle-sidebar .recycle-list li .color-indicator {
+.recyclemap-sidebar .recyclemap-list li .color-indicator {
     margin-right: 8px;
     vertical-align: middle;
 }
@@ -166,7 +166,7 @@
         flex-direction: column;
     }
     
-    .recyclemap-container .recycle-sidebar {
+    .recyclemap-container .recyclemap-sidebar {
         margin: 10px 10px 5px 10px;
     }
 
@@ -179,46 +179,46 @@
         flex: 1;
     }
     
-    .recyclemap-container .recycle-sidebar {
+    .recyclemap-container .recyclemap-sidebar {
         order: 1; /* pone el buscador arriba */
     }
 
     /* altura cuando se muestra el input de búsqueda */
-    .recyclemap-container .recycle-sidebar.small-height {
+    .recyclemap-container .recyclemap-sidebar.small-height {
         flex: 0 0 auto;
         height: auto;
         max-height: 50px;
     }
 
     /* altura cuando se muestra la lista de puntos */
-    .recyclemap-container .recycle-sidebar.large-height {
+    .recyclemap-container .recyclemap-sidebar.large-height {
         flex: 0 0 35%;
         overflow-y: scroll;
     }
 
-    .recycle-sidebar h3 {
+    .recyclemap-sidebar h3 {
         margin: 0px;
         padding: 0.5rem 0rem;
     }
 }
 
 @media (max-width: 368px) {
-    .recycle-sidebar .recycle-form {
+    .recyclemap-sidebar .recyclemap-form {
       flex-direction: column;
       align-items: stretch;
     }
   
-    .recycle-sidebar .recycle-form .input-wrapper {
+    .recyclemap-sidebar .recyclemap-form .input-wrapper {
       width: 100%;
       margin-bottom: 0.5rem;
     }
   
-    .recycle-sidebar .recycle-form button {
+    .recyclemap-sidebar .recyclemap-form button {
       width: 100%;
     }
 
     /* altura cuando se muestra el input de búsqueda */
-    .recyclemap-container .recycle-sidebar.small-height {
+    .recyclemap-container .recyclemap-sidebar.small-height {
         max-height: 100px;
     }
 }

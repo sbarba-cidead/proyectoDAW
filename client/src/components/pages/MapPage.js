@@ -106,7 +106,7 @@ function MapPage() {
 
     // función para guardar una nueva actividad de reciclaje
     const handleRecyclingActivity = async () =>{
-        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+        if (!user || user.banned) { return; } // si no hay usuario iniciado o está baneado no guarda la actividad
 
         try {
             await sendRecyclingActivity('Buscar puntos de reciclaje');
@@ -255,10 +255,10 @@ function MapPage() {
                 </MapContainer>
             </div>
             
-            <div className={`recycle-sidebar ${isSmallWidthScreen ? (showSearchUI ? 'small-height' : 'large-height') : ''}`}>
+            <div className={`recyclemap-sidebar ${isSmallWidthScreen ? (showSearchUI ? 'small-height' : 'large-height') : ''}`}>
                 {/* se oculta para pantallas pequeñas cuando showSearchUI es false */}
                 {(!isSmallWidthScreen || showSearchUI) && (
-                    <form onSubmit={handleSubmit} className="recycle-form">
+                    <form onSubmit={handleSubmit} className="recyclemap-form">
                         <div className="input-wrapper">
                             <input
                                 type="text"
@@ -279,7 +279,7 @@ function MapPage() {
                 {(!isSmallWidthScreen || !showSearchUI) && (
                     <>
                         <h3>Puntos cercanos</h3>
-                        <ul className="recycle-list">
+                        <ul className="recyclemap-list">
                             {orderedPoints.map(p => (
                                 <li key={p._id} onClick={() => handlePointSelect(p)}>
                                     <FaSquareFull className={`color-indicator icon-color-${p.containerType?._id}`} />

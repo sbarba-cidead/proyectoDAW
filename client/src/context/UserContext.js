@@ -40,6 +40,8 @@ export function UserProvider({ children }) {
                         setUser({
                             username: data.username,
                             avatar: `${avatarsUrl}/${data.avatar}`,
+                            role: data.role,
+                            banned: data.banned,
                         });
                     } else { // token incorrecto o expirado
                         // elimina el token del local

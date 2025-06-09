@@ -17,7 +17,7 @@ function EcoInfoPage() {
 
     // función para guardar una nueva actividad de reciclaje
     const handleRecyclingActivity = async (link) =>{
-        if (!user) { // si no hay usuario iniciado
+        if (!user || user.banned) { // si no hay usuario iniciado o está baneado
             window.open(link, '_blank'); // se abre la ventana del link
             return; // si no hay usuario iniciado no guarda la actividad
         }

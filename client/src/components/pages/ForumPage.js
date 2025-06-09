@@ -19,7 +19,7 @@ const ForumPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const { user } = useUserContext();
-  const [initialTotalPostCount, setInitialTotalPostCount] = useState(null); // número total de posts disponibles en BD
+  const initialTotalPostCountRef = useRef(null); // número total de posts disponibles en BD
   const [posts, setPosts] = useState([]); // posts cargados, se actualiza con paginación
   const [displayedPosts, setDisplayedPosts] = useState([]); // post mostrados en UI 
   const [nextPageToLoad, setNextPageToLoad] = useState(1); // paginación de posts (número de página)
@@ -48,6 +48,10 @@ const ForumPage = () => {
   // carga inicial y para cambio de filtros y ordenacion
   useEffect(() => {
     loadData();
+
+    if (user && user.banned) {
+      showTempNotification("Tu usuario está baneado, no puedes publicar posts o respuestas.", "warning", 5000);
+    }
   }, [selectedCategories, orderBy]);
 
   // función principal que carga todo al inicio y al aplicar cambios
@@ -105,10 +109,8 @@ const ForumPage = () => {
 
       // variable para autofetch //
       // si es la primera carga, guarda el total de posts disponibles en BD
-      if (pageToLoad === 1 && initialTotalPostCount === null) {
-        setInitialTotalPostCount(postsData.total);
-        console.log("postsData.total", postsData.total)
-        console.log("initialTotalPostCount desde cambio de valor", initialTotalPostCount);
+      if (pageToLoad === 1 && initialTotalPostCountRef.current === null) {
+        initialTotalPostCountRef.current = postsData.total;
       }
 
       // variable para load more //
@@ -171,9 +173,7 @@ const ForumPage = () => {
         const response = await fetch(`${apiUrl}/forum/posts/post-count`);
         const data = await response.json();
         
-        console.log("initialTotalPostCount desde autofetch", initialTotalPostCount);
-
-        if (data.count > initialTotalPostCount) { setNewPostsAvailable(true); }
+        if (data.count > initialTotalPostCountRef.current) { setNewPostsAvailable(true); }
       } catch (error) {
         console.error("Error comprobando nuevos posts:", error);
       }
@@ -281,7 +281,7 @@ const ForumPage = () => {
 
   // refresca la lista de posts para mostrar el nuevo
   function handleCreateNewPost(newPost) {
-    setPosts(prev => [newPost, ...prev]);
+    setDisplayedPosts(prev => [newPost, ...prev]);
 
     // si el nuevo post tiene nuevas categorías, se añaden a las dispinibles para filtrar
     const newCategories = newPost.categories || [];
@@ -344,7 +344,7 @@ const ForumPage = () => {
 
       showTempNotification(`Se ha completado el cambio de estado del post.`, 'success', 3000);
 
-      setPosts(prevPosts =>
+      setDisplayedPosts(prevPosts =>
         prevPosts.map(p =>
           p._id === postId ? { ...p, banned: !currentStatus } : p
         )
@@ -358,7 +358,7 @@ const ForumPage = () => {
 
   // función para guardar una nueva actividad de reciclaje
   const handleRecyclingActivity = async (postID) =>{
-      if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+      if (!user || user.banned) { return; } // si no hay usuario iniciado o está baneado no guarda la actividad
 
       try {
           await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad', postID);
@@ -384,23 +384,23 @@ const ForumPage = () => {
       }
       <ConfirmDialog />
       <div className="header-container">
-        {/* botón de crear post */}
-        {user && (<div className="new-post-button-wrapper">
+        <div className="forum-page-action-buttons">
+          {/* botón de crear post */}
+          {user && (
+            <button
+              className={`new-post-button ${user.banned ? 'banned' : ''} ${isSmallWindow ? 'floating' : ''}`}
+              onClick={() => setShowNewPostModal(true)}
+            >
+              {isSmallWindow ? '+' : '+ Nuevo post'}
+            </button>
+          )}
+          
+          {/* buscador */}
           <button
-            className={`new-post-button ${isSmallWindow ? 'floating' : ''}`}
-            onClick={() => setShowNewPostModal(true)}
-          >
-            {isSmallWindow ? '+' : '+ Nuevo post'}
-          </button>
-        </div>)}
-        
-        {/* buscador */}
-        <div className="search-wrapper">
-          <button
-            className="open-search-modal-button"
+            className={`search-button ${isSmallWindow ? 'floating' : ''}`}
             onClick={() => setShowSearchModal(true)}
           >
-            <FaSearch />
+            {isSmallWindow ? (<FaSearch />) : (<span><FaSearch /> Buscar</span>)}
           </button>
         </div>
 
@@ -475,33 +475,34 @@ const ForumPage = () => {
                 onClick={() => handleOpenPostModal(post)}
               >
                 <div className="post-header">
-
-                  <div className="admin-actions-container">
-                    <div className="admin-actions-bg">
-                      <button 
-                        title="Banear post" 
-                        className="icon-button ban-btn" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBanPost(post._id, post.banned);
-                        }}
-                      >
-                        <FaBan />
-                      </button>
-                      <button 
-                        title="Eliminar post"
-                        className="icon-button delete-btn" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePost(post._id);
-                        }}
-                      >
-                        <FaTrashAlt />
-                      </button>
+                  {user && user.role === 'admin' && (
+                    <div className="admin-actions-container">
+                      <div className="admin-actions-bg">
+                        <button 
+                          title="Banear post" 
+                          className="icon-button ban-btn" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBanPost(post._id, post.banned);
+                          }}
+                        >
+                          <FaBan />
+                        </button>
+                        <button 
+                          title="Eliminar post"
+                          className="icon-button delete-btn" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePost(post._id);
+                          }}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <p className="dates">
+                  <div className="dates">
                     <span className="created-container">
                       <span className="date-label">Creado:</span>
                       <span className="date">{convertUTCDateTime(post.createdAt)}</span>
@@ -511,7 +512,7 @@ const ForumPage = () => {
                       <span className="date-label">Última respuesta:</span>
                       <span className="date">{convertUTCDateTime(post.lastReplyAt)}</span>
                     </span>
-                  </p>
+                  </div>
                   <div className="post-title">
                     {post.type === 'event' ? <FaCalendar color="#FF6F00" /> : <FaCommentDots color="#89c26e" />}
                     <span className="text-container">
@@ -535,6 +536,7 @@ const ForumPage = () => {
                         levelIcon={post.createdBy.level?.icon}
                         levelText={post.createdBy.level?.text}
                         levelColor={post.createdBy.level?.color}
+                        userRole={post.createdBy.role}
                       >
                         <Link
                           className="created-by"
@@ -584,13 +586,17 @@ const ForumPage = () => {
       {showSearchModal && (
         <ForumSearchModal
           onClose={() => setShowSearchModal(false)}
-          apiUrl={apiUrl}
+          onSelectPost={(post) => {
+            handleOpenPostModal(post);
+            setShowSearchModal(false);
+          }}
         />
       )}
 
       {/* modal para crear nuevo post */}
       {showNewPostModal && (
           <ForumNewPostModal
+              user={user}
               onClose={() => setShowNewPostModal(false)}
               onPostCreated={handleCreateNewPost}
           />

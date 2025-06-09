@@ -20,8 +20,7 @@
     border-radius: 12px;
     overflow: hidden;
     display: flex;
-    flex-direction: column;
-    
+    flex-direction: column;    
 }
 
 /* contenedor para el botón de cerrar */
@@ -59,6 +58,10 @@
 }
 
 /* --------------- */
+
+.postmodal-background .modal-wrapper .modal-content.banned {
+    opacity: 0.6;
+}
 
 /* información del post (autor y fecha) */
 .postmodal-background .modal-wrapper .modal-content 
@@ -295,6 +298,10 @@
     flex-direction: column;
 }
 
+.replies-list .reply.banned {
+    opacity: 0.6;
+}
+
 /* info de la respuesta (autor y fecha) */
 .replies-list .reply .reply-metainfo {    
     font-size: 13px;
@@ -330,12 +337,13 @@
 
 .replies-list .reply .comment-reply-container {
     display: flex;
-    justify-content: flex-end;
+    /* justify-content: flex-end; */
     margin-top: 5px;
     padding-right: 10px;
 }
 
 .comment-reply-container .comment-reply-btn {
+    margin-left: auto;
     background: none;
     color: #4CAF50;
     border: none;
@@ -354,6 +362,53 @@
 .comment-reply-container .post-reply-btn .arrow {
     margin-right: 4px;
     font-size: 16px;
+}
+
+.comment-reply-container .admin-actions-container {
+    display: flex;
+    margin-right: 10px;
+    align-items: center;
+    justify-self: flex-start;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 80%;
+    background: rgba(30, 30, 30, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 5px;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg .icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg .icon-button.ban-btn {
+  color: #ff0000;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg .icon-button.ban-btn:hover {
+  color: #c40202;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg .icon-button.delete-btn {
+  color: #f46c36;
+}
+
+.comment-reply-container .admin-actions-container .admin-actions-bg .icon-button.delete-btn:hover {
+  color: #b74d1c;
 }
 
 .postmodal-background .modal-wrapper

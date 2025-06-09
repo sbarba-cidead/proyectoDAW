@@ -7,6 +7,8 @@ import { convertUTCDateTime } from 'utils/functions';
 import NotificationMessage from 'components/page-elements/NotificationMessage';
 import { sendRecyclingActivity } from 'utils/functions';
 import UserCardTooltip from 'components/page-elements/UserCardTooltip';
+import { FaBan, FaTrashAlt } from 'react-icons/fa';
+import ConfirmDialog, { confirm } from 'components/page-elements/ConfirmDialog';
 
 const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
     const { user } = useUserContext();
@@ -167,11 +169,11 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
     };
 
     // función para guardar una nueva actividad de reciclaje
-    const handleRecyclingActivity = async () =>{
-        if (!user) { return; } // si no hay usuario iniciado no guarda la actividad
+    const handleRecyclingActivity = async (commentId) =>{
+        if (!user || user.banned) { return; } // si no hay usuario iniciado o está baneado no guarda la actividad
 
         try {
-            await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad');
+            await sendRecyclingActivity('Participar en la Comunidad de Sostenibilidad', commentId);
         } catch (error) {
             console.error('Error registrando actividad de reciclaje:', error.message);
         }
@@ -248,7 +250,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
             setReplyCount(prev => prev + 1);
 
             // Guarda actividad
-            handleRecyclingActivity();
+            handleRecyclingActivity(data.comment._id);
             setlastRepliedPost && setlastRepliedPost(post._id);
 
             // Espera un poco antes de iniciar la búsqueda y scroll
@@ -294,164 +296,155 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
 
     // envío de respuestas a otras respuestas
     const handleCommentReplySubmit = async (commentContent, postId, responseToId) => {
-    try {
-        if (!commentContent.trim()) {
-            showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
-            return;
-        }
-
-        const token = localStorage.getItem('usertoken');
-        if (!token) {
-            console.error("Token de autenticación no válido.");
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({ 
-                text: commentContent.trim(), 
-                postId: postId 
-            }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
-            console.error(data.error);
-            return;
-        }
-
-        // Limpia el formulario
-        setNewCommentReplyText('');
-        setShowCommentReplyForm(false);
-        setReplyFormVisibleForComment(null);
-
-        // Asegura visibilidad de respuestas
-        if (!repliesVisible) setRepliesVisible(true);
-
-        // Guarda actividad
-        handleRecyclingActivity();
-        setReplyCount(prev => prev + 1);
-
-        // Espera antes de cargar y hacer scroll
-        setTimeout(async () => {
-            let found = false;
-            let allReplies = [];
-
-            const updatedTotalPages = await fetchRepliesPageInfo();
-
-            for (let p = 1; p <= updatedTotalPages; p++) {
-                const pageReplies = await fetchRepliesList(p);
-                allReplies.push(...pageReplies);
-                setReplies([...allReplies]); // Actualiza progresivamente
-                setPage(p);
-
-                await new Promise(r => setTimeout(r, 100));
-
-                const el = scrollRefs.current[data.reply._id];
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    found = true;
-                    break;
-                }
+        try {
+            if (!commentContent.trim()) {
+                showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
+                return;
             }
 
-            if (!found) {
-                setTimeout(() => {
+            const token = localStorage.getItem('usertoken');
+            if (!token) {
+                console.error("Token de autenticación no válido.");
+                return;
+            }
+
+            setIsSubmitting(true);
+
+            const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    text: commentContent.trim(), 
+                    postId: postId 
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
+                console.error(data.error);
+                return;
+            }
+
+            // Limpia el formulario
+            setNewCommentReplyText('');
+            setShowCommentReplyForm(false);
+            setReplyFormVisibleForComment(null);
+
+            // Asegura visibilidad de respuestas
+            if (!repliesVisible) setRepliesVisible(true);
+
+            // Guarda actividad
+            handleRecyclingActivity(data.reply._id);
+            setReplyCount(prev => prev + 1);
+
+            // Espera antes de cargar y hacer scroll
+            setTimeout(async () => {
+                let found = false;
+                let allReplies = [];
+
+                const updatedTotalPages = await fetchRepliesPageInfo();
+
+                for (let p = 1; p <= updatedTotalPages; p++) {
+                    const pageReplies = await fetchRepliesList(p);
+                    allReplies.push(...pageReplies);
+                    setReplies([...allReplies]); // Actualiza progresivamente
+                    setPage(p);
+
+                    await new Promise(r => setTimeout(r, 100));
+
                     const el = scrollRefs.current[data.reply._id];
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
-            }
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        found = true;
+                        break;
+                    }
+                }
 
-        }, 150);
+                if (!found) {
+                    setTimeout(() => {
+                        const el = scrollRefs.current[data.reply._id];
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
 
-    } catch (error) {
-        console.error('Error creando la respuesta:', error);
-        showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 2000);
-    } finally {
-        setIsSubmitting(false);
-    }
-};
+            }, 150);
 
-
-
-    // // enviar nueva respuesta a otra respuesta
-    // const handleCommentReplySubmit = async (commentContent, postId, responseToId) => {
-    //     try {
-    //         if (!commentContent.trim()) {
-    //             showTempNotification('El texto de la respuesta no puede estar vacío.', 'error', 3000);
-    //             return;
-    //         }
-
-    //         const token = localStorage.getItem('usertoken');
-    //         if (!token) {
-    //             console.error("Token de autenticación no válido.");
-    //             return;
-    //         }
-
-    //         setIsSubmitting(true);
-
-    //         const response = await fetch(`${apiUrl}/forum/comments/${responseToId}/create-comment`, {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //                 Authorization: `Bearer ${token}`
-    //             },
-    //             body: JSON.stringify({ 
-    //                 text: commentContent.trim(), 
-    //                 postId: postId 
-    //             }),
-    //         });
-
-    //         const data = await response.json();
-
-    //         if (!response.ok) {
-    //             showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 3000);
-    //             console.error(data.error);
-    //             return;
-    //         }
-
-    //         // añade la nueva respuesta a la lista para que se 
-    //         // recargen las respuestas al post
-    //         setReplies(prev => [...prev, data.reply]);
-    //         // aumenta número de respuestas
-    //         setReplyCount(prev => prev + 1);
-
-    //         // limpia el formulario
-    //         setNewCommentReplyText(''); // limpia el formulario
-    //         setShowCommentReplyForm(false); // oculta el forumario
-    //         setReplyFormVisibleForComment(null);
-
-    //         // si no estaba activada la visualización de respuestas, la activa
-    //         if (!repliesVisible) setRepliesVisible(true);
-
-    //         setTimeout(() => { // pasado un tiempo
-    //             // scroll hacia la nueva respuesta
-    //             const el = scrollRefs.current[data.reply._id];
-    //             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    //         }, 100);
-
-    //         // se añade actividad de reciclaje
-    //         handleRecyclingActivity();
-    //     } catch (error) {
-    //         console.error('Error creando la respuesta:', error);
-    //     } finally {
-    //         setIsSubmitting(false);
-    //     }
-    // };
+        } catch (error) {
+            console.error('Error creando la respuesta:', error);
+            showTempNotification('Error al enviar la respuesta.\nInténtalo de nuevo.', 'error', 2000);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     // creación de id temporal para las respuestas (usado para referencias en front)
     const tempIdMap = {};
         sortedReplies.forEach((r, index) => {
         tempIdMap[r._id] = index + 1;
     });
+
+    // (sólo admin) banea el comentario, ocultando su texto
+    const handleBanComment = async (commentId, currentStatus) => {
+        console.log("comprobacion")
+        const action = currentStatus ? 'desbanear' : 'banear';
+        const confirmAnswer = await confirm(`Se va a ${action} este comentario. ¿Continuar?`);
+        if (!confirmAnswer) return;
+    
+        try {
+            const res = await fetch(`${apiUrl}/forum/comments/${commentId}/visibility`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ banned: !currentStatus }),
+            });
+    
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Error actualizando la visibilidad');
+            }
+    
+            showTempNotification(`Se ha completado el cambio de estado del comentario.`, 'success', 3000);
+    
+            setReplies(prevReplies =>
+                prevReplies.map(r =>
+                r._id === commentId ? { ...r, banned: !currentStatus } : r
+            ));
+        } catch (error) {      
+            showTempNotification(`No se pudo ${action} el comentario.\nInténtalo de nuevo.`, 'error', 3000);
+    
+            console.error('Error al actualizar visibilidad del comentario:', error);
+        }
+    }
+
+    // (sólo admin) borra un post
+    const handleDeleteComment = async (commentId) => {
+        const confirmAnswer = await confirm("Esta acción borrará por completo el comentario y no puede deshacerse. ¿Continuar?");
+        if (!confirmAnswer) return;
+    
+        try {
+            const res = await fetch(`${apiUrl}/forum/comments/${commentId}`, {
+                method: 'DELETE',
+            });
+    
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Error borrando el comentario');
+            }
+    
+            showTempNotification('El comentario se ha eliminado.', 'success', 2000);
+    
+            // actualiza el estado local de comentarios eliminando el comentario
+            setReplies(prevReplies => prevReplies.filter(r => r._id !== commentId));
+            setReplyCount(prev => prev-1);
+        } catch (error) {      
+            showTempNotification('No se pudo borrar el comentario.\nInténtalo de nuevo.', 'error', 2000);
+            console.error('Error al borrar el comentario:', error);
+        }
+    }
     
 
     return (
@@ -461,11 +454,12 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                 textMessage={notificationMessage}
                 notificationType={notificationMessageType} />
             }
+            <ConfirmDialog />
             <div className="modal-wrapper" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <button className="close-btn" onClick={onClose}>✖</button>
                 </div>
-                <div className="modal-content" ref={scrollContainerRef}>
+                <div className={`modal-content ${post.banned ? 'banned' : ''}`} ref={scrollContainerRef}>
                     <div ref={el => scrollRefs.current['post'] = el} className="post-content">
                         <div className="post-metainfo">
                             <div className="post-categories">
@@ -489,6 +483,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                     levelIcon={post.createdBy.level?.icon}
                                     levelText={post.createdBy.level?.text}
                                     levelColor={post.createdBy.level?.color}
+                                    userRole={post.createdBy.role}
                                 >
                                     <Link
                                         className="created-by"
@@ -511,13 +506,16 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                 el <span className="date">{convertUTCDateTime(post.createdAt)}</span>
                             </div>
                         </div>
-                        <h2 className="post-content-title">{post.title}</h2>
+                        <h2 className="post-content-title">{post.banned ? 'Publicación baneada por un administrador' : post.title}</h2>
                         <div className='post-content-text'>
-                            {post.content.split('\\n').map((para, idx) => (
-                                <p key={idx}>{para}</p>
-                            ))}
+                            {post.banned ? 
+                                'El contenido no puede mostrarse porque la publicación fue baneada por un administrador.' :
+                                post.content.split('\\n').map((para, idx) => (
+                                    <p key={idx}>{para}</p>
+                                ))
+                            }
                         </div>
-                        {user && !showPostReplyForm && (
+                        {user && !showPostReplyForm && !post.banned && (
                             <button className="post-reply-btn" onClick={() => setShowPostReplyForm(true)}><span className="arrow">↪</span> Responder al post</button>
                         )}
                         {showPostReplyForm && (
@@ -575,7 +573,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                                 : new Date(b.createdAt) - new Date(a.createdAt)
                                             )
                                             .map((reply) => (
-                                                <div key={reply._id} ref={el => scrollRefs.current[reply._id] = el} className="reply">
+                                                <div key={reply._id} ref={el => scrollRefs.current[reply._id] = el} className={`reply ${reply.banned ? 'banned' : ''}`}>
                                                     <div className="reply-metainfo">
                                                         <span className="username">
                                                             <UserCardTooltip
@@ -585,6 +583,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                                                 levelIcon={reply.user?.level?.icon}
                                                                 levelText={reply.user?.level?.text}
                                                                 levelColor={reply.user?.level?.color}
+                                                                userRole={reply.user.role}
                                                             >
                                                                 <Link
                                                                     className="created-by"
@@ -614,14 +613,42 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
                                                             <button onClick={() => handleScrollTo(reply.responseTo)}>comentario #{tempIdMap[reply.responseTo] || 'mensaje eliminado'}</button>
                                                         </p>
                                                     )}
-                                                    <p className="reply-text">{reply.text}</p>
+                                                    <p className="reply-text">{reply.banned ? 'Este comentario ha sido baneado por un administrador.' : reply.text}</p>
 
                                                     {user && replyFormVisibleForComment !== reply._id && (
                                                         <div className="comment-reply-container">
-                                                            <button className="comment-reply-btn" 
-                                                                onClick={() => { setReplyFormVisibleForComment(reply._id); setShowCommentReplyForm(true);} }>
-                                                                <span className="arrow">↪</span> Responder
-                                                            </button>
+                                                            {user.role === 'admin' && (
+                                                                <div className="admin-actions-container">
+                                                                    <div className="admin-actions-bg">
+                                                                    <button 
+                                                                        title="Banear comentario" 
+                                                                        className="icon-button ban-btn" 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleBanComment(reply._id, reply.banned);
+                                                                        }}
+                                                                    >
+                                                                        <FaBan />
+                                                                    </button>
+                                                                    <button 
+                                                                        title="Eliminar comentario"
+                                                                        className="icon-button delete-btn" 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteComment(reply._id);
+                                                                        }}
+                                                                    >
+                                                                        <FaTrashAlt />
+                                                                    </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {!reply.banned && (
+                                                                <button className="comment-reply-btn" 
+                                                                    onClick={() => { setReplyFormVisibleForComment(reply._id); setShowCommentReplyForm(true);} }>
+                                                                    <span className="arrow">↪</span> Responder
+                                                                </button>
+                                                            )}
                                                         </div>
 
                                                     )}

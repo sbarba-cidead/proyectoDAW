@@ -23,7 +23,7 @@ router.get('/ping', (req, res) => {
 router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
   try {
     const userId = req.userId;
-    const { type } = req.body;
+    const { type, postRef, commentRef } = req.body;
     if (!type ) {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
@@ -32,7 +32,9 @@ router.post('/save-recycling-activity', authMiddleware, async (req, res) => {
     const newRecyclingActivity = new RecyclingActivity({
       type,
       date: new Date(),
-      userId
+      userId,
+      postRef,
+      commentRef,
     });
 
     const savedRecyclingActivity = await newRecyclingActivity.save();

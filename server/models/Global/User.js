@@ -83,7 +83,11 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordExpires: { 
         type: Date,
-    }
+    },
+    banned: {
+        type: Boolean,
+        default: false,
+    } // si el usuario ha sido baneado por un admin
 }, { timestamps: true });
 
 userSchema.index({ score: -1 });

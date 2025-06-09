@@ -25,7 +25,11 @@ const forumCommentSchema = new Schema({
     type: String,
     required: true,
     trim: true,
-  } // contenido del mensaje
+  }, // contenido del mensaje
+  banned: {
+    type: Boolean,
+    default: false,
+  } // si el comentario ha sido baneado por un admin
 }, {
   collection: "forum_comments"
 });

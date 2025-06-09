@@ -7,7 +7,7 @@ import NotificationMessage from 'components/page-elements/NotificationMessage';
 
 const animatedComponents = makeAnimated();
 
-const ForumNewPostModal = ({ onClose, onPostCreated }) => {
+const ForumNewPostModal = ({ user, onClose, onPostCreated }) => {
     const [title, setTitle] = useState('');
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [content, setContent] = useState('');
@@ -86,6 +86,7 @@ const ForumNewPostModal = ({ onClose, onPostCreated }) => {
             title: title.trim(),
             content: content.trim(),
             categories: categoriesFormatted,
+            userRole: user.role,
         };
 
         try {

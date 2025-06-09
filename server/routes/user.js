@@ -144,7 +144,7 @@ router.post('/otheruser', async (req, res) => {
                               path: 'messages._id',
                               select: 'title content text post responseTo createdAt model',
                             })
-                            .select('avatar fullname username score level recyclingActivities messages banned');
+                            .select('avatar fullname username score level recyclingActivities messages role banned');
 
     if (!user) { // si no se encuentra el usuario
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -199,7 +199,7 @@ router.get('/otheruser/:username', async (req, res) => {
       const user = await User.findOne({username})
                               .populate('recyclingActivities')
                               .populate('level')
-                              .select('avatar fullname username score level recyclingActivities messages banned');
+                              .select('avatar fullname username score level recyclingActivities messages role banned');
 
       if (!user) { // si no se encuentra el usuario
         return res.status(404).json({ error: 'USER_NOT_FOUND' });

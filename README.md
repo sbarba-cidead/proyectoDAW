@@ -1,6 +1,9 @@
 Vídeo demo en PC (localhost): https://youtu.be/ylKWodDQIp8  
 Vídeo demo en PC (despliegue): https://youtu.be/8TJwTu9YCPU   
 Vídeo demo modo móvil: https://youtu.be/cE-ZY-vywhQ  
+
+Vídeo demo con nuevas funcionalidades: https://youtu.be/fXbENq6tQAg  
+Vídeo demo desde móvil real: https://youtu.be/z0LfRTzUHKU  
   
   
 URL despliegue producción:  

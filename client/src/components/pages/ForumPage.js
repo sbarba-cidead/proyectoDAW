@@ -119,7 +119,6 @@ const ForumPage = () => {
       await fetchCategories();
     } catch (error) {
       console.error('Error obteniendo los posts:', error);
-      console.log("hola");
       setPageError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
     } finally {
       setLoading(false);

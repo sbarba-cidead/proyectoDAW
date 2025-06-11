@@ -1,6 +1,6 @@
 import 'styles/modals/ForumPostModal.css';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUserContext } from 'context/UserContext';
 import { convertUTCDateTime } from 'utils/functions';
@@ -36,37 +36,9 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
     const searchParams = new URLSearchParams(location.search);
     const replyIdToScroll = searchParams.get('replyId')
 
-    useEffect(() => {
-        if (!replyIdToScroll) return;
 
-        const loadAndScroll = async () => {
-            setRepliesVisible(true);
-            await fetchReplies(1);
-            for (let p = 2; p <= totalPages; p++) {
-            await fetchReplies(p);
-            }
-            setTimeout(() => tryScrollTo(replyIdToScroll), 200);
-        };
-
-        loadAndScroll();
-    }, [replyIdToScroll]);
-
-    // detecta y enlaza la referencia para el scroll del modal,
-    // la posición se almacena como dato de sesión para mantenerla tras la recarga de la página
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-
-        const handleScroll = () => {
-            sessionStorage.setItem(`forum_post_${post._id}_scrollTop`, container.scrollTop);
-        };
-
-        container.addEventListener('scroll', handleScroll);
-        return () => container.removeEventListener('scroll', handleScroll);
-    }, [post._id]);
-
-    // carga de respuestas al post mediante paginación
-    const fetchReplies = async (pageToLoad = 1) => {
+        // carga de respuestas al post mediante paginación
+    const fetchReplies = useCallback(async (pageToLoad = 1) => {
         try {
             const response = await fetch(`${apiUrl}/forum/posts/${post._id}/replies?page=${pageToLoad}`);
             const data = await response.json();
@@ -83,7 +55,36 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
         } catch (error) {
             console.error('Error obteniendo respuestas:', error);
         }
-    };
+    }, [apiUrl, post._id]);
+
+    useEffect(() => {
+        if (!replyIdToScroll) return;
+
+        const loadAndScroll = async () => {
+            setRepliesVisible(true);
+            await fetchReplies(1);
+            for (let p = 2; p <= totalPages; p++) {
+            await fetchReplies(p);
+            }
+            setTimeout(() => tryScrollTo(replyIdToScroll), 200);
+        };
+
+        loadAndScroll();
+    }, [replyIdToScroll, fetchReplies, totalPages]);
+
+    // detecta y enlaza la referencia para el scroll del modal,
+    // la posición se almacena como dato de sesión para mantenerla tras la recarga de la página
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            sessionStorage.setItem(`forum_post_${post._id}_scrollTop`, container.scrollTop);
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [post._id]);
 
     // guarda el estado de visualización del post por si se recarga la página
     useEffect(() => {
@@ -94,7 +95,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
             };
             sessionStorage.setItem(`forum_post_${post._id}_state`, JSON.stringify(savedState));
         }
-    }, [repliesVisible, page]);
+    }, [repliesVisible, page, post._id]);
 
     // recuperación de datos guardados de visualización del post al recargar la página
     useEffect(() => {
@@ -126,7 +127,7 @@ const ForumPostModal = ({ post, onClose, setlastRepliedPost }) => {
             }
         };
         restoreState();
-    }, [post._id]);
+    }, [post._id, fetchReplies]);
 
     // ordenar las respuestas al post
     const sortedReplies = [...replies].sort((a, b) => {

@@ -56,7 +56,7 @@ function RecycleGuidePage() {
             const normalizedSearchData = normalizeText(searchData);
 
             try {
-                const res = await fetch(`${apiUrl}/recycle/eco-guide-data?search=${encodeURIComponent(searchData)}`);
+                const res = await fetch(`${apiUrl}/recycle/eco-guide-data?search=${encodeURIComponent(normalizedSearchData)}`);
                 const data = await res.json();
                 setProductsQueryResult(data); // productos que se han encontrado en coincidencia
             } catch (error) {
@@ -106,9 +106,10 @@ function RecycleGuidePage() {
     return (
         <div className="recyclebins-container">
             <div className="search-products-container">
-                <label>Busca un producto:</label>
+                <label htmlFor="input-product-search">Busca un producto:</label>
                 <input
                     type="text"
+                    id="input-product-search"
                     value={searchData}
                     onChange={(e) => setSearchData(e.target.value)}
                     onKeyDown={handleSelectProductKeyPress} // detección de la tecla enter

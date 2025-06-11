@@ -35,7 +35,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
     };
 
     checkServerConnection();
-  }, []);
+  }, [apiUrl]);
 
   // toggle para mostrar u ocultar contraseña
   const handlePasswordToggle = () => {
@@ -111,8 +111,8 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
           },
           body: JSON.stringify({
             fullname: fullname.trim(),
-            username: username.trim(),
-            email: email.trim(),
+            username: username.trim().toLowerCase(),
+            email: email.trim().toLowerCase(),
             password: password.trim(),
           }),
         });
@@ -170,8 +170,8 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            credential,
-            password,
+            credential: credential.trim().toLowerCase(),
+            password: password.trim(),
           }),
         });
 
@@ -240,6 +240,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                 placeholder="Introduce tu correo electrónico"
                 value={email}
                 onChange={handleInputChange}
+                autoComplete="email"
               />
               {email && (
                 <FaTimesCircle
@@ -259,6 +260,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                   placeholder="Nombre y apellidos"
                   value={fullname}
                   onChange={handleInputChange}
+                  autoComplete="name"
                 />
                 {fullname && (
                   <FaTimesCircle
@@ -274,6 +276,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                   placeholder="Nombre de usuario"
                   value={username}
                   onChange={handleInputChange}
+                  autoComplete="username"
                 />
                 {username && (
                   <FaTimesCircle
@@ -289,6 +292,7 @@ function LoginModal( { initialFormData, formData, setFormData, handleInputChange
                   placeholder="Correo electrónico"
                   value={email}
                   onChange={handleInputChange}
+                  autoComplete="email"
                 />
                 {email && (
                   <FaTimesCircle

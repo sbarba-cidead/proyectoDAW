@@ -34,7 +34,7 @@ const ForumSearchModal = ({ onClose, onSelectPost }) => {
         };
 
         fetchSuggestions();
-    }, [query]);
+    }, [query, apiUrl]);
 
     // para mostrar mensaje de notificicación
     const showTempNotification = (msg, type, duration) => {
@@ -63,6 +63,7 @@ const ForumSearchModal = ({ onClose, onSelectPost }) => {
                         <div className="input-wrapper">
                             <input
                                 type="text"
+                                id="input-posts-search"
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 placeholder="Buscar posts..."

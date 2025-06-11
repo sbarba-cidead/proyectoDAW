@@ -8,7 +8,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
                           notificationMessage, notificationMessageType, onClose }) {
   
   // datos iniciales del usuario, sin editar
-  const [initialData, setInitialData] = useState(userData);
+  const [initialData] = useState(userData);
 
   // datos editados del usuario
   // (se inicializan con los datos iniciales)
@@ -21,7 +21,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
 
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [previewAvatarURL, setPreviewAvatarURL] = useState(null);
-  const [fallbackAvatar, setFallbackAvatar] = useState(initialData.avatar);
+  const [fallbackAvatar] = useState(initialData.avatar);
 
   
   const modalRef = useRef();
@@ -205,6 +205,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Nombre completo"
               value={newEditedData.fullname.trim()}
               onChange={handleInputChange}
+              autoComplete="name"
             />
             <button type="button" className="reset-button">
               <FaUndo className="reset-icon" onClick={() => handleReset('fullname')} />
@@ -219,6 +220,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Nombre de usuario"
               value={newEditedData.username.trim()}
               onChange={handleInputChange}
+              autoComplete="username"
             />
             <button type="button" className="reset-button">
               <FaUndo className="reset-icon" onClick={() => handleReset('username')} />
@@ -233,6 +235,7 @@ function UserEditModal({ userData, onSave, setNotificationMessage, setNotificati
               placeholder="Correo electrónico"
               value={newEditedData.email.trim()}
               onChange={handleInputChange}
+              autoComplete="email"
             />
             <button type="button" className="reset-button">
               <FaUndo className="reset-icon" onClick={() => handleReset('email')} />

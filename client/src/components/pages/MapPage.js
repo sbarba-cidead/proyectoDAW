@@ -262,6 +262,7 @@ function MapPage() {
                         <div className="input-wrapper">
                             <input
                                 type="text"
+                                id="input-direction-search"
                                 value={direction}
                                 onChange={(e) => setDirection(e.target.value)}
                                 placeholder="Introduce una dirección"

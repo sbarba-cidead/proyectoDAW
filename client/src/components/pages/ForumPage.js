@@ -1,6 +1,6 @@
 import 'styles/pages/ForumPage.css';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { FaBan, FaCalendar, FaComment, FaCommentDots, FaSearch, FaTrashAlt } from 'react-icons/fa';
 import { useUserContext } from 'context/UserContext';
@@ -25,7 +25,7 @@ const ForumPage = () => {
   const [nextPageToLoad, setNextPageToLoad] = useState(1); // paginación de posts (número de página)
   const [canLoadMorePosts, setCanLoadMorePosts] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [pageError, setPageError] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationMessageType, setNotificationMessageType] = useState('');
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -45,50 +45,24 @@ const ForumPage = () => {
   const avatarsUrl = process.env.REACT_APP_AVATAR_IMAGES_URL;
 
 
-  // carga inicial y para cambio de filtros y ordenacion
-  useEffect(() => {
-    loadData();
-
-    if (user && user.banned) {
-      showTempNotification("Tu usuario está baneado, no puedes publicar posts o respuestas.", "warning", 5000);
-    }
-  }, [selectedCategories, orderBy]);
-
-  // función principal que carga todo al inicio y al aplicar cambios
-  const loadData = async () => {
-    setError(null);
-    setLoading(true);
-
-    let firstPosts;
-
+  // función para obtener las categorías disponibles de los posts
+  const fetchCategories = useCallback(async () => {
     try {
-      firstPosts = await fetchPosts(1);
-      setDisplayedPosts(firstPosts.slice(0, numberPostShown));
-      await fetchCategories();
+      const res = await fetch(`${apiUrl}/forum/posts/post-categories`);
+      const data = await res.json();
+
+      // orden de las categorías por orden alfabético
+      const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
+
+      setAvailableCategories(sorted);
     } catch (error) {
-      console.error('Error obteniendo los posts:', error);
-      setError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
-    } finally {
-      setLoading(false);
+      console.error('Error cargando categorías:', error);
+      throw error;
     }
-  };
-
-  // para mostrar mensaje de notificicación
-  const showTempNotification = (msg, type, duration) => {
-      setNotificationMessage(msg);
-      setNotificationMessageType(type);
-      setTimeout(() => setNotificationMessage(''), duration);
-  };
-
-  // reseteo de variables para aplicar order y filtros
-  const resetValues = () => {
-    setPosts([]);
-    setDisplayedPosts([]);
-    setNextPageToLoad(1);
-  }
+  }, [apiUrl]);
 
   // función para carga paginada de posts
-  const fetchPosts = async (pageToLoad) => {
+  const fetchPosts = useCallback(async (pageToLoad) => {
     const queryParams = new URLSearchParams({
       page: pageToLoad,
       limit: numberPostLoad, // número de posts que se cargarán
@@ -128,24 +102,52 @@ const ForumPage = () => {
       return newPosts;
     } catch (error) {
       console.error('Error al cargar posts:', error);
-      return [];
+      throw error;
     }
-  };
+  }, [apiUrl, orderBy, posts.length, selectedCategories]);
 
-  // función para obtener las categorías disponibles de los posts
-  const fetchCategories = async () => {
+  // función principal que carga todo al inicio y al aplicar cambios
+  const loadData = useCallback(async () => {
+    setPageError(null);
+    setLoading(true);
+
+    let firstPosts;
+
     try {
-      const res = await fetch(`${apiUrl}/forum/posts/post-categories`);
-      const data = await res.json();
-
-      // orden de las categorías por orden alfabético
-      const sorted = data.sort((a, b) => a.name.localeCompare(b.name));
-
-      setAvailableCategories(sorted);
-    } catch (err) {
-      console.error('Error cargando categorías:', err);
+      firstPosts = await fetchPosts(1);
+      setDisplayedPosts(firstPosts.slice(0, numberPostShown));
+      await fetchCategories();
+    } catch (error) {
+      console.error('Error obteniendo los posts:', error);
+      console.log("hola");
+      setPageError('No hay conexión con el servidor:\nNo se pudieron cargar los datos. Inténtalo de nuevo');
+    } finally {
+      setLoading(false);
     }
+  }, [fetchPosts, fetchCategories, numberPostShown]);
+
+  // carga inicial y para cambio de filtros y ordenacion
+  useEffect(() => {
+    loadData();
+
+    if (user && user.banned) {
+      showTempNotification("Tu usuario está baneado, no puedes publicar posts o respuestas.", "warning", 5000);
+    }
+  }, [selectedCategories, orderBy, user, loadData]);
+
+  // para mostrar mensaje de notificicación
+  const showTempNotification = (msg, type, duration) => {
+      setNotificationMessage(msg);
+      setNotificationMessageType(type);
+      setTimeout(() => setNotificationMessage(''), duration);
   };
+
+  // reseteo de variables para aplicar order y filtros
+  const resetValues = () => {
+    setPosts([]);
+    setDisplayedPosts([]);
+    setNextPageToLoad(1);
+  }
 
   // controla la carga de más posts por paginación
   const handleLoadMore = async () => {
@@ -165,6 +167,17 @@ const ForumPage = () => {
     }
   };
 
+  // busca el post por id
+  const fetchPostById = useCallback(async (id) => {
+    try {
+      const response = await fetch(`${apiUrl}/forum/posts/${id}`);
+      const data = await response.json();
+      setSelectedPost(data);
+    } catch (error) {
+      console.error("Error cargando el post:", error);
+    }
+  }, [apiUrl]);
+
   // autofetch para comprobar si hay nuevos posts disponibles
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -180,7 +193,7 @@ const ForumPage = () => {
     }, 60000); // cada 60 segundos
 
     return () => clearInterval(interval);
-  }, []);
+  }, [apiUrl]);
 
   // actualiza la referencia a posts
   useEffect(() => {
@@ -193,18 +206,7 @@ const ForumPage = () => {
     if (postId) {
       fetchPostById(postId);
     }
-  }, [postId]);
-
-  // busca el post por id
-  const fetchPostById = async (id) => {
-    try {
-      const response = await fetch(`${apiUrl}/forum/posts/${id}`);
-      const data = await response.json();
-      setSelectedPost(data);
-    } catch (error) {
-      console.error("Error cargando el post:", error);
-    }
-  };
+  }, [postId, fetchPostById]);
 
   // controla la apertura del modal del post desde la ruta
   const handleOpenPostModal = (post) => {
@@ -248,7 +250,7 @@ const ForumPage = () => {
   // mostrar filtros aplicados en el desplegable
   const getFiltersAppliedText = () => {
     const count = selectedCategories.length;
-    return count === 0 ? 'Sin filtros aplicados' : `${count} filtro${count == 1 ? '' : 's'} aplicado${count == 1 ? '' : 's'}`;
+    return count === 0 ? 'Sin filtros aplicados' : `${count} filtro${count === 1 ? '' : 's'} aplicado${count === 1 ? '' : 's'}`;
   };
 
   // escucha los clicks fuera del desplegable de filtros
@@ -368,9 +370,9 @@ const ForumPage = () => {
   } 
 
   if (loading) return <div className="forum loading">Recuperando datos...</div>;
-  if (error) return <div className="forum">
+  if (pageError) return <div className="forum">
       {<NotificationMessage
-          textMessage={error}
+          textMessage={pageError}
           notificationType={"error"} />
       }
   </div>;
@@ -389,7 +391,13 @@ const ForumPage = () => {
           {user && (
             <button
               className={`new-post-button ${user.banned ? 'banned' : ''} ${isSmallWindow ? 'floating' : ''}`}
-              onClick={() => setShowNewPostModal(true)}
+              onClick={() => {
+                if (user.banned) {
+                  showTempNotification("Tu usuario está baneado, no puedes publicar posts o respuestas.", "warning", 3000);
+                  return;
+                }
+                setShowNewPostModal(true);
+              }}
             >
               {isSmallWindow ? '+' : '+ Nuevo post'}
             </button>
@@ -406,10 +414,11 @@ const ForumPage = () => {
 
         {/* selector de categoría */}
         <div className="category-select">
-          <label>Categorías:</label>
+          <label htmlFor="category-custom-select">Categorías:</label>
           <div className="custom-select">
             <div className="dropdown" ref={dropdownRef}>
               <button
+                id="category-custom-select"
                 className="dropdown-btn"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 ref={buttonRef}
@@ -440,8 +449,8 @@ const ForumPage = () => {
 
         {/* selector de orden de los posts */}
         <div className="order-select">
-          <label>Ordenar:</label>
-          <select onChange={(e) => {setOrderBy(e.target.value); resetValues();}} value={orderBy}>
+          <label htmlFor="orderby-select">Ordenar:</label>
+          <select id="orderby-select" onChange={(e) => {setOrderBy(e.target.value); resetValues();}} value={orderBy}>
             <option value="latest">Últimas creadas</option>
             <option value="oldest">Más antiguas</option>
             <option value="lastReply">Últimas actualizadas</option>

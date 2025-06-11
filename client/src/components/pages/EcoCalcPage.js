@@ -151,8 +151,8 @@ function EcoCalcPage() {
     const renderQuestions = (questions, answers, handleChangeFn) => (
         questions.map((q) => (
             <div className="form-group" key={q.id}>
-                <label>{q.question}</label>
-                <select name={q.id} value={answers[q.id] !== undefined ? answers[q.id] : ''} onChange={handleChangeFn}>
+                <label htmlFor={q.id}>{q.question}</label>
+                <select id={q.id} name={q.id} value={answers[q.id] !== undefined ? answers[q.id] : ''} onChange={handleChangeFn}>
                     <option value="">Selecciona una opción</option>
                     {q.options.map((opt, idx) => (
                         <option key={idx} value={opt.value}>{opt.label}</option>
